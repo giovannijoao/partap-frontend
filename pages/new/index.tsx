@@ -35,7 +35,7 @@ export default function NewPropertyPage(props) {
       templateAreas={`"header"
                   "main"
                   "footer"`}
-      gridTemplateRows={'50px min-content 1fr 30px'}
+      gridTemplateRows={'50px 1fr 30px'}
       gridTemplateColumns={'1fr'}
       gap='1'
     >
