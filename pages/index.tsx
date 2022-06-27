@@ -1,8 +1,21 @@
-import useSwr from 'swr'
-import { Box, Button, Grid, Heading, Input } from '@chakra-ui/react'
-import React from 'react'
-
+import { Box, Button, FormControl, FormLabel, Grid, Heading, Input } from '@chakra-ui/react'
+import { useRouter } from 'next/router';
+import React, { useContext, useEffect } from 'react'
+import { useForm } from "react-hook-form";
+import { AuthContext } from '../contexts/AuthContext';
 export default function Home() {
+  const router = useRouter()
+  const { register, handleSubmit } = useForm()
+  const { isAuthenticated, signIn } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (isAuthenticated) router.push('/home')
+  }, [router, isAuthenticated])
+
+  async function handleSignIn(info) {
+    signIn(info)
+  }
+
   return (
     <Grid
       w={"full"}
@@ -23,9 +36,13 @@ export default function Home() {
           gap={1}
         >
           <Heading fontSize={'medium'} textAlign="center">Faça login para entrar</Heading>
-          <Input placeholder='E-mail' />
-          <Input placeholder='Password' type="password" />
-          <Button>Entrar</Button>
+          <form onSubmit={handleSubmit(handleSignIn)}>
+            <FormControl>
+              <Input placeholder='E-mail' {...register('email')} />
+              <Input placeholder='Password' type="password" {...register('password')} />
+              <Button type="submit">Entrar</Button>
+            </FormControl>
+          </form>
         </Box>
       </Box>
       <div></div>

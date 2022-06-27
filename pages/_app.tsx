@@ -1,8 +1,11 @@
+import { AuthProvider } from "../contexts/AuthContext"
 import ThemeProvider from "../contexts/themes/ThemeProvider"
 
 function MyApp({ Component, pageProps }) {
   return <ThemeProvider>
-    <Component {...pageProps} />
+    <AuthProvider>
+      <Component {...pageProps} />
+    </AuthProvider>
   </ThemeProvider>
 }
 
