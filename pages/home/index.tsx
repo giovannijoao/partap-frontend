@@ -1,8 +1,10 @@
-import { Badge, Box, Flex, Grid, GridItem, Heading, Image, SimpleGrid, Stack, Text, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Flex, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Stack, Text, Wrap, WrapItem } from "@chakra-ui/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiInstance } from "../../services/api";
 import useSWR from "swr"
-
+import { ButtonChooserItem } from "./styles";
+import { SearchIcon } from "@chakra-ui/icons";
+import { useEffect, useRef, useState } from "react";
 interface PropertyInformationResponse {
   data: Array<{
     _id: string;
@@ -28,20 +30,33 @@ interface PropertyInformationResponse {
   }>
 
 }
+
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
+
 export default function HomePage() {
   const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
-  const { data: response, error } = useSWR(isAuthenticated ? '/properties' : null, ApiInstance, {
-    refreshInterval: 60000,
+  const [addressFieldValue, setAddressFieldValue] = useState("");
+  const [addressFilter, setAddressFilter] = useState("");
+  const { data: response, error } = useSWR(isAuthenticated ? ['/properties', addressFilter] : null, (url, args) => {
+    return ApiInstance.get(url, {
+      params: {
+        ...args && ({ address: args })
+      }
+    })
+  }, {
     onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
       if (retryCount >= 10) return
       revalidate({ retryCount })
     }
   })
-  const isLoadingProperties = !response && !error;
 
-  if (isLoadingUser || isLoadingProperties) return <></>;
+  useEffect(() => {
+    let timeout;
+    timeout = setTimeout(() => setAddressFilter(addressFieldValue), 500)
+    return () => clearTimeout(timeout)
+  }, [addressFieldValue])
 
+  if (isLoadingUser) return <></>;
 
   const items = response?.data.data.map(item => {
     return {
@@ -73,6 +88,21 @@ export default function HomePage() {
       </GridItem>
       <GridItem area="controls" p={2}>
         <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
+        {/* <Select width={48} mt={2}>
+          <option value='isRent' selected>Aluguel</option>
+          <option value='isSell'>Comprar</option>
+          <option value='both'>Aluguel/Comprar</option>
+        </Select> */}
+        <Box mt={2}>
+          <InputGroup w={"xs"}>
+            <InputLeftElement
+              pointerEvents='none'
+            >
+              <SearchIcon color='gray.300' />
+            </InputLeftElement>
+            <Input type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+          </InputGroup>
+        </Box>
       </GridItem>
       <GridItem
         area="main"
