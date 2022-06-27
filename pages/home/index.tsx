@@ -1,10 +1,9 @@
-import { Badge, Box, Flex, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Select, SimpleGrid, Stack, Text, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiInstance } from "../../services/api";
-import useSWR from "swr"
-import { ButtonChooserItem } from "./styles";
+import useSWR, { mutate } from "swr"
 import { SearchIcon } from "@chakra-ui/icons";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 interface PropertyInformationResponse {
   data: Array<{
     _id: string;
@@ -37,6 +36,9 @@ export default function HomePage() {
   const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
+  const [importUrl, setImportUrl] = useState("");
+  const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
+
   const { data: response, error } = useSWR(isAuthenticated ? ['/properties', addressFilter] : null, (url, args) => {
     return ApiInstance.get(url, {
       params: {
@@ -55,6 +57,14 @@ export default function HomePage() {
     timeout = setTimeout(() => setAddressFilter(addressFieldValue), 500)
     return () => clearTimeout(timeout)
   }, [addressFieldValue])
+
+  const handleImport = useCallback(() => {
+    mutate('/properties-extractor', ApiInstance.get('/properties-extractor', {
+      params: {
+        url: importUrl
+      }
+    }))
+  }, [importUrl])
 
   if (isLoadingUser) return <></>;
 
@@ -94,14 +104,19 @@ export default function HomePage() {
           <option value='both'>Aluguel/Comprar</option>
         </Select> */}
         <Box mt={2}>
-          <InputGroup w={"xs"}>
-            <InputLeftElement
-              pointerEvents='none'
-            >
-              <SearchIcon color='gray.300' />
-            </InputLeftElement>
-            <Input type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
-          </InputGroup>
+          <Flex>
+            <Box>
+              <InputGroup w={"xs"}>
+                <InputLeftElement
+                  pointerEvents='none'
+                >
+                  <SearchIcon color='gray.300' />
+                </InputLeftElement>
+                <Input type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+              </InputGroup>
+            </Box>
+            <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
+          </Flex>
         </Box>
       </GridItem>
       <GridItem
@@ -150,5 +165,21 @@ export default function HomePage() {
         </SimpleGrid>
       </GridItem>
     </Grid>
+    <Modal isOpen={isAddOpen} onClose={onCloseAdd}>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Adicionar uma propriedade</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody display="flex" flexDirection="column">
+          <FormControl>
+            <FormLabel textAlign="center">Importe a partir de uma URL ou<br/>crie manualmente o imóvel</FormLabel>
+            <Input placeholder='Importar de site' onChange={e => setImportUrl(e.target.value)} />
+          </FormControl>
+          <Button colorScheme='blue' mr="auto" mx="auto" mt={2} onClick={handleImport}>
+            Importar
+          </Button>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   </>
 }
