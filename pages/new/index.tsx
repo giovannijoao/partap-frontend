@@ -5,31 +5,30 @@ import { useForm } from "react-hook-form";
 import useSWR from "swr";
 import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
+import useSWRImmutable from 'swr/immutable';
+import { GetServerSideProps } from "next";
 
-export default function NewPropertyPage() {
+export default function NewPropertyPage(props) {
   const { query } = useRouter()
 
-  const { data: importData, error } = useSWR(query.url ? '/properties-extractor' : null, url => ApiInstance.get(url, { params: { url: query.url }}), {
-    revalidateOnFocus: false,
-    revalidateOnMount: true,
-    revalidateOnReconnect: false,
-    refreshWhenOffline: false,
-    refreshWhenHidden: false,
-    refreshInterval: 0
-  });
-  const { register, handleSubmit, reset } = useForm()
+  console.log(14, query)
+  const { data: importData, error } = useSWRImmutable(['/properties-extractor', query.url], url => ApiInstance.get(url, { params: { url: query.url }}));
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: importData?.data.data
+  })
 
   async function handleAdd(info) {
     console.log(11, info)
   }
 
   useEffect(() => {
-    const data = importData?.data?.data;
+    console.log(25, importData, error)
+    const data = importData?.data.data;
     if (data) {
       console.log('22 Reseting')
-      reset(data);
+      // reset(data);
     }
-  }, [reset, importData])
+  }, [reset, importData, error])
 
   return <>
     <Grid

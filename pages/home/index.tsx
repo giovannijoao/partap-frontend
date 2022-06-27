@@ -4,6 +4,7 @@ import { ApiInstance } from "../../services/api";
 import useSWR, { mutate } from "swr"
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
 interface PropertyInformationResponse {
   data: Array<{
     _id: string;
@@ -33,6 +34,7 @@ interface PropertyInformationResponse {
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 export default function HomePage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
@@ -58,13 +60,18 @@ export default function HomePage() {
     return () => clearTimeout(timeout)
   }, [addressFieldValue])
 
-  const handleImport = useCallback(() => {
-    mutate('/properties-extractor', ApiInstance.get('/properties-extractor', {
+  const handleImport = useCallback(async () => {
+    await mutate(['/properties-extractor', importUrl], ApiInstance.get('/properties-extractor', {
       params: {
         url: importUrl
       }
     }))
-  }, [importUrl])
+    router.push(`/new?url=${importUrl}`)
+  }, [router, importUrl])
+
+  useEffect(() => {
+    router.prefetch('/new')
+  }, [router])
 
   if (isLoadingUser) return <></>;
 
