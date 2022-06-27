@@ -31,7 +31,7 @@ export function AuthProvider({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { data: fetchedUserData, error } = useSWR(isAuthenticated ? '/profile' : null, ApiInstance, {
     revalidateOnFocus: false,
-    revalidateOnMount: false,
+    revalidateOnMount: true,
     revalidateOnReconnect: false,
     refreshWhenOffline: false,
     refreshWhenHidden: false,

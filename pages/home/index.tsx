@@ -1,7 +1,6 @@
-import { Badge, Box, Flex, Grid, GridItem, Heading, Image, SimpleGrid, Text } from "@chakra-ui/react";
+import { Badge, Box, Flex, Grid, GridItem, Heading, Image, SimpleGrid, Stack, Text, Wrap, WrapItem } from "@chakra-ui/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiInstance } from "../../services/api";
-import { Header } from "./styles"
 import useSWR from "swr"
 
 interface PropertyInformationResponse {
@@ -29,10 +28,9 @@ const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currenc
 export default function HomePage() {
   const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
   const { data: response, error } = useSWR(isAuthenticated ? '/properties' : null, ApiInstance, {
-    refreshInterval: 300
+    refreshInterval: 60000
   })
   const isLoadingProperties = !response && !error;
-  console.log(33, response)
 
   if (isLoadingUser || isLoadingProperties) return <></>;
 
@@ -83,17 +81,26 @@ export default function HomePage() {
                 boxShadow='base'
                 borderRadius="sm"
                 key={item._id}
+                display="flex"
+                flexDirection="column"
               >
-                <Image src="/image-example.png" alt="Image" width="100%" />
-                <Box p={2}>
-                  <Heading fontSize="md">{item.address}</Heading>
-                  <Flex mt={1}>
-                    <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
-                    <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
-                    <Box flexGrow={1}/>
-                    <Text fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost}</Text>
-                  </Flex>
-                </Box>
+                <Image src="https://dwuka77wsfe40.cloudfront.net/resize/540x360/893526396-620.172499372029417012022MG1239.jpg" alt="Image" width="100%" />
+                <Flex p={2}
+                  direction="column"
+                  grow="1">
+                  <Heading fontSize="md" flex="1" flexGrow="1">{item.address}</Heading>
+                  <Wrap mt={1}>
+                    <WrapItem>
+                      <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
+                    </WrapItem>
+                    <WrapItem>
+                      <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
+                    </WrapItem>
+                    <WrapItem flexGrow="1" >
+                      <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost}</Text>
+                    </WrapItem>
+                  </Wrap>
+                </Flex>
 
               </Box>
             })
