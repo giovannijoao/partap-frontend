@@ -20,7 +20,11 @@ interface PropertyInformationResponse {
       condominiumValue: number;
       iptuValue: number;
       totalCost: number;
-    }
+    },
+    images: {
+      url: string;
+      description: string;
+    }[]
   }>
 
 }
@@ -28,7 +32,11 @@ const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currenc
 export default function HomePage() {
   const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
   const { data: response, error } = useSWR(isAuthenticated ? '/properties' : null, ApiInstance, {
-    refreshInterval: 60000
+    refreshInterval: 60000,
+    onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+      if (retryCount >= 10) return
+      revalidate({ retryCount })
+    }
   })
   const isLoadingProperties = !response && !error;
 
@@ -63,15 +71,19 @@ export default function HomePage() {
         <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
         <Heading pl='4' fontSize={"medium"} color="whiteAlpha.900">Partap</Heading>
       </GridItem>
-      <GridItem area="controls">
-
+      <GridItem area="controls" p={2}>
+        <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
       </GridItem>
       <GridItem
         area="main"
         m={2}
       >
         <SimpleGrid
-          minChildWidth="200px"
+          columns={{
+            base: 1,
+            sm: 2,
+            md: 4,
+          }}
           gap={4}
           >
           {
@@ -84,7 +96,7 @@ export default function HomePage() {
                 display="flex"
                 flexDirection="column"
               >
-                <Image src="https://dwuka77wsfe40.cloudfront.net/resize/540x360/893526396-620.172499372029417012022MG1239.jpg" alt="Image" width="100%" />
+                <Image src={item.images[0].url} alt="Image" width="100%" />
                 <Flex p={2}
                   direction="column"
                   grow="1">

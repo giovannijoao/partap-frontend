@@ -44,6 +44,7 @@ export function AuthProvider({
   useEffect(() => {
     const cookies = parseCookies(cookiesCtx);
     if (cookies.token) {
+      ApiInstance.defaults.headers['Authorization'] = cookies.token;
       setIsAuthenticated(true)
     }
   }, [])
@@ -57,6 +58,7 @@ export function AuthProvider({
     setCookie(cookiesCtx, 'user', JSON.stringify(data.data.user), {
       maxAge: 24 * 60 * 60
     })
+    ApiInstance.defaults.headers['Authorization'] = data.data.token
     setIsAuthenticated(true);
   }
 
