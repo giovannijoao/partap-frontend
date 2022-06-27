@@ -1,11 +1,50 @@
 import { Badge, Box, Flex, Grid, GridItem, Heading, Image, SimpleGrid, Text } from "@chakra-ui/react";
 import { useAuth } from "../../contexts/AuthContext";
+import { ApiInstance } from "../../services/api";
 import { Header } from "./styles"
+import useSWR from "swr"
 
+interface PropertyInformationResponse {
+  data: Array<{
+    _id: string;
+    address: string;
+    isRent: boolean;
+    isSell: boolean;
+    information: {
+      bedrooms: number;
+      parkingSlots: number;
+      totalArea: number;
+      description: string;
+    }
+    costs: {
+      rentValue: number;
+      condominiumValue: number;
+      iptuValue: number;
+      totalCost: number;
+    }
+  }>
+
+}
+const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 export default function HomePage() {
-  const { isLoading: isLoadingUser, user } = useAuth();
-  if (isLoadingUser) return <></>;
-  const items = [1, 2, 3, 4, 5, 6];
+  const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
+  const { data: response, error } = useSWR(isAuthenticated ? '/properties' : null, ApiInstance, {
+    refreshInterval: 300
+  })
+  const isLoadingProperties = !response && !error;
+  console.log(33, response)
+
+  if (isLoadingUser || isLoadingProperties) return <></>;
+
+
+  const items = response?.data.data.map(item => {
+    return {
+      ...item,
+      costs: {
+        totalCost: formatNumber.format(item.costs.totalCost)
+      }
+    };
+  });
   return <>
     <Grid
       templateAreas={`"header"
@@ -38,21 +77,21 @@ export default function HomePage() {
           gap={4}
           >
           {
-            items.map(item => {
+            items?.map(item => {
               return <Box
                 w={"100%"}
                 boxShadow='base'
                 borderRadius="sm"
-                key={item}
+                key={item._id}
               >
-                <Image src="/image-example.png" alt="Image" />
+                <Image src="/image-example.png" alt="Image" width="100%" />
                 <Box p={2}>
-                  <Heading fontSize="md">Rua Napoleão de Barros</Heading>
+                  <Heading fontSize="md">{item.address}</Heading>
                   <Flex mt={1}>
-                    <Badge>50m²</Badge>
-                    <Badge ml={1}>1 quarto</Badge>
+                    <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
+                    <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
                     <Box flexGrow={1}/>
-                    <Text color="green" fontSize={"xs"}>Total R$ 1.700</Text>
+                    <Text fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost}</Text>
                   </Flex>
                 </Box>
 
