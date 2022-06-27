@@ -1,4 +1,4 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, Text, Textarea } from "@chakra-ui/react";
+import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -35,7 +35,7 @@ export default function NewPropertyPage(props) {
       templateAreas={`"header"
                   "main"
                   "footer"`}
-      gridTemplateRows={'50px 1fr 30px'}
+      gridTemplateRows={'4em 1fr 30px'}
       gridTemplateColumns={'1fr'}
       gap='1'
     >
@@ -49,12 +49,12 @@ export default function NewPropertyPage(props) {
         <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
         <Heading pl='4' fontSize={"medium"} color="whiteAlpha.900">Partap</Heading>
       </GridItem>
-      <GridItem px={4}>
+      <GridItem px={4} gridArea="main">
         <Heading fontSize="lg">Acompanhar novo imóvel</Heading>
-        <Box mt={2}>
-          <Flex as="form" gap={2} direction="column" onSubmit={handleSubmit(handleAdd)}>
-            <Flex gap={2}>
-              <FormControl w={"sm"}>
+        <Box mt={2} gap={2}>
+          <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
+            <Flex direction={"row"} gap={2}>
+              <FormControl w={{base: "70%", md: "sm"}}>
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -64,7 +64,7 @@ export default function NewPropertyPage(props) {
                   <Input id="endereco" type='text' placeholder='Endereço' {...register('address')} />
                 </InputGroup>
               </FormControl>
-              <FormControl w={"40"}>
+              <FormControl w={{base: "30%", md: "40"}}>
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -76,7 +76,7 @@ export default function NewPropertyPage(props) {
                 </InputGroup>
               </FormControl>
             </Flex>
-            <Flex gap={2}>
+            <Flex gap={2} direction={{base: 'row', md: "row"}} >
               <FormControl w={"44"}>
                 <InputGroup>
                   <InputLeftElement

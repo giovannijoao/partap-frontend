@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiInstance } from "../../services/api";
 import useSWR, { mutate } from "swr"
@@ -185,6 +185,7 @@ export default function HomePage() {
           <Button colorScheme='blue' mr="auto" mx="auto" mt={2} onClick={handleImport}>
             Importar
           </Button>
+          <Link href="/new" textAlign={"center"}>Criar manualmente</Link>
         </ModalBody>
       </ModalContent>
     </Modal>
