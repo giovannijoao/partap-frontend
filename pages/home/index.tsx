@@ -85,8 +85,8 @@ export default function HomePage() {
   });
   return <>
     <Grid
+      width={"full"}
       templateAreas={`"header"
-                  "controls"
                   "main"
                   "footer"`}
       gridTemplateRows={'50px min-content 1fr 30px'}
@@ -103,33 +103,28 @@ export default function HomePage() {
         <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
         <Heading pl='4' fontSize={"medium"} color="whiteAlpha.900">Partap</Heading>
       </GridItem>
-      <GridItem area="controls" p={2}>
-        <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
-        {/* <Select width={48} mt={2}>
-          <option value='isRent' selected>Aluguel</option>
-          <option value='isSell'>Comprar</option>
-          <option value='both'>Aluguel/Comprar</option>
-        </Select> */}
-        <Box mt={2}>
-          <Flex>
-            <Box>
-              <InputGroup w={"xs"}>
-                <InputLeftElement
-                  pointerEvents='none'
-                >
-                  <SearchIcon color='gray.300' />
-                </InputLeftElement>
-                <Input type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
-              </InputGroup>
-            </Box>
-            <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
-          </Flex>
-        </Box>
-      </GridItem>
       <GridItem
         area="main"
-        m={2}
+        m={4}
       >
+        <Box mb={4}>
+          <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
+          <Box mt={2}>
+            <Flex gap={2}>
+              <Box>
+                <InputGroup w={"xs"}>
+                  <InputLeftElement
+                    pointerEvents='none'
+                  >
+                    <SearchIcon color='gray.300' />
+                  </InputLeftElement>
+                  <Input type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+                </InputGroup>
+              </Box>
+              <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
+            </Flex>
+          </Box>
+        </Box>
         <SimpleGrid
           columns={{
             base: 1,

@@ -1,4 +1,4 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea } from "@chakra-ui/react";
+import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
@@ -13,7 +13,7 @@ export default function NewPropertyPage(props) {
 
   console.log(14, query)
   const { data: importData, error } = useSWRImmutable(['/properties-extractor', query.url], url => ApiInstance.get(url, { params: { url: query.url }}));
-  const { register, handleSubmit, reset } = useForm({
+  const { register, handleSubmit, reset, getValues } = useForm({
     defaultValues: importData?.data.data
   })
 
@@ -30,24 +30,25 @@ export default function NewPropertyPage(props) {
     }
   }, [reset, importData, error])
 
+  const formValues = getValues();
+  console.log(34, formValues)
   return <>
     <Grid
       templateAreas={`"header"
-                  "main"
-                  "footer"`}
-      gridTemplateRows={'4em 1fr 30px'}
+                  "main"`}
+      gridTemplateRows={'4em 1fr'}
       gridTemplateColumns={'1fr'}
       gap='1'
     >
       <GridItem
-        pl='2'
+        pl='4'
         bgGradient='linear-gradient(to-r, pink.400, pink.600)'
         area={'header'}
         display="flex"
         alignItems="center"
       >
         <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
-        <Heading pl='4' fontSize={"medium"} color="whiteAlpha.900">Partap</Heading>
+        <Heading pl='4' fontSize={"2xl"} color="whiteAlpha.900">Partap</Heading>
       </GridItem>
       <GridItem px={4} gridArea="main">
         <Heading fontSize="lg">Acompanhar novo imóvel</Heading>
@@ -111,7 +112,7 @@ export default function NewPropertyPage(props) {
                 </InputGroup>
               </FormControl>
             </Flex>
-            <Flex gap={2}>
+            <Wrap gap={2} w="2xl">
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/ic_baseline-subway.svg" alt="Field" />
                 <Text fontSize={"xs"}>Metro próximo</Text>
@@ -136,7 +137,18 @@ export default function NewPropertyPage(props) {
                   <option value='false'>Não</option>
                 </Select>
               </CustomSelectField>
-            </Flex>
+              { formValues.information.floor && <FormControl>
+                <InputGroup>
+                  <InputLeftElement
+                    pointerEvents='none'
+                  >
+                    <Image src="/cil_building.svg" alt="Field" />
+                  </InputLeftElement>
+                  <Input id="metragem" type='number' placeholder='0' {...register('information.floor')} />
+                  <InputRightAddon>m²</InputRightAddon>
+                </InputGroup>
+              </FormControl> }
+            </Wrap>
             <Flex>
               <Textarea placeholder='Descrição' w="lg" />
             </Flex>

@@ -1,4 +1,4 @@
-import { Box, Button, FormControl, FormLabel, Grid, Heading, Input } from '@chakra-ui/react'
+import { Box, Button, Flex, FormControl, FormLabel, Grid, Heading, Input, SimpleGrid } from '@chakra-ui/react'
 import { useRouter } from 'next/router';
 import React, { useContext, useEffect } from 'react'
 import { useForm } from "react-hook-form";
@@ -25,11 +25,11 @@ export default function Home() {
   }
 
   return (
-    <Grid
+    <SimpleGrid
       w={"full"}
       h={"full"}
-      templateColumns={"repeat(3, 1fr)"}
-      templateRows=""
+      columns={{base: 1, md: 3}}
+      p={2}
       justifyItems={"center"}
     >
       <div></div>
@@ -46,14 +46,16 @@ export default function Home() {
           <Heading fontSize={'medium'} textAlign="center">Faça login para entrar</Heading>
           <form onSubmit={handleSubmit(handleSignIn)}>
             <FormControl>
-              <Input placeholder='E-mail' {...register('email')} />
-              <Input placeholder='Password' type="password" {...register('password')} />
-              <Button type="submit">Entrar</Button>
+              <Flex direction="column" gap={2}>
+                <Input placeholder='E-mail' {...register('email')} />
+                <Input placeholder='Password' type="password" {...register('password')} />
+                <Button type="submit">Entrar</Button>
+              </Flex>
             </FormControl>
           </form>
         </Box>
       </Box>
       <div></div>
-    </Grid>
+    </SimpleGrid>
   )
 }
