@@ -11,5 +11,5 @@ export const CustomSelectField = styled(Flex)`
   border-color: var(--chakra-colors-chakra-border-color)
 `
 
-// eslint-disable-next-line import/no-anonymous-default-export
-export default true;
+const Box = styled(Flex)``;
+export default Box;
