@@ -1,11 +1,11 @@
-import { Grid, GridItem, Heading } from "@chakra-ui/react";
-import Image from "next/image";
+import { Badge, Box, Flex, Grid, GridItem, Heading, Image, SimpleGrid, Text } from "@chakra-ui/react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Header } from "./styles"
 
 export default function HomePage() {
   const { isLoading: isLoadingUser, user } = useAuth();
   if (isLoadingUser) return <></>;
+  const items = [1, 2, 3, 4, 5, 6];
   return <>
     <Grid
       templateAreas={`"header"
@@ -23,10 +23,44 @@ export default function HomePage() {
         display="flex"
         alignItems="center"
       >
-        <Image src="/bx_home.svg" alt="Home" width={32} height={32} />
+        <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
         <Heading pl='4' fontSize={"medium"} color="whiteAlpha.900">Partap</Heading>
       </GridItem>
-      <Heading>{`Hello world ${user.name}`}</Heading>
+      <GridItem area="controls">
+
+      </GridItem>
+      <GridItem
+        area="main"
+        m={2}
+      >
+        <SimpleGrid
+          minChildWidth="200px"
+          gap={4}
+          >
+          {
+            items.map(item => {
+              return <Box
+                w={"100%"}
+                boxShadow='base'
+                borderRadius="sm"
+                key={item}
+              >
+                <Image src="/image-example.png" alt="Image" />
+                <Box p={2}>
+                  <Heading fontSize="md">Rua Napoleão de Barros</Heading>
+                  <Flex mt={1}>
+                    <Badge>50m²</Badge>
+                    <Badge ml={1}>1 quarto</Badge>
+                    <Box flexGrow={1}/>
+                    <Text color="green" fontSize={"xs"}>Total R$ 1.700</Text>
+                  </Flex>
+                </Box>
+
+              </Box>
+            })
+          }
+        </SimpleGrid>
+      </GridItem>
     </Grid>
   </>
 }
