@@ -2,36 +2,24 @@ import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Ima
 import { useRouter } from "next/router";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import useSWR from "swr";
 import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
-import { GetServerSideProps } from "next";
+import ImageGallery from 'react-image-gallery';
+import { DropToS3 } from "../../components/DropToS3";
 
 export default function NewPropertyPage(props) {
   const { query } = useRouter()
 
-  console.log(14, query)
-  const { data: importData, error } = useSWRImmutable(['/properties-extractor', query.url], url => ApiInstance.get(url, { params: { url: query.url }}));
+  const { data: importData, error } = useSWRImmutable(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url }}));
   const { register, handleSubmit, reset, getValues } = useForm({
     defaultValues: importData?.data.data
   })
 
   async function handleAdd(info) {
-    console.log(11, info)
   }
 
-  useEffect(() => {
-    console.log(25, importData, error)
-    const data = importData?.data.data;
-    if (data) {
-      console.log('22 Reseting')
-      // reset(data);
-    }
-  }, [reset, importData, error])
-
   const formValues = getValues();
-  console.log(34, formValues)
   return <>
     <Grid
       templateAreas={`"header"
@@ -137,7 +125,7 @@ export default function NewPropertyPage(props) {
                   <option value='false'>Não</option>
                 </Select>
               </CustomSelectField>
-              { formValues.information.floor && <FormControl>
+              { formValues?.information?.floor && <FormControl>
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -152,6 +140,10 @@ export default function NewPropertyPage(props) {
             <Flex>
               <Textarea placeholder='Descrição' w="lg" />
             </Flex>
+            <Box>
+              <Heading fontSize={"md"}>Caixa de fotos</Heading>
+              <DropToS3 />
+            </Box>
             <Button w={"min-content"} mx="auto" type="submit">
               Adicionar
             </Button>
