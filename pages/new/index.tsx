@@ -1,4 +1,4 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea, Wrap } from "@chakra-ui/react";
+import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -6,15 +6,18 @@ import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
+import { AttachmentIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 
+type IImage = {
+  url: string,
+  description?: string
+}
 export default function NewPropertyPage(props) {
   const { query } = useRouter()
 
-  const { data: importData, error } = useSWRImmutable(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url }}));
-  const [images, setImages] = useState<{
-    url: string,
-    description?: string
-  }[]>([]);
+  const { data: importData, error } = useSWRImmutable(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url } }));
+  const [images, setImages] = useState<IImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<number>();
   const { register, handleSubmit, reset, getValues } = useForm({
     defaultValues: importData?.data.data
   })
@@ -35,13 +38,28 @@ export default function NewPropertyPage(props) {
       formData.append('photos', file)
     })
     const result = await ApiInstance.post('/file-upload', formData);
-    setImages((x) => [...x, ...result.data.map(x => ({
+    setImages([...images, ...result.data.map(x => ({
       url: x.location
     }))])
-  }, [])
+    if (!selectedImage && selectedImage !== 0) setSelectedImage(0)
+  }, [selectedImage, images])
 
-  console.log(44, images)
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
+
+  const handleImageSelection = useCallback((dir: "left" | "right") => {
+    if (dir === "right") {
+      setSelectedImage(c => {
+        if (c + 1 >= images.length - 1) return 0;
+        return c + 1;
+      })
+    } else {
+      setSelectedImage(c => {
+        console.log(52, c, c - 1, images.length)
+        if (c - 1 < 0) return images.length - 1;
+        return c - 1;
+      })
+    }
+  }, [images])
 
   const formValues = getValues();
   return <>
@@ -67,7 +85,7 @@ export default function NewPropertyPage(props) {
         <Box mt={2} gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
-              <FormControl w={{base: "70%", md: "sm"}}>
+              <FormControl w={{ base: "70%", md: "sm" }}>
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -77,7 +95,7 @@ export default function NewPropertyPage(props) {
                   <Input id="endereco" type='text' placeholder='Endereço' {...register('address')} />
                 </InputGroup>
               </FormControl>
-              <FormControl w={{base: "30%", md: "40"}}>
+              <FormControl w={{ base: "30%", md: "40" }}>
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -89,7 +107,7 @@ export default function NewPropertyPage(props) {
                 </InputGroup>
               </FormControl>
             </Flex>
-            <Flex gap={2} direction={{base: 'row', md: "row"}} >
+            <Flex gap={2} direction={{ base: 'row', md: "row" }} >
               <FormControl w={"44"}>
                 <InputGroup>
                   <InputLeftElement
@@ -128,7 +146,7 @@ export default function NewPropertyPage(props) {
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/ic_baseline-subway.svg" alt="Field" />
                 <Text fontSize={"xs"}>Metro próximo</Text>
-                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.nearSubway', { setValueAs: (v) => Boolean(v)})}>
+                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.nearSubway', { setValueAs: (v) => Boolean(v) })}>
                   <option value='true'>Sim</option>
                   <option value='false'>Não</option>
                 </Select>
@@ -136,7 +154,7 @@ export default function NewPropertyPage(props) {
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/cil_sofa.svg" alt="Field" />
                 <Text fontSize={"xs"}>Mobiliado</Text>
-                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.isFurnished', { setValueAs: (v) => Boolean(v)})}>
+                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.isFurnished', { setValueAs: (v) => Boolean(v) })}>
                   <option value='true'>Sim</option>
                   <option value='false'>Não</option>
                 </Select>
@@ -144,12 +162,12 @@ export default function NewPropertyPage(props) {
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/dashicons_pets.svg" alt="Field" />
                 <Text fontSize={"xs"}>Aceita pets</Text>
-                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.acceptPets', { setValueAs: (v) => Boolean(v)})}>
+                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.acceptPets', { setValueAs: (v) => Boolean(v) })}>
                   <option value='true'>Sim</option>
                   <option value='false'>Não</option>
                 </Select>
               </CustomSelectField>
-              { formValues?.information?.floor && <FormControl>
+              {formValues?.information?.floor && <FormControl>
                 <InputGroup w={40}>
                   <InputLeftElement
                     pointerEvents='none'
@@ -159,15 +177,15 @@ export default function NewPropertyPage(props) {
                   <Input id="floor" type='number' placeholder='0' {...register('information.floor')} />
                   <InputRightAddon>andar</InputRightAddon>
                 </InputGroup>
-              </FormControl> }
+              </FormControl>}
             </Wrap>
             <Flex>
               <Textarea placeholder='Descrição' w="lg" />
             </Flex>
             <Box>
-              <Heading fontSize={"md"}>Caixa de fotos</Heading>
-              <Flex mt={1} height={40} >
-                <Box w="32" {...getRootProps()}>
+              <Flex gap={2} alignItems="center">
+                <Heading fontSize={"md"}>Caixa de fotos</Heading>
+                <Box {...getRootProps()} flexShrink={1}>
                   <input {...getInputProps()} />
                   <Box
                     border="1px"
@@ -176,6 +194,7 @@ export default function NewPropertyPage(props) {
                     padding={"2"}
                     textAlign="center"
                   >
+                    <AttachmentIcon w={6} h={6} />
                     {
                       isDragActive ?
                         <Text>Coloque os arquivos arqui</Text> :
@@ -183,20 +202,39 @@ export default function NewPropertyPage(props) {
                     }
                   </Box>
                 </Box>
-                <Flex w="md" border="1px"
+              </Flex>
+              {images.length > 0 &&
+                <Box
+                  alignItems={"center"}
+                  border="1px"
                   borderColor={"gray.300"}
                   borderRadius={"md"}
                   padding={"2"}
-                  width="full"
-                  height={"100%"}
-                  ml={2}
-                  gap={2}
-                  overflowX="auto"
+                  mt={2}
+                  maxW={"lg"}
+                >
+                  <Flex
+                    flex={1}
+                    alignItems="center"
+                    gap={1}
                   >
-                  {images.map(image => <Image borderRadius={4} key={image.url} src={image.url} alt={image.description} />)}
-                </Flex>
-              </Flex>
-
+                    <IconButton aria-label="Previous Image" onClick={() => handleImageSelection(`left`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+                    <Box flex={1}>
+                      <Image h={64} src={images[selectedImage] ? images[selectedImage].url : ""} alt="Image" />
+                    </Box>
+                    <IconButton aria-label="Next Image" onClick={() => handleImageSelection(`right`)} icon={<ChevronRightIcon h={8} w={8} />} />
+                  </Flex>
+                  <Flex
+                    mt={2}
+                    overflowX={"auto"}
+                    gap={1}
+                  >
+                    {images.map(image => <Box key={image.url}>
+                      <Image w={32} src={image.url} alt={image.description} />
+                    </Box>)}
+                  </Flex>
+                </Box>
+              }
             </Box>
             <Button w={"min-content"} mx="auto" type="submit">
               Adicionar
