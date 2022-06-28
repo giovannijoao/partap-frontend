@@ -1,23 +1,47 @@
 import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
-import ImageGallery from 'react-image-gallery';
-import { DropToS3 } from "../../components/DropToS3";
+import { useDropzone } from "react-dropzone";
 
 export default function NewPropertyPage(props) {
   const { query } = useRouter()
 
   const { data: importData, error } = useSWRImmutable(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url }}));
+  const [images, setImages] = useState<{
+    url: string,
+    description?: string
+  }[]>([]);
   const { register, handleSubmit, reset, getValues } = useForm({
     defaultValues: importData?.data.data
   })
 
+  useEffect(() => {
+    const data = importData?.data?.data;
+    if (data) {
+      reset(data);
+    }
+  }, [reset, importData])
+
   async function handleAdd(info) {
   }
+
+  const onDrop = useCallback(async acceptedFiles => {
+    const formData = new FormData();
+    acceptedFiles.forEach(file => {
+      formData.append('photos', file)
+    })
+    const result = await ApiInstance.post('/file-upload', formData);
+    setImages((x) => [...x, ...result.data.map(x => ({
+      url: x.location
+    }))])
+  }, [])
+
+  console.log(44, images)
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
   const formValues = getValues();
   return <>
@@ -126,14 +150,14 @@ export default function NewPropertyPage(props) {
                 </Select>
               </CustomSelectField>
               { formValues?.information?.floor && <FormControl>
-                <InputGroup>
+                <InputGroup w={40}>
                   <InputLeftElement
                     pointerEvents='none'
                   >
-                    <Image src="/cil_building.svg" alt="Field" />
+                    <Image src="/bi_door-open.svg" alt="Field" />
                   </InputLeftElement>
-                  <Input id="metragem" type='number' placeholder='0' {...register('information.floor')} />
-                  <InputRightAddon>m²</InputRightAddon>
+                  <Input id="floor" type='number' placeholder='0' {...register('information.floor')} />
+                  <InputRightAddon>andar</InputRightAddon>
                 </InputGroup>
               </FormControl> }
             </Wrap>
@@ -142,7 +166,37 @@ export default function NewPropertyPage(props) {
             </Flex>
             <Box>
               <Heading fontSize={"md"}>Caixa de fotos</Heading>
-              <DropToS3 />
+              <Flex mt={1} height={40} >
+                <Box w="32" {...getRootProps()}>
+                  <input {...getInputProps()} />
+                  <Box
+                    border="1px"
+                    borderColor={"gray.300"}
+                    borderRadius={"md"}
+                    padding={"2"}
+                    textAlign="center"
+                  >
+                    {
+                      isDragActive ?
+                        <Text>Coloque os arquivos arqui</Text> :
+                        <Text>Arraste e solte aqui arquivos<br />ou clique para selecionar</Text>
+                    }
+                  </Box>
+                </Box>
+                <Flex w="md" border="1px"
+                  borderColor={"gray.300"}
+                  borderRadius={"md"}
+                  padding={"2"}
+                  width="full"
+                  height={"100%"}
+                  ml={2}
+                  gap={2}
+                  overflowX="auto"
+                  >
+                  {images.map(image => <Image borderRadius={4} key={image.url} src={image.url} alt={image.description} />)}
+                </Flex>
+              </Flex>
+
             </Box>
             <Button w={"min-content"} mx="auto" type="submit">
               Adicionar
