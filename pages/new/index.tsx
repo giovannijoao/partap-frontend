@@ -1,4 +1,4 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Text, Textarea, Wrap } from "@chakra-ui/react";
+import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Spinner, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,8 @@ export default function NewPropertyPage(props) {
   const { register, handleSubmit, reset, getValues } = useForm({
     defaultValues: importData?.data.data
   })
+
+  const isLoadingImportData = query.url && !importData && !error;
 
   useEffect(() => {
     const data = importData?.data?.data;
@@ -82,7 +84,11 @@ export default function NewPropertyPage(props) {
       </GridItem>
       <GridItem px={4} gridArea="main">
         <Heading fontSize="lg">Acompanhar novo imóvel</Heading>
-        <Box mt={2} gap={2}>
+        { isLoadingImportData && <Box mt={2}>
+          <Spinner size="xl" />
+          <Text>Importando dados...</Text>
+          </Box>}
+        { !isLoadingImportData && <Box mt={2} gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
               <FormControl w={{ base: "70%", md: "sm" }}>
@@ -240,7 +246,7 @@ export default function NewPropertyPage(props) {
               Adicionar
             </Button>
           </Flex>
-        </Box>
+        </Box>}
       </GridItem>
     </Grid>
   </>
