@@ -128,7 +128,7 @@ export default function HomePage() {
                 display="flex"
                 flexDirection="column"
               >
-                <Image src={item.images[0].url} alt="Image" width="100%" />
+                {item.images && item.images[0]  && <Image src={item.images[0].url} alt="Image" width="100%" />}
                 <Flex p={2}
                   direction="column"
                   grow="1">

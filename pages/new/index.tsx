@@ -76,7 +76,7 @@ export default function NewPropertyPage(props) {
 
   async function handleAdd(info: IProperty) {
     const { modo, ...restInfo } = info;
-    const totalCost = allCostsTypes.filter(cost => !ignoreCostsInTotalCost.includes(cost.name)).reduce((a, c) => a + (info?.costs[c.name] || 0), 0);
+    const totalCost = allCostsTypes.filter(cost => !ignoreCostsInTotalCost.includes(cost.name)).reduce((a, c) => a + (info.costs && info.costs[c.name] || 0), 0);
     const parsedInfo = {
       ...restInfo,
       isRent: modo === "aluguel",
