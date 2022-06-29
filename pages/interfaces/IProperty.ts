@@ -1,5 +1,4 @@
-export default interface IProperty {
-  _id?: string;
+export interface IProperty {
   address: string;
   isRent: boolean;
   isSell: boolean;
@@ -15,6 +14,17 @@ export default interface IProperty {
     floor: number;
     bathrooms: number;
   };
+  costs: object;
+  images: {
+    url: string;
+    description: string;
+  }[];
+  provider: string | "own";
+  url?: string;
+}
+
+export interface IPropertyResponse extends IProperty {
+  _id?: string;
   costs: {
     rentValue?: number;
     condominiumValue?: number;
@@ -22,10 +32,4 @@ export default interface IProperty {
     sellPrice?: number;
     totalCost?: number;
   };
-  images: {
-    url: string;
-    description: string;
-  }[];
-  provider: string | "own";
-  url?: string;
 }

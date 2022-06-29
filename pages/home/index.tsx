@@ -5,10 +5,10 @@ import useSWR, { mutate } from "swr"
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import IProperty from "../interfaces/IProperty"
+import { IPropertyResponse } from "../interfaces/IProperty"
 import { AxiosResponse } from "axios";
 type PropertyInformationResponse = AxiosResponse<{
-  data: Array<IProperty>
+  data: Array<IPropertyResponse>
 }>
 
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
