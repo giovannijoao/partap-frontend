@@ -1,15 +1,16 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, Heading, Input, SimpleGrid } from '@chakra-ui/react'
+import { Box, Button, Flex, FormControl, FormLabel, Grid, Heading, Input, SimpleGrid, Text } from '@chakra-ui/react'
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useForm } from "react-hook-form";
-import { AuthContext } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import useSWR from 'swr'
 import { ApiInstance } from '../../services/api';
 
 export default function Home() {
   const router = useRouter()
+  const [signUpForm, setSignUpForm] = useState(false);
   const { register, handleSubmit } = useForm()
-  const { isAuthenticated, signIn } = useContext(AuthContext);
+  const { isAuthenticating, isAuthenticated, signIn, signUp, authenticationError } = useAuth();
   const { data, error } = useSWR(isAuthenticated ? '/profile' : null, ApiInstance)
 
   useEffect(() => {
@@ -20,41 +21,52 @@ export default function Home() {
     if (isAuthenticated) router.push('/home')
   }, [router, isAuthenticated])
 
-  async function handleSignIn(info) {
-    signIn(info)
+  async function handleSignUp(info) {
+    await signUp(info)
+    await signIn(info, false);
   }
 
   return (
     <SimpleGrid
-      w={"full"}
-      h={"full"}
-      columns={{base: 1, md: 3}}
+      w={"100vw"}
+      h={"100vh"}
+      columns={{ base: 1, md: 3 }}
       p={2}
+      alignItems="center"
       justifyItems={"center"}
     >
       <div></div>
-      <Box
+      <Flex
         alignSelf={"center"}
+        direction="column"
+        gap={2}
       >
-        <Heading size={"2xl"} textAlign="center">Partap</Heading>
-        <Box
-          mt={4}
-          display={"flex"}
-          flexDir="column"
-          gap={1}
-        >
-          <Heading fontSize={'medium'} textAlign="center">Faça login para entrar</Heading>
-          <form onSubmit={handleSubmit(handleSignIn)}>
-            <FormControl>
-              <Flex direction="column" gap={2}>
-                <Input placeholder='E-mail' {...register('email')} />
-                <Input placeholder='Password' type="password" {...register('password')} />
-                <Button type="submit">Entrar</Button>
-              </Flex>
-            </FormControl>
+        <Heading size={"2xl"} color="purple.500" textAlign="center">Partap</Heading>
+        <Heading fontSize={'medium'} textAlign="center">Faça login para entrar</Heading>
+        {!signUpForm && <>
+          <form onSubmit={handleSubmit(signIn)}>
+            <Flex w="xs" direction="column" gap={2}>
+              <Input required placeholder='E-mail' {...register('email')} />
+              <Input required placeholder='Password' type="password" {...register('password')} />
+              {authenticationError && <Text fontSize="sm" color="red.500" textAlign="center">{authenticationError}</Text>}
+              <Button colorScheme='green' isLoading={isAuthenticating} type="submit">Entrar</Button>
+            </Flex>
           </form>
-        </Box>
-      </Box>
+          <Button size="sm" type="submit" onClick={() => setSignUpForm(true)}>Cadastrar</Button>
+        </>}
+        {signUpForm && <>
+          <form onSubmit={handleSubmit(handleSignUp)}>
+            <Flex w="xs" direction="column" gap={2}>
+              <Input required placeholder='Nome' {...register('name')} />
+              <Input required placeholder='E-mail' {...register('email')} />
+              <Input required placeholder='Password' type="password" {...register('password')} />
+              {authenticationError && <Text fontSize="sm" color="red.500" textAlign="center">Usuário já existe</Text>}
+              <Button colorScheme='green' isLoading={isAuthenticating} type="submit">Cadastrar</Button>
+            </Flex>
+          </form>
+          <Button size="sm" type="submit" onClick={() => setSignUpForm(false)}>Voltar ao login</Button>
+        </>}
+      </Flex>
       <div></div>
     </SimpleGrid>
   )
