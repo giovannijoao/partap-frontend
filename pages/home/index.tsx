@@ -5,31 +5,11 @@ import useSWR, { mutate } from "swr"
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-interface PropertyInformationResponse {
-  data: Array<{
-    _id: string;
-    address: string;
-    isRent: boolean;
-    isSell: boolean;
-    information: {
-      bedrooms: number;
-      parkingSlots: number;
-      totalArea: number;
-      description: string;
-    }
-    costs: {
-      rentValue: number;
-      condominiumValue: number;
-      iptuValue: number;
-      totalCost: number;
-    },
-    images: {
-      url: string;
-      description: string;
-    }[]
-  }>
-
-}
+import IProperty from "../interfaces/IProperty"
+import { AxiosResponse } from "axios";
+type PropertyInformationResponse = AxiosResponse<{
+  data: Array<IProperty>
+}>
 
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
@@ -41,7 +21,7 @@ export default function HomePage() {
   const [importUrl, setImportUrl] = useState("");
   const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
 
-  const { data: response, error } = useSWR(isAuthenticated ? ['/properties', addressFilter] : null, (url, args) => {
+  const { data: response, error } = useSWR<PropertyInformationResponse>(isAuthenticated ? ['/properties', addressFilter] : null, (url, args) => {
     return ApiInstance.get(url, {
       params: {
         ...args && ({ address: args })

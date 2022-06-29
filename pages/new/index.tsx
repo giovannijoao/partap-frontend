@@ -1,12 +1,14 @@
 import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Menu, MenuButton, MenuItem, MenuList, Select, SimpleGrid, Spinner, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
 import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import IProperty from "../interfaces/IProperty";
+import { AxiosResponse } from "axios";
 
 type IImage = {
   url: string,
@@ -32,10 +34,14 @@ const allCostsTypes = [{
   "text": "Compra"
 }]
 
-export default function NewPropertyPage(props) {
-  const { query } = useRouter()
+type IPropertyExtractorResponse = AxiosResponse<{
+  data: IProperty
+}>;
 
-  const { data: importData, error } = useSWRImmutable(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url } }));
+export default function NewPropertyPage(props) {
+  const { query, push } = useRouter()
+
+  const { data: importData, error } = useSWRImmutable<IPropertyExtractorResponse>(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url } }));
   const [images, setImages] = useState<IImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<number>();
   const [costsTypes, setCostsTypes] = useState<ICostType[]>(allCostsTypes);
@@ -60,8 +66,23 @@ export default function NewPropertyPage(props) {
     }
   }, [reset, importData])
 
-  async function handleAdd(info) {
-    console.log(35, info)
+  async function handleAdd(info: IProperty) {
+    const { modo, ...restInfo } = info;
+    const totalCost = allCostsTypes.reduce((a, c) => a + (info.costs[c.name] || 0), 0);
+    const parsedInfo = {
+      ...restInfo,
+      isRent: modo === "aluguel",
+      isSell: modo === "compra",
+      costs: {
+        ...restInfo.costs,
+        totalCost
+      },
+      provider: `own`,
+      images,
+    }
+    const result = await ApiInstance.post(`/properties`, parsedInfo);
+    console.log(result)
+    push(`/home`);
   }
 
   const onDrop = useCallback(async acceptedFiles => {
@@ -132,6 +153,10 @@ export default function NewPropertyPage(props) {
         { !isLoadingImportData && <Box mt={2} gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
+              <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('modo')}>
+                <option value='aluguel'>Aluguel</option>
+                <option value='compra'>Compra</option>
+              </Select>
               <FormControl w={{ base: "70%", md: "sm" }}>
                 <InputGroup>
                   <InputLeftElement
@@ -231,7 +256,7 @@ export default function NewPropertyPage(props) {
                 presentCostsTypes.map(costType => {
                   return <InputGroup w={64} key={costType.name}>
                       <InputLeftAddon>R$</InputLeftAddon>
-                      <Input type='number' {...register(`costs.${costType.name}`)} />
+                      <Input type='number' step={".01"} {...register(`costs.${costType.name}`, { setValueAs: (v) => parseFloat(v) })} />
                       <InputRightAddon>{costType.text}</InputRightAddon>
                     </InputGroup>
                 })
@@ -248,7 +273,7 @@ export default function NewPropertyPage(props) {
               </Box>}
             </Wrap>
             <Flex>
-              <Textarea placeholder='Descrição' w="lg" />
+              <Textarea placeholder='Descrição' w="lg" {...register(`information.description`)} />
             </Flex>
             <Box>
               <Flex gap={2} alignItems="center">
