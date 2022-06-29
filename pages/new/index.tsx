@@ -1,4 +1,4 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, InputRightAddon, Select, SimpleGrid, Spinner, Text, Textarea, Wrap } from "@chakra-ui/react";
+import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Menu, MenuButton, MenuItem, MenuList, Select, SimpleGrid, Spinner, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -6,19 +6,40 @@ import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
-import { AttachmentIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 
 type IImage = {
   url: string,
   description?: string
 }
+type ICostType = {
+  name: string;
+  text: string;
+  isPresent?: boolean;
+}
+
+const allCostsTypes = [{
+  "name": "rentValue",
+  "text": "Aluguel"
+}, {
+  "name": "condominiumValue",
+  "text": "Condomínio"
+}, {
+  "name": "iptuValue",
+  "text": "IPTU"
+}, {
+  "name": "sellPrice",
+  "text": "Compra"
+}]
+
 export default function NewPropertyPage(props) {
   const { query } = useRouter()
 
   const { data: importData, error } = useSWRImmutable(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url } }));
   const [images, setImages] = useState<IImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<number>();
-  const { register, handleSubmit, reset, getValues } = useForm({
+  const [costsTypes, setCostsTypes] = useState<ICostType[]>(allCostsTypes);
+  const { register, handleSubmit, reset, getValues: getFormValues, setValue: setFieldValue } = useForm({
     defaultValues: importData?.data.data
   })
 
@@ -28,10 +49,19 @@ export default function NewPropertyPage(props) {
     const data = importData?.data?.data;
     if (data) {
       reset(data);
+      setCostsTypes(allCostsTypes.map(field => {
+        let costs = data.costs || {};
+        const isPresent = costs[field.name] || costs[field.name] === 0
+        return {
+          ...field,
+          isPresent
+        }
+      }))
     }
   }, [reset, importData])
 
   async function handleAdd(info) {
+    console.log(35, info)
   }
 
   const onDrop = useCallback(async acceptedFiles => {
@@ -63,7 +93,25 @@ export default function NewPropertyPage(props) {
     }
   }, [images])
 
-  const formValues = getValues();
+  const addCostType = useCallback((typeToAdd) => {
+    console.log(97)
+    setCostsTypes(types => types.map(type => {
+      console.log(99)
+      if (type.name !== typeToAdd) return type;
+      type.isPresent = true;
+      console.log(102)
+      return type;
+    }))
+  }, [])
+
+  const formValues = getFormValues();
+  const presentCostsTypes = costsTypes.filter(field => field.isPresent);
+  const missingCostsTypes = costsTypes.filter(field => !field.isPresent);
+  console.log({
+    presentCostsTypes,
+    missingCostsTypes,
+  })
+
   return <>
     <Grid
       templateAreas={`"header"
@@ -71,6 +119,7 @@ export default function NewPropertyPage(props) {
       gridTemplateRows={'4em 1fr'}
       gridTemplateColumns={'1fr'}
       gap='1'
+      mb={2}
     >
       <GridItem
         pl='4'
@@ -184,6 +233,27 @@ export default function NewPropertyPage(props) {
                   <InputRightAddon>andar</InputRightAddon>
                 </InputGroup>
               </FormControl>}
+            </Wrap>
+            <Wrap gap={2} w="2xl">
+              {
+                presentCostsTypes.map(costType => {
+                  return <InputGroup w={64} key={costType.name}>
+                      <InputLeftAddon>R$</InputLeftAddon>
+                      <Input type='number' {...register(`costs.${costType.name}`)} />
+                      <InputRightAddon>{costType.text}</InputRightAddon>
+                    </InputGroup>
+                })
+              }
+              {missingCostsTypes.length > 0 && <Box w="xs">
+                <Menu>
+                  <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+                    Adicionar custo
+                  </MenuButton>
+                  <MenuList>
+                    {missingCostsTypes.map(field => <MenuItem onClick={() => addCostType(field.name)} key={field.text}>{field.text}</MenuItem>)}
+                  </MenuList>
+                </Menu>
+              </Box>}
             </Wrap>
             <Flex>
               <Textarea placeholder='Descrição' w="lg" />
