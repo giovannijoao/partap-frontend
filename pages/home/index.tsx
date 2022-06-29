@@ -70,7 +70,7 @@ export default function HomePage() {
       templateAreas={`"header"
                   "main"
                   "footer"`}
-      gridTemplateRows={'50px min-content 1fr 30px'}
+      gridTemplateRows={'auto min-content 1fr 30px'}
       gridTemplateColumns={'1fr'}
       gap='1'
     >

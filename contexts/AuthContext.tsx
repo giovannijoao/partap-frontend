@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { ApiURL } from "../config";
-import { setCookie, parseCookies } from 'nookies'
+import { destroyCookie, setCookie, parseCookies } from 'nookies'
 import { ApiInstance } from "../services/api";
 import useSWR from 'swr'
 import { useRouter } from "next/router";
@@ -17,9 +17,11 @@ type UserData = {
 
 type AuthContextType = {
   isAuthenticated: boolean;
-  signIn: (data: SignInData) => void;
   user: UserData;
   isLoading: boolean
+
+  signIn: (data: SignInData) => void;
+  logout: () => void;
 }
 
 export const AuthContext = createContext({} as AuthContextType)
@@ -28,6 +30,7 @@ export const cookiesCtx = undefined;
 export function AuthProvider({
   children
 }) {
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { data: fetchedUserData, error } = useSWR(isAuthenticated ? '/profile' : null, ApiInstance, {
     revalidateOnFocus: false,
@@ -62,11 +65,20 @@ export function AuthProvider({
     setIsAuthenticated(true);
   }
 
+  async function logout() {
+    destroyCookie(cookiesCtx, `token`);
+    destroyCookie(cookiesCtx, `user`);
+    ApiInstance.defaults.headers['Authorization'] = "";
+    setIsAuthenticated(false);
+    router.push(`/login`)
+  }
+
   return <AuthContext.Provider value={{
     isAuthenticated,
-    signIn,
     user: userData,
     isLoading,
+    signIn,
+    logout,
   }}>
     {children}
   </AuthContext.Provider>

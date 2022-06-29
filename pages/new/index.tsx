@@ -130,7 +130,7 @@ export default function NewPropertyPage(props) {
     <Grid
       templateAreas={`"header"
                   "main"`}
-      gridTemplateRows={'4em 1fr'}
+      gridTemplateRows={'auto 1fr'}
       gridTemplateColumns={'1fr'}
       gap='1'
       mb={2}
