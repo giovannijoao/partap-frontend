@@ -1,4 +1,4 @@
-export interface IProperty {
+export default interface IProperty {
   address: string;
   isRent: boolean;
   isSell: boolean;

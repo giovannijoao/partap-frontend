@@ -7,7 +7,7 @@ import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
 import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import { IProperty } from "../interfaces/IProperty";
+import IProperty from "../interfaces/IProperty";
 import { AxiosResponse } from "axios";
 
 type IImage = {
