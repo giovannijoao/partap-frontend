@@ -86,7 +86,6 @@ export default function NewPropertyPage(props) {
       })
     } else {
       setSelectedImage(c => {
-        console.log(52, c, c - 1, images.length)
         if (c - 1 < 0) return images.length - 1;
         return c - 1;
       })
@@ -94,12 +93,9 @@ export default function NewPropertyPage(props) {
   }, [images])
 
   const addCostType = useCallback((typeToAdd) => {
-    console.log(97)
     setCostsTypes(types => types.map(type => {
-      console.log(99)
       if (type.name !== typeToAdd) return type;
       type.isPresent = true;
-      console.log(102)
       return type;
     }))
   }, [])
@@ -107,10 +103,6 @@ export default function NewPropertyPage(props) {
   const formValues = getFormValues();
   const presentCostsTypes = costsTypes.filter(field => field.isPresent);
   const missingCostsTypes = costsTypes.filter(field => !field.isPresent);
-  console.log({
-    presentCostsTypes,
-    missingCostsTypes,
-  })
 
   return <>
     <Grid
@@ -201,7 +193,7 @@ export default function NewPropertyPage(props) {
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/ic_baseline-subway.svg" alt="Field" />
                 <Text fontSize={"xs"}>Metro próximo</Text>
-                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.nearSubway', { setValueAs: (v) => Boolean(v) })}>
+                <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.nearSubway', { setValueAs: (v) => v === "true" })}>
                   <option value='true'>Sim</option>
                   <option value='false'>Não</option>
                 </Select>
@@ -209,7 +201,7 @@ export default function NewPropertyPage(props) {
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/cil_sofa.svg" alt="Field" />
                 <Text fontSize={"xs"}>Mobiliado</Text>
-                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.isFurnished', { setValueAs: (v) => Boolean(v) })}>
+                <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.isFurnished', { setValueAs: (v) => v === "true" })}>
                   <option value='true'>Sim</option>
                   <option value='false'>Não</option>
                 </Select>
@@ -217,7 +209,7 @@ export default function NewPropertyPage(props) {
               <CustomSelectField gap={1}>
                 <Image mx={1} src="/dashicons_pets.svg" alt="Field" />
                 <Text fontSize={"xs"}>Aceita pets</Text>
-                <Select m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.acceptPets', { setValueAs: (v) => Boolean(v) })}>
+                <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.acceptPets', { setValueAs: (v) => v === "true" })}>
                   <option value='true'>Sim</option>
                   <option value='false'>Não</option>
                 </Select>
