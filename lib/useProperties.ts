@@ -18,7 +18,6 @@ export default function useProperties({
 }: UsePropertiesProps) {
   const { user } = useUser();
   // We do a request to /api/events only if the user is logged in
-  console.log(21, user)
   const { data: properties } = useSWR<PropertyInformationResponse>(
     user?.isLoggedIn ? ["/properties", addressFilter] : null,
     (url, args) =>

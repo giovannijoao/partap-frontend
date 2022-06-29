@@ -13,7 +13,7 @@ const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currenc
 
 export default function HomePage() {
   const router = useRouter();
-  const { user } = useUser({
+  useUser({
     redirectTo: '/login',
   })
 
