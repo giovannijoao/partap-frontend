@@ -1,39 +1,31 @@
 import { Badge, Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
-import { useAuth } from "../../contexts/AuthContext";
 import { ApiInstance } from "../../services/api";
-import useSWR, { mutate } from "swr"
+import { mutate } from "swr"
 import { SearchIcon } from "@chakra-ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import { IPropertyResponse } from "../interfaces/IProperty"
-import { AxiosResponse } from "axios";
 import Header from "../../components/Header";
-type PropertyInformationResponse = AxiosResponse<{
-  data: Array<IPropertyResponse>
-}>
+import useUser from "../../lib/useUser";
+import useProperties from "../../lib/useProperties";
+
 
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: isLoadingUser, user } = useAuth();
+  const { user } = useUser({
+    redirectTo: '/login',
+  })
+
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
   const [importUrl, setImportUrl] = useState("");
   const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
 
-  const { data: response, error } = useSWR<PropertyInformationResponse>(isAuthenticated ? ['/properties', addressFilter] : null, (url, args) => {
-    return ApiInstance.get(url, {
-      params: {
-        ...args && ({ address: args })
-      }
-    })
-  }, {
-    onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-      if (retryCount >= 10) return
-      revalidate({ retryCount })
-    }
-  })
+  const { properties } = useProperties({
+    user,
+    addressFilter,
+  });
 
   useEffect(() => {
     let timeout;
@@ -54,9 +46,7 @@ export default function HomePage() {
     router.prefetch('/new')
   }, [router])
 
-  if (isLoadingUser) return <></>;
-
-  const items = response?.data.data.map(item => {
+  const items = properties?.data.data.map(item => {
     return {
       ...item,
       costs: {

@@ -1,8 +1,9 @@
 import { Button, Flex, GridItem, Heading, Image } from "@chakra-ui/react";
-import { useAuth } from "../contexts/AuthContext";
+import useUser from "../lib/useUser";
 
 export default function Header() {
-  const { user, logout } = useAuth()
+  const { user, logout } = useUser()
+  console.log(6, user)
   return <GridItem
     bgGradient='linear-gradient(to-r, pink.400, pink.600)'
     area={'header'}
