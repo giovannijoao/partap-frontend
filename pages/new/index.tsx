@@ -64,8 +64,10 @@ export default function NewPropertyPage(props) {
           isPresent
         }
       }))
-      setImages(data.images)
-      setSelectedImage(0)
+      if (data.images) {
+        setImages(data.images)
+        setSelectedImage(0)
+      }
     }
   }, [reset, importData])
 
@@ -311,7 +313,7 @@ export default function NewPropertyPage(props) {
                   >
                     <IconButton aria-label="Previous Image" onClick={() => handleImageSelection(`left`)} icon={<ChevronLeftIcon h={8} w={8} />} />
                     <Box flex={1}>
-                      <Image h={64} src={images[selectedImage] ? images[selectedImage].url : ""} alt="Image" />
+                      <Image h={64} mx="auto" src={images[selectedImage] ? images[selectedImage].url : ""} alt="Image" />
                     </Box>
                     <IconButton aria-label="Next Image" onClick={() => handleImageSelection(`right`)} icon={<ChevronRightIcon h={8} w={8} />} />
                   </Flex>
