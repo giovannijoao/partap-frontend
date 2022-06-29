@@ -30,7 +30,7 @@ type AuthContextType = {
   isLoading: boolean;
   authenticationError: string;
 
-  signIn: (data: SignInData, toastSuccess: boolean) => Promise<void>;
+  signIn: (data: SignInData, toastSuccess?: boolean) => Promise<void>;
   signUp: (data: SignUpData, onSignUpSuccess?: () => void) => Promise<void>;
   logout: () => void;
 }

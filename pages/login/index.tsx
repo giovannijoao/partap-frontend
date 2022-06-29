@@ -44,7 +44,7 @@ export default function Home() {
         <Heading size={"2xl"} color="purple.500" textAlign="center">Partap</Heading>
         <Heading fontSize={'medium'} textAlign="center">Faça login para entrar</Heading>
         {!signUpForm && <>
-          <form onSubmit={handleSubmit(signIn)}>
+          <form onSubmit={handleSubmit((info) => signIn(info))}>
             <Flex w="xs" direction="column" gap={2}>
               <Input required placeholder='E-mail' {...register('email')} />
               <Input required placeholder='Password' type="password" {...register('password')} />
