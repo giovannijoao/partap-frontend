@@ -121,15 +121,15 @@ export default function HomePage() {
                   grow="1">
                   <Heading fontSize="md" flex="1" flexGrow="1">{item.address}</Heading>
                   <Wrap mt={1}>
-                    <WrapItem>
+                    { item.information.totalArea  && <WrapItem>
                       <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
-                    </WrapItem>
-                    <WrapItem>
+                    </WrapItem>}
+                    { item.information.bedrooms && <WrapItem>
                       <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
-                    </WrapItem>
-                    <WrapItem flexGrow="1" >
+                    </WrapItem> }
+                    { item.costs.totalCost && <WrapItem flexGrow="1" >
                       <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost}</Text>
-                    </WrapItem>
+                    </WrapItem>}
                   </Wrap>
                 </Flex>
 

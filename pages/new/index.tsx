@@ -148,7 +148,7 @@ export default function NewPropertyPage(props) {
         { !isLoadingImportData && <Box gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
-              <Select defaultValue="false" width={"32"} {...register('modo')}>
+              <Select defaultValue="false" width={"32"} {...register('modo')} required>
                 <option value='aluguel'>Aluguel</option>
                 <option value='compra'>Compra</option>
               </Select>
@@ -159,7 +159,7 @@ export default function NewPropertyPage(props) {
                   >
                     <Image src="/bx_home.svg" alt="Field" />
                   </InputLeftElement>
-                  <Input id="endereco" type='text' placeholder='Endereço' {...register('address')} />
+                  <Input id="endereco" type='text' placeholder='Endereço' {...register('address')} required />
                 </InputGroup>
               </FormControl>
               <FormControl w={{ base: "30%", md: "40" }}>
