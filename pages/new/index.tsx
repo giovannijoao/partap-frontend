@@ -7,7 +7,7 @@ import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
 import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import IProperty from "../interfaces/IProperty";
+import { IProperty } from "../interfaces/IProperty";
 import { AxiosResponse } from "axios";
 
 type IImage = {
@@ -102,12 +102,6 @@ export default function NewPropertyPage(props) {
   const handleImageSelection = useCallback((dir: "left" | "right") => {
     if (dir === "right") {
       setSelectedImage(c => {
-        console.log({
-          c,
-          'C+1': c+1,
-          l: images.length,
-          result: c + 1 >= images.length - 1
-        })
         if (c + 1 >= images.length) return 0;
         return c + 1;
       })
@@ -151,15 +145,18 @@ export default function NewPropertyPage(props) {
         <Heading pl='4' fontSize={"2xl"} color="whiteAlpha.900">Partap</Heading>
       </GridItem>
       <GridItem px={4} gridArea="main">
-        <Heading fontSize="lg">Acompanhar novo imóvel</Heading>
-        { isLoadingImportData && <Box mt={2}>
+        <Flex alignItems="center" gap={2} mb={4}>
+          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+          <Heading fontSize={"2xl"}>Acompanhar novo imóvel</Heading>
+        </Flex>
+        { isLoadingImportData && <Box>
           <Spinner size="xl" />
           <Text>Importando dados...</Text>
           </Box>}
-        { !isLoadingImportData && <Box mt={2} gap={2}>
+        { !isLoadingImportData && <Box gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
-              <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('modo')}>
+              <Select defaultValue="false" width={"32"} {...register('modo')}>
                 <option value='aluguel'>Aluguel</option>
                 <option value='compra'>Compra</option>
               </Select>
@@ -262,6 +259,7 @@ export default function NewPropertyPage(props) {
                 presentCostsTypes.map(costType => {
                   return <InputGroup w={64} key={costType.name}>
                       <InputLeftAddon>R$</InputLeftAddon>
+                      {/* @ts-ignore */}
                       <Input type='number' step={".01"} {...register(`costs.${costType.name}`, { setValueAs: (v) => parseFloat(v) })} />
                       <InputRightAddon>{costType.text}</InputRightAddon>
                     </InputGroup>
