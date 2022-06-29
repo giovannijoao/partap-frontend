@@ -1,4 +1,5 @@
-export default interface IProperty {
+import React from "react"
+export interface IProperty {
   address: string;
   isRent: boolean;
   isSell: boolean;
@@ -32,4 +33,8 @@ export interface IPropertyResponse extends IProperty {
     sellPrice?: number;
     totalCost?: number;
   };
+}
+
+export default function DefaultComponent() {
+  return <div />;
 }

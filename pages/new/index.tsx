@@ -7,8 +7,9 @@ import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
 import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import IProperty from "../interfaces/IProperty";
+import { IProperty } from "../interfaces/IProperty";
 import { AxiosResponse } from "axios";
+import Header from "../../components/Header";
 
 type IImage = {
   url: string,
@@ -134,16 +135,7 @@ export default function NewPropertyPage(props) {
       gap='1'
       mb={2}
     >
-      <GridItem
-        pl='4'
-        bgGradient='linear-gradient(to-r, pink.400, pink.600)'
-        area={'header'}
-        display="flex"
-        alignItems="center"
-      >
-        <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
-        <Heading pl='4' fontSize={"2xl"} color="whiteAlpha.900">Partap</Heading>
-      </GridItem>
+      <Header />
       <GridItem px={4} gridArea="main">
         <Flex alignItems="center" gap={2} mb={4}>
           <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />

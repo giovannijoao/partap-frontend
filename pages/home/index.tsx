@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { IPropertyResponse } from "../interfaces/IProperty"
 import { AxiosResponse } from "axios";
+import Header from "../../components/Header";
 type PropertyInformationResponse = AxiosResponse<{
   data: Array<IPropertyResponse>
 }>
@@ -73,16 +74,7 @@ export default function HomePage() {
       gridTemplateColumns={'1fr'}
       gap='1'
     >
-      <GridItem
-        pl='2'
-        bgGradient='linear-gradient(to-r, pink.400, pink.600)'
-        area={'header'}
-        display="flex"
-        alignItems="center"
-      >
-        <Image src="/bx_home.svg" alt="Home" w={8} h={8} />
-        <Heading pl='4' fontSize={"medium"} color="whiteAlpha.900">Partap</Heading>
-      </GridItem>
+      <Header />
       <GridItem
         area="main"
         m={4}
