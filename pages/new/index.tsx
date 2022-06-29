@@ -102,7 +102,13 @@ export default function NewPropertyPage(props) {
   const handleImageSelection = useCallback((dir: "left" | "right") => {
     if (dir === "right") {
       setSelectedImage(c => {
-        if (c + 1 >= images.length - 1) return 0;
+        console.log({
+          c,
+          'C+1': c+1,
+          l: images.length,
+          result: c + 1 >= images.length - 1
+        })
+        if (c + 1 >= images.length) return 0;
         return c + 1;
       })
     } else {
