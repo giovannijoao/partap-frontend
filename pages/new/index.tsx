@@ -35,6 +35,8 @@ const allCostsTypes = [{
   "text": "Compra"
 }]
 
+const ignoreCostsInTotalCost = ["sellPrice"];
+
 type IPropertyExtractorResponse = AxiosResponse<{
   data: IProperty
 }>;
@@ -43,6 +45,7 @@ export default function NewPropertyPage(props) {
   const { query, push } = useRouter()
 
   const { data: importData, error } = useSWRImmutable<IPropertyExtractorResponse>(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url } }));
+  const [isPosting, setIsPosting] = useState(false);
   const [images, setImages] = useState<IImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<number>();
   const [costsTypes, setCostsTypes] = useState<ICostType[]>(allCostsTypes);
@@ -73,7 +76,7 @@ export default function NewPropertyPage(props) {
 
   async function handleAdd(info: IProperty) {
     const { modo, ...restInfo } = info;
-    const totalCost = allCostsTypes.reduce((a, c) => a + (info.costs[c.name] || 0), 0);
+    const totalCost = allCostsTypes.filter(cost => !ignoreCostsInTotalCost.includes(cost.name)).reduce((a, c) => a + (info.costs[c.name] || 0), 0);
     const parsedInfo = {
       ...restInfo,
       isRent: modo === "aluguel",
@@ -82,12 +85,17 @@ export default function NewPropertyPage(props) {
         ...restInfo.costs,
         totalCost
       },
-      provider: `own`,
+      provider: restInfo.provider || "own",
       images,
     }
-    const result = await ApiInstance.post(`/properties`, parsedInfo);
-    console.log(result)
-    push(`/home`);
+    setIsPosting(true);
+    try {
+      await ApiInstance.post(`/properties`, parsedInfo);
+      push(`/home`);
+    } catch (error) {
+      console.log("error")
+    }
+    setIsPosting(false)
   }
 
   const onDrop = useCallback(async acceptedFiles => {
@@ -328,7 +336,7 @@ export default function NewPropertyPage(props) {
                 </Box>
               }
             </Box>
-            <Button w={"min-content"} mx="auto" type="submit">
+            <Button isLoading={isPosting} w={"min-content"} mx="auto" type="submit">
               Adicionar
             </Button>
           </Flex>
