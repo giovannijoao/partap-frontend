@@ -8,7 +8,7 @@ export default function useUser({
   redirectTo = '',
   redirectIfFound = false,
 } = {}) {
-  const { data: user, mutate: mutateUser, error } = useSWR<IUser>('/api/user')
+  const { data: user, mutate: mutateUser, error } = useSWR<IUser>('/api/user', url => OwnAPI.get(url).then(res => res.data))
 
   useEffect(() => {
     // if no redirect needed, just return (example: already on /dashboard)

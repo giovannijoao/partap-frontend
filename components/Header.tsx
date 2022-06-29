@@ -3,7 +3,6 @@ import useUser from "../lib/useUser";
 
 export default function Header() {
   const { user, logout } = useUser()
-  console.log(6, user)
   return <GridItem
     bgGradient='linear-gradient(to-r, pink.400, pink.600)'
     area={'header'}

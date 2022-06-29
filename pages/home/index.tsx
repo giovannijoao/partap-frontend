@@ -23,7 +23,6 @@ export default function HomePage() {
   const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
 
   const { properties } = useProperties({
-    user,
     addressFilter,
   });
 

@@ -3,10 +3,10 @@ import { AxiosResponse } from "axios";
 import { ApiInstance } from "../services/api";
 import { IPropertyResponse } from "../pages/interfaces/IProperty";
 import { IUser } from "../pages/api/user";
+import useUser from "./useUser";
 
 type UsePropertiesProps = {
   addressFilter: string;
-  user: IUser | undefined;
 };
 
 type PropertyInformationResponse = AxiosResponse<{
@@ -15,9 +15,10 @@ type PropertyInformationResponse = AxiosResponse<{
 
 export default function useProperties({
   addressFilter,
-  user,
 }: UsePropertiesProps) {
+  const { user } = useUser();
   // We do a request to /api/events only if the user is logged in
+  console.log(21, user)
   const { data: properties } = useSWR<PropertyInformationResponse>(
     user?.isLoggedIn ? ["/properties", addressFilter] : null,
     (url, args) =>
