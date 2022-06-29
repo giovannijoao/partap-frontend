@@ -2,39 +2,35 @@ import useSWR from "swr";
 import { AxiosResponse } from "axios";
 import { ApiInstance } from "../services/api";
 import { IPropertySaved } from "../pages/interfaces/IProperty";
-import { IUser } from "../pages/api/user";
 import useUser from "./useUser";
 
-type UsePropertiesProps = {
-  addressFilter: string;
-};
+interface UsePropertyProps {
+  propertyId: string
+}
 
 type PropertyInformationResponse = AxiosResponse<{
   data: Array<IPropertySaved>;
 }>;
 
-export default function useProperties({
-  addressFilter,
-}: UsePropertiesProps) {
+
+export default function useProperty({ propertyId }: UsePropertyProps) {
   const { user } = useUser();
   // We do a request to /api/events only if the user is logged in
-  const { data: properties } = useSWR<PropertyInformationResponse>(
-    user?.isLoggedIn ? ["/properties", addressFilter] : null,
+  const { data: property } = useSWR<PropertyInformationResponse>(
+    user?.isLoggedIn ? `/properties/${propertyId}` : null,
     (url, args) =>
       ApiInstance.get(url, {
-        params: {
-          ...(args && { address: args }),
-        },
         headers: {
-          Authorization: user.token
+          Authorization: user.token,
         },
       }),
     {
       onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        // TODO: implementar logica para nao buscar mais caso a propriedade nao exista
         if (retryCount >= 10) return;
         revalidate({ retryCount });
       },
     }
   );
-  return { properties };
+  return property?.data.data;
 }

@@ -24,7 +24,7 @@ export interface IProperty {
   url?: string;
 }
 
-export interface IPropertyResponse extends IProperty {
+export interface IPropertySaved extends IProperty {
   _id?: string;
   costs: {
     rentValue?: number;
