@@ -64,6 +64,8 @@ export default function NewPropertyPage(props) {
           isPresent
         }
       }))
+      setImages(data.images)
+      setSelectedImage(0)
     }
   }, [reset, importData])
 
@@ -317,10 +319,9 @@ export default function NewPropertyPage(props) {
                     mt={2}
                     overflowX={"auto"}
                     gap={1}
+                    w="100%"
                   >
-                    {images.map(image => <Box key={image.url}>
-                      <Image w={32} src={image.url} alt={image.description} />
-                    </Box>)}
+                    {images.map((image, i) => <Image onClick={() => setSelectedImage(i)} key={image.url} boxSize="150px" src={image.url} alt={image.description} />)}
                   </Flex>
                 </Box>
               }

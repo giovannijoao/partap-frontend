@@ -90,7 +90,7 @@ export default function HomePage() {
                   >
                     <SearchIcon color='gray.300' />
                   </InputLeftElement>
-                  <Input disabled={items.length === 0} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+                  <Input disabled={items?.length === 0} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
                 </InputGroup>
               </Box>
               <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
@@ -106,7 +106,7 @@ export default function HomePage() {
           gap={4}
           >
           {
-            items.length === 0 && <Flex
+            items?.length === 0 && <Flex
               direction="column"
               gap={2}
               boxShadow='base'

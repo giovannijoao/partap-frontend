@@ -21,6 +21,10 @@ export default function Home() {
     if (isAuthenticated) router.push('/home')
   }, [router, isAuthenticated])
 
+  async function handleSignIn(info) {
+    signIn(info)
+  }
+
   async function handleSignUp(info) {
     await signUp(info)
     await signIn(info, false);
@@ -44,7 +48,7 @@ export default function Home() {
         <Heading size={"2xl"} color="purple.500" textAlign="center">Partap</Heading>
         <Heading fontSize={'medium'} textAlign="center">Faça login para entrar</Heading>
         {!signUpForm && <>
-          <form onSubmit={handleSubmit((info) => signIn(info))}>
+          <form onSubmit={handleSubmit(handleSignIn)}>
             <Flex w="xs" direction="column" gap={2}>
               <Input required placeholder='E-mail' {...register('email')} />
               <Input required placeholder='Password' type="password" {...register('password')} />
