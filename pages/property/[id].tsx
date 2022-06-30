@@ -74,7 +74,7 @@ const allCostsTypes = [{
 
 export default function PropertyPage() {
   const { query, push } = useRouter();
-  const { logout } = useUser({
+  useUser({
     redirectTo: `/login`
   })
 
@@ -116,12 +116,6 @@ export default function PropertyPage() {
       </Flex>
     })
   , [property])
-
-  if (Array.isArray(query.id)) {
-    logout();
-    return <></>
-  }
-
 
   if (!property) {
     return <Flex w="100vw" h="100vh" alignItems="center" justifyContent="center">

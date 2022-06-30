@@ -10,6 +10,8 @@ import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } fr
 import { IProperty } from "../interfaces/IProperty";
 import { AxiosResponse } from "axios";
 import Header from "../../components/Header";
+import useProperty from "../../lib/useProperty";
+import usePropertyExtractor from "../../lib/usePropertyExtractor";
 
 type IImage = {
   url: string,
@@ -44,19 +46,25 @@ type IPropertyExtractorResponse = AxiosResponse<{
 export default function NewPropertyPage(props) {
   const { query, push } = useRouter()
 
-  const { data: importData, error } = useSWRImmutable<IPropertyExtractorResponse>(query.url ? ['/properties-extractor', query.url] : null, url => ApiInstance.get(url, { params: { url: query.url } }));
+  const { property, error } = usePropertyExtractor({
+    url: query.url,
+  })
   const [isPosting, setIsPosting] = useState(false);
   const [images, setImages] = useState<IImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<number>();
   const [costsTypes, setCostsTypes] = useState<ICostType[]>(allCostsTypes);
   const { register, handleSubmit, reset, getValues: getFormValues, setValue: setFieldValue } = useForm({
-    defaultValues: importData?.data.data
+    defaultValues: property
   })
 
-  const isLoadingImportData = query.url && !importData && !error;
+  const isLoadingImportData = query.url && !property && !error;
+  console.log(59, isLoadingImportData, {
+    property,
+    error,
+  })
 
   useEffect(() => {
-    const data = importData?.data?.data;
+    const data = property;
     if (data) {
       reset(data);
       setCostsTypes(allCostsTypes.map(field => {
@@ -72,7 +80,7 @@ export default function NewPropertyPage(props) {
         setSelectedImage(0)
       }
     }
-  }, [reset, importData])
+  }, [reset, property])
 
   async function handleAdd(info: IProperty) {
     const { modo, ...restInfo } = info;

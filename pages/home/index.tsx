@@ -8,6 +8,7 @@ import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
 import useProperties from "../../lib/useProperties";
 import useProperty from "../../lib/useProperty";
+import usePropertyExtractor from "../../lib/usePropertyExtractor";
 
 
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
@@ -18,6 +19,7 @@ export default function HomePage() {
     redirectTo: '/login',
   })
   const { mutateProperty } = useProperty();
+  const { mutatePropertyExtractor } = usePropertyExtractor()
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
@@ -35,13 +37,9 @@ export default function HomePage() {
   }, [addressFieldValue])
 
   const handleImport = useCallback(async () => {
-    await mutate(['/properties-extractor', importUrl], ApiInstance.get('/properties-extractor', {
-      params: {
-        url: importUrl
-      }
-    }))
+    mutatePropertyExtractor(importUrl);
     router.push(`/new?url=${importUrl}`)
-  }, [router, importUrl])
+  }, [mutatePropertyExtractor, importUrl, router])
 
   useEffect(() => {
     router.prefetch('/new')
