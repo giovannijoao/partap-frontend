@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
 import useProperties from "../../lib/useProperties";
+import useProperty from "../../lib/useProperty";
 
 
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
@@ -16,6 +17,7 @@ export default function HomePage() {
   useUser({
     redirectTo: '/login',
   })
+  const { mutateProperty } = useProperty();
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
@@ -53,6 +55,7 @@ export default function HomePage() {
       }
     };
   });
+
   return <>
     <Grid
       width={"full"}
@@ -116,6 +119,9 @@ export default function HomePage() {
                 key={item._id}
                 display="flex"
                 flexDirection="column"
+                cursor={"pointer"}
+                onClick={() => router.push(`/property/${item._id}`)}
+                onMouseEnter={() => mutateProperty(item._id)}
               >
                 {item.images && item.images[0]  && <Image src={item.images[0].url} alt="Image" width="100%" />}
                 <Flex p={2}

@@ -1,5 +1,5 @@
 import { ChevronLeftIcon } from "@chakra-ui/icons";
-import { Box, Container, Flex, Grid, Heading, IconButton, Image, SimpleGrid, Text, Wrap, WrapItem } from "@chakra-ui/react"
+import { Box, Container, Flex, Grid, Heading, IconButton, Image, SimpleGrid, Spinner, Text, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
 import { useMemo, useState } from "react";
 import Header from "../../components/Header"
@@ -79,7 +79,7 @@ export default function PropertyPage() {
   })
 
   const propertyId = query.id as string;
-  const property = useProperty({
+  const { property } = useProperty({
     propertyId
   });
 
@@ -92,7 +92,7 @@ export default function PropertyPage() {
   }), [property])
 
   const costsElements = useMemo(() => allCostsTypes
-    .filter(costType => property.costs && (property.costs[costType.name] || property.costs[costType.name] === 0))
+    .filter(costType => property?.costs && (property.costs[costType.name] || property.costs[costType.name] === 0))
     .map(costType => {
       const cost = formatNumber.format(property.costs[costType.name]);
       return <Flex
@@ -122,6 +122,15 @@ export default function PropertyPage() {
     return <></>
   }
 
+
+  if (!property) {
+    return <Flex w="100vw" h="100vh" alignItems="center" justifyContent="center">
+      <Box textAlign="center">
+        <Spinner size="xl" />
+        <Text>Um momento, por favor...</Text>
+      </Box>
+    </Flex>
+  }
 
   return <>
     <Flex gap={2} direction="column" height={"100vh"} mb={16}>
