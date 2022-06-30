@@ -78,7 +78,7 @@ const allCostsTypes = [{
 
 export default function PropertyPage() {
   const { query, push } = useRouter();
-  useUser({
+  const { user } = useUser({
     redirectTo: `/login`
   })
   const { isOpen: isOpenInvite, onOpen: onOpenInvite, onClose: onCloseInvite } = useDisclosure()
@@ -89,6 +89,7 @@ export default function PropertyPage() {
     propertyId,
     token,
   });
+  const isAdminUser = user?.id === property?.userId;
 
   const displayInformationGroups = useMemo(() => displayInfo.filter(d => d.filter(property)).map(d => {
     const value = d.value(property)
@@ -191,13 +192,13 @@ export default function PropertyPage() {
             {costsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
-              <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenInvite}>Compartilhar com alguém</Button>
+              {isAdminUser  && <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenInvite}>Compartilhar com alguém</Button>}
             </Flex>
           </Flex>
         </Flex>
       </Box>
     </Flex>
-    <ShareModal isOpenInvite={isOpenInvite} onCloseInvite={onCloseInvite} property={property} token={token} />
+    {isAdminUser  && <ShareModal isOpenInvite={isOpenInvite} onCloseInvite={onCloseInvite} property={property} token={token} />}
   </>;
 }
 
@@ -212,6 +213,7 @@ function ShareModal({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("")
   const [email, setEmail] = useState("");
+  const [linkCopied, setLinkCopied] = useState(false);
   const { user: loggedUser } = useUser()
 
   const mutateProperty = useCallback(() => mutate(`/properties/${property._id}${token ? `?token=${token}` : ``}`), [property._id]);
@@ -239,8 +241,7 @@ function ShareModal({
       setEmail("")
       mutateProperty()
     } catch (error) {
-      console.log(error)
-      const message = error.response?.data.message;
+      const message = error.response?.data?.message;
       if (message === "User not found") setErrorMsg("Usuário não encontrado")
       else if (message === "User already invited") setErrorMsg("Usuário já convidado")
       else if (message === "You cannot invite yourself") setErrorMsg("Você não pode adicionar a si mesmo")
@@ -261,7 +262,23 @@ function ShareModal({
     mutateProperty()
   }, [loggedUser.token, mutateProperty, property._id])
 
-  const isAdminUser = loggedUser.id === property.userId;
+  const handleCopyLink = useCallback(async () => {
+    if (!property.share.token) {
+      setIsLoading(true)
+      const tokenResponse = await ApiInstance.get(`/share/${property._id}`, {
+        headers: {
+          Authorization: loggedUser.token,
+        }
+      }).then(res => res.data);
+      property.share.token = tokenResponse.data.token;
+      setIsLoading(false)
+    }
+    const link = `${window.location.origin}/property/${property._id}?token=${property.share.token}`
+    navigator.clipboard.writeText(link)
+    setLinkCopied(true)
+  }, [loggedUser.token, property._id, property.share])
+
+
 
   return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
     <ModalOverlay />
@@ -293,7 +310,7 @@ function ShareModal({
                 alt='Profile'
               />
               <Text>{user.name}</Text>
-                {isAdminUser && <IconButton ml="auto" aria-label={`Remover usuário ${user.name}`} icon={<DeleteIcon />} onClick={() => handleRemove(user._id)} />}
+              <IconButton ml="auto" aria-label={`Remover usuário ${user.name}`} icon={<DeleteIcon />} onClick={() => handleRemove(user._id)} />
             </Flex>
             {property.share.users.length !== i - 1 && <Divider my={0.5} />}
             </Fragment>
@@ -301,8 +318,8 @@ function ShareModal({
         </Flex>
       </ModalBody>
       <ModalFooter>
-        <Button leftIcon={<LinkIcon />}  colorScheme='purple'>
-          Copiar link
+        <Button isLoading={isLoading} leftIcon={<LinkIcon />}  colorScheme='purple' onClick={handleCopyLink}>
+          {linkCopied ? "Link copiado" : "Copiar link"}
         </Button>
       </ModalFooter>
     </ModalContent>
