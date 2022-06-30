@@ -69,7 +69,8 @@ const allCostsTypes = [{
   "name": "totalCost",
   "text": "Total",
   "bgColor": "linear-gradient(to-r, pink.400, pink.600)",
-  "fontColor": "white"
+  "fontColor": "white",
+  "filter": (property: IPropertySaved) => property.modo === "aluguel"
 }]
 
 export default function PropertyPage() {
@@ -92,7 +93,7 @@ export default function PropertyPage() {
   }), [property])
 
   const costsElements = useMemo(() => allCostsTypes
-    .filter(costType => property?.costs && (property.costs[costType.name] || property.costs[costType.name] === 0))
+    .filter(costType => property?.costs && (property.costs[costType.name] || property.costs[costType.name] === 0) && (!costType.filter || costType.filter(property)))
     .map(costType => {
       const cost = formatNumber.format(property.costs[costType.name]);
       return <Flex

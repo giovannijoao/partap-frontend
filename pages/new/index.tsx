@@ -40,10 +40,6 @@ const allCostsTypes = [{
 
 const ignoreCostsInTotalCost = ["sellPrice"];
 
-type IPropertyExtractorResponse = AxiosResponse<{
-  data: IProperty
-}>;
-
 export default function NewPropertyPage(props) {
   const { query, push } = useRouter()
   const { user } = useUser({

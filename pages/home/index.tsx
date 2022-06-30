@@ -46,11 +46,13 @@ export default function HomePage() {
   }, [router])
 
   const items = properties?.data.data.map(item => {
+    const costs = Object.fromEntries(Object.entries(item.costs).map(([key, value]) => [key, {
+      isPresent: value && value != 0,
+      formatted: formatNumber.format(value)
+    }]))
     return {
       ...item,
-      costs: {
-        totalCost: formatNumber.format(item.costs.totalCost)
-      }
+      costs
     };
   });
 
@@ -133,8 +135,11 @@ export default function HomePage() {
                     { item.information.bedrooms && <WrapItem>
                       <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
                     </WrapItem> }
-                    { item.costs.totalCost && <WrapItem flexGrow="1" >
-                      <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost}</Text>
+                    {item.costs.totalCost?.isPresent && <WrapItem flexGrow="1" >
+                      <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost.formatted}</Text>
+                    </WrapItem>}
+                    {item.isSell && !item.isRent && item.costs.sellPrice?.isPresent && <WrapItem flexGrow="1" >
+                      <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
                     </WrapItem>}
                   </Wrap>
                 </Flex>
