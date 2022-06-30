@@ -46,5 +46,14 @@ export default function useProperty({ propertyId }: UsePropertyProps = {}) {
     [user, fetchProperty]
   );
 
-  return { property: property?.data, mutateProperty };
+  const propertyData = property?.data;
+  let modo;
+  if (propertyData) {
+    if (propertyData.isRent && propertyData.isSell) modo = "";
+    else if (propertyData.isRent) modo = "aluguel";
+    else if (propertyData.isSell) modo = "compra";
+    propertyData.modo = modo;
+  }
+
+  return { property: propertyData, mutateProperty };
 }
