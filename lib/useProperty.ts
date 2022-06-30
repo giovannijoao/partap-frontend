@@ -9,7 +9,7 @@ interface UsePropertyProps {
 }
 
 type PropertyInformationResponse = AxiosResponse<{
-  data: Array<IPropertySaved>;
+  data: IPropertySaved;
 }>;
 
 
