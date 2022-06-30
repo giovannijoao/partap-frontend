@@ -146,7 +146,11 @@ export default function PropertyPage() {
         >
           {property.images.map((image, i) => <Image key={image.url} src={image.url} alt={image.description} />)}
         </Flex>
-        <Flex my={4} gap={6}>
+        <Flex my={4} gap={6} direction={{
+          base: "column",
+          md: "row",
+          lg: "row"
+        }}>
           <Box flex={2}>
             <Wrap mb={4}>
               {displayInformationGroups.map(d => {
