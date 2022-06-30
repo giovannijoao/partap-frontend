@@ -28,6 +28,12 @@ export default function usePropertyExtractor({ url }: UsePropertyExtractorProps 
     user?.isLoggedIn && url ? `/properties-extractor?url=${url}` : null,
     (url) => fetchProperty(url),
     {
+      revalidateOnFocus: false,
+      revalidateOnMount:false,
+      revalidateOnReconnect: false,
+      refreshWhenOffline: false,
+      refreshWhenHidden: false,
+      refreshInterval: 0,
       onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
         // TODO: implementar logica para nao buscar mais caso a propriedade nao exista
         if (retryCount >= 10) return;
@@ -50,5 +56,14 @@ export default function usePropertyExtractor({ url }: UsePropertyExtractorProps 
     [user, fetchProperty]
   );
 
-  return { property: property?.data, mutatePropertyExtractor, error };
+  const propertyData =  property?.data
+  let modo;
+  if (propertyData) {
+    if (propertyData.isRent && propertyData.isSell) modo = "";
+    else if (propertyData.isRent) modo = "aluguel";
+    else if (propertyData.isSell) modo = "compra";
+    propertyData.modo = modo;
+  }
+
+  return { property: propertyData, mutatePropertyExtractor, error };
 }

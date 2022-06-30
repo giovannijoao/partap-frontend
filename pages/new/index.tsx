@@ -12,6 +12,7 @@ import { AxiosResponse } from "axios";
 import Header from "../../components/Header";
 import useProperty from "../../lib/useProperty";
 import usePropertyExtractor from "../../lib/usePropertyExtractor";
+import useUser from "../../lib/useUser";
 
 type IImage = {
   url: string,
@@ -45,9 +46,12 @@ type IPropertyExtractorResponse = AxiosResponse<{
 
 export default function NewPropertyPage(props) {
   const { query, push } = useRouter()
+  const { user } = useUser({
+    redirectTo: "/login"
+  })
 
   const { property, error } = usePropertyExtractor({
-    url: query.url,
+    url: query.url as string,
   })
   const [isPosting, setIsPosting] = useState(false);
   const [images, setImages] = useState<IImage[]>([]);
@@ -58,10 +62,6 @@ export default function NewPropertyPage(props) {
   })
 
   const isLoadingImportData = query.url && !property && !error;
-  console.log(59, isLoadingImportData, {
-    property,
-    error,
-  })
 
   useEffect(() => {
     const data = property;
@@ -98,7 +98,11 @@ export default function NewPropertyPage(props) {
     }
     setIsPosting(true);
     try {
-      await ApiInstance.post(`/properties`, parsedInfo);
+      await ApiInstance.post(`/properties`, parsedInfo, {
+        headers: {
+          Authorization: user.token
+        }
+      });
       push(`/home`);
     } catch (error) {
       console.log("error")
