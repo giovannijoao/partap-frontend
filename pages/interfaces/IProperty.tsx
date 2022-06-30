@@ -20,6 +20,14 @@ export interface IProperty {
     url: string;
     description: string;
   }[];
+  share: {
+    token: string;
+    users: {
+      _id: string;
+      name: string;
+    }[]
+  };
+  userId: string;
   provider: string | "own";
   url?: string;
 }

@@ -1,11 +1,14 @@
-import { ChevronLeftIcon } from "@chakra-ui/icons";
-import { Box, Container, Flex, Grid, Heading, IconButton, Image, SimpleGrid, Spinner, Text, Wrap, WrapItem } from "@chakra-ui/react"
+import { AddIcon, ChevronLeftIcon, DeleteIcon, EmailIcon, LinkIcon } from "@chakra-ui/icons";
+import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
-import { useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState } from "react";
+import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
+import ShareIconSVG from "../../components/js-icons/Share";
 import useProperty from "../../lib/useProperty";
 import useUser from "../../lib/useUser";
+import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
@@ -78,10 +81,13 @@ export default function PropertyPage() {
   useUser({
     redirectTo: `/login`
   })
+  const { isOpen: isOpenInvite, onOpen: onOpenInvite, onClose: onCloseInvite } = useDisclosure()
 
   const propertyId = query.id as string;
+  const token = query.token as string;
   const { property } = useProperty({
-    propertyId
+    propertyId,
+    token,
   });
 
   const displayInformationGroups = useMemo(() => displayInfo.filter(d => d.filter(property)).map(d => {
@@ -93,7 +99,7 @@ export default function PropertyPage() {
   }), [property])
 
   const costsElements = useMemo(() => allCostsTypes
-    .filter(costType => property?.costs && (property.costs[costType.name] || property.costs[costType.name] === 0) && (!costType.filter || costType.filter(property)))
+    .filter(costType => property?.costs && (property.costs[costType.name] && property.costs[costType.name] !== 0) && (!costType.filter || costType.filter(property)))
     .map(costType => {
       const cost = formatNumber.format(property.costs[costType.name]);
       return <Flex
@@ -139,7 +145,7 @@ export default function PropertyPage() {
           gap={1}
           overflowX="auto"
         >
-          {property.images.map((image, i) => <Image key={image.url} src={image.url} alt={image.description} />)}
+          {property.images.map((image, i) => <Image maxH={"sm"} key={image.url} src={image.url} alt={image.description} />)}
         </Flex>
         <Flex my={4} gap={6} direction={{
           base: "column",
@@ -178,11 +184,127 @@ export default function PropertyPage() {
               {property.information.description}
             </Box>
           </Box>
-          <Flex flex={1} direction="column" gap={2}>
+          <Flex maxW={{
+            base: "full",
+            sm: "xs",
+          }} flex={1} direction="column" gap={2}>
             {costsElements}
+            <Divider my={2} />
+            <Flex direction="column" gap={2}>
+              <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenInvite}>Compartilhar com alguém</Button>
+            </Flex>
           </Flex>
         </Flex>
       </Box>
     </Flex>
+    <ShareModal isOpenInvite={isOpenInvite} onCloseInvite={onCloseInvite} property={property} token={token} />
   </>;
+}
+
+
+function ShareModal({
+  isOpenInvite,
+  onCloseInvite,
+  property: _property,
+  token,
+ }) {
+  const property = _property as IPropertySaved;
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("")
+  const [email, setEmail] = useState("");
+  const { user: loggedUser } = useUser()
+
+  const mutateProperty = useCallback(() => mutate(`/properties/${property._id}${token ? `?token=${token}` : ``}`), [property._id]);
+  const handleAdd = useCallback(async (e) => {
+    e.preventDefault()
+    setErrorMsg("")
+    setIsLoading(true)
+    try {
+      const user = await ApiInstance.get(`/users-invite`, {
+        params: {
+          email,
+        },
+        headers: {
+          Authorization: loggedUser.token,
+        }
+      }).then(res => res.data);
+      await ApiInstance.put(`/share/${property._id}`, {
+        user: user.data._id,
+        token,
+      }, {
+        headers: {
+          Authorization: loggedUser.token,
+        },
+      }).then(res => res.data);
+      setEmail("")
+      mutateProperty()
+    } catch (error) {
+      console.log(error)
+      const message = error.response?.data.message;
+      if (message === "User not found") setErrorMsg("Usuário não encontrado")
+      else if (message === "User already invited") setErrorMsg("Usuário já convidado")
+      else if (message === "You cannot invite yourself") setErrorMsg("Você não pode adicionar a si mesmo")
+      else setErrorMsg("Ocorreu um erro")
+    }
+    setIsLoading(false)
+  }, [email, loggedUser.token, mutateProperty, property._id, token])
+
+  const handleRemove = useCallback(async (userId) => {
+    await ApiInstance.delete(`/share/${property._id}`, {
+      params: {
+        user: userId,
+      },
+      headers: {
+        Authorization: loggedUser.token,
+      },
+    }).then(res => res.data);
+    mutateProperty()
+  }, [loggedUser.token, mutateProperty, property._id])
+
+  const isAdminUser = loggedUser.id === property.userId;
+
+  return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
+    <ModalOverlay />
+    <ModalContent>
+      <ModalHeader>Compartilhar</ModalHeader>
+      <ModalCloseButton />
+      <ModalBody mb={4}>
+        <Flex as="form" gap={2} onSubmit={handleAdd} >
+          <InputGroup>
+            <InputLeftElement
+              pointerEvents='none'
+            ><EmailIcon color='gray.300' /></InputLeftElement>
+            <Input disabled={isLoading} type='email' placeholder='Email do convidado' onChange={e => setEmail(e.target.value)} value={email || ""} />
+          </InputGroup>
+          <Button leftIcon={<AddIcon />} isLoading={isLoading} colorScheme='teal' variant='solid' type={"submit"}>
+            Convidar
+          </Button>
+        </Flex>
+        {errorMsg && <Text fontSize="sm" color="red.500" textAlign="left">{errorMsg}</Text>}
+        <Divider mt={2} />
+        <Flex my={2} direction="column" gap={1}>
+          {property.share.users.map((user, i) => {
+            return <Fragment key={user._id}>
+              <Flex flex={1} alignItems="center" gap={4}>
+              <Image
+                borderRadius='full'
+                boxSize='8'
+                src={`https://ui-avatars.com/api/?name=${user.name}`}
+                alt='Profile'
+              />
+              <Text>{user.name}</Text>
+                {isAdminUser && <IconButton ml="auto" aria-label={`Remover usuário ${user.name}`} icon={<DeleteIcon />} onClick={() => handleRemove(user._id)} />}
+            </Flex>
+            {property.share.users.length !== i - 1 && <Divider my={0.5} />}
+            </Fragment>
+          })}
+        </Flex>
+      </ModalBody>
+      <ModalFooter>
+        <Button leftIcon={<LinkIcon />}  colorScheme='purple'>
+          Copiar link
+        </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
 }

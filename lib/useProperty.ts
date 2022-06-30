@@ -4,14 +4,15 @@ import { IPropertySaved } from "../pages/interfaces/IProperty";
 import useUser from "./useUser";
 import { useCallback } from "react";
 interface UsePropertyProps {
-  propertyId?: string
+  propertyId?: string,
+  token?: string;
 }
 
 type PropertyInformationResponse = {
   data: IPropertySaved;
 };
 
-export default function useProperty({ propertyId }: UsePropertyProps = {}) {
+export default function useProperty({ propertyId, token }: UsePropertyProps = {}) {
   const { user } = useUser();
 
   const fetchProperty = useCallback((url: string) =>
@@ -24,7 +25,7 @@ export default function useProperty({ propertyId }: UsePropertyProps = {}) {
 
   const { data: property } =
     useSWR<PropertyInformationResponse>(
-      user?.isLoggedIn && propertyId ? `/properties/${propertyId}` : null,
+      user?.isLoggedIn && propertyId ? `/properties/${propertyId}${token ? `?token=${token}` : ``}` : null,
       (url) =>
         fetchProperty(url),
       {

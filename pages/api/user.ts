@@ -7,6 +7,7 @@ export interface IUser {
   token?: string;
   name?: string;
   email?: string;
+  id?: string;
 }
 
 export default withIronSessionApiRoute(userRoute, sessionOptions);
