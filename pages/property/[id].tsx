@@ -1,7 +1,7 @@
-import { AddIcon, ChevronLeftIcon, DeleteIcon, EmailIcon, LinkIcon } from "@chakra-ui/icons";
-import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react"
+import { AddIcon, ChevronLeftIcon, DeleteIcon, EmailIcon, LinkIcon, StarIcon } from "@chakra-ui/icons";
+import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
-import { Fragment, useCallback, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
@@ -81,7 +81,8 @@ export default function PropertyPage() {
   const { user } = useUser({
     redirectTo: `/login`
   })
-  const { isOpen: isOpenInvite, onOpen: onOpenInvite, onClose: onCloseInvite } = useDisclosure()
+  const { isOpen: isOpenAdminInvite, onOpen: onOpenAdminInvite, onClose: onCloseAdminInvite } = useDisclosure()
+  const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
   const propertyId = query.id as string;
   const token = query.token as string;
@@ -89,7 +90,14 @@ export default function PropertyPage() {
     propertyId,
     token,
   });
-  const isAdminUser = user?.id === property?.userId;
+  const isAdminUser = user && user.id === property?.user._id;
+  const isInvitedUser = !!token && user.id !== property?.user._id && !property?.share?.users.find(u => u._id === user.id);
+
+
+  useEffect(() => {
+    if (isInvitedUser) onOpenSelfInvite()
+  }, [isInvitedUser, onOpenSelfInvite])
+
 
   const displayInformationGroups = useMemo(() => displayInfo.filter(d => d.filter(property)).map(d => {
     const value = d.value(property)
@@ -192,13 +200,14 @@ export default function PropertyPage() {
             {costsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
-              {isAdminUser  && <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenInvite}>Compartilhar com alguém</Button>}
+              {isAdminUser  && <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenAdminInvite}>Compartilhar com alguém</Button>}
             </Flex>
           </Flex>
         </Flex>
       </Box>
     </Flex>
-    {isAdminUser  && <ShareModal isOpenInvite={isOpenInvite} onCloseInvite={onCloseInvite} property={property} token={token} />}
+    {isAdminUser  && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
+    {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
 
@@ -207,7 +216,6 @@ function ShareModal({
   isOpenInvite,
   onCloseInvite,
   property: _property,
-  token,
  }) {
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
@@ -216,7 +224,7 @@ function ShareModal({
   const [linkCopied, setLinkCopied] = useState(false);
   const { user: loggedUser } = useUser()
 
-  const mutateProperty = useCallback(() => mutate(`/properties/${property._id}${token ? `?token=${token}` : ``}`), [property._id]);
+  const mutateProperty = useCallback(() => mutate(`/properties/${property._id}`), [property._id]);
   const handleAdd = useCallback(async (e) => {
     e.preventDefault()
     setErrorMsg("")
@@ -232,7 +240,6 @@ function ShareModal({
       }).then(res => res.data);
       await ApiInstance.put(`/share/${property._id}`, {
         user: user.data._id,
-        token,
       }, {
         headers: {
           Authorization: loggedUser.token,
@@ -248,7 +255,7 @@ function ShareModal({
       else setErrorMsg("Ocorreu um erro")
     }
     setIsLoading(false)
-  }, [email, loggedUser.token, mutateProperty, property._id, token])
+  }, [email, loggedUser.token, mutateProperty, property._id])
 
   const handleRemove = useCallback(async (userId) => {
     await ApiInstance.delete(`/share/${property._id}`, {
@@ -321,6 +328,63 @@ function ShareModal({
         <Button isLoading={isLoading} leftIcon={<LinkIcon />}  colorScheme='purple' onClick={handleCopyLink}>
           {linkCopied ? "Link copiado" : "Copiar link"}
         </Button>
+      </ModalFooter>
+    </ModalContent>
+  </Modal>
+}
+
+function SelfInviteModal({
+  isOpenSelfInvite,
+  onCloseSelfInvite,
+  property: _property,
+  token,
+}) {
+  const toast = useToast();
+  const { user } = useUser();
+  const property = _property as IPropertySaved;
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleAdd = useCallback(async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      await ApiInstance.put(`/share/${property._id}`, {
+        user: user.id,
+        token,
+      }, {
+        headers: {
+          Authorization: user.token,
+        },
+      }).then(res => res.data);
+      mutate(`/properties/${property._id}?token=${token}`)
+      mutate(`/properties`)
+      toast({
+        title: 'Adicionado ao seus imóveis',
+        description: "Agora você pode ver esse imóvel na sua tela de acompanhamento",
+        status: 'success',
+        duration: 9000,
+        isClosable: true,
+      })
+      onCloseSelfInvite()
+    } catch (error) {
+      console.log(error)
+    }
+    setIsLoading(false)
+  }, [property._id, user.id, user.token, token, toast, onCloseSelfInvite])
+
+  return <Modal isOpen={isOpenSelfInvite} onClose={onCloseSelfInvite}>
+    <ModalOverlay />
+    <ModalContent>
+      <ModalHeader>Você recebeu um convite</ModalHeader>
+      <ModalCloseButton />
+      <ModalBody>
+        <Text><span style={{fontWeight: 500}}>{property.user.name}</span> te enviou esse imóvel.</Text>
+        <Text>Deseja adicionar aos seus imóveis para fácil acesso na tela inicial?</Text>
+      </ModalBody>
+
+      <ModalFooter>
+        <Button isLoading={isLoading} colorScheme='purple' leftIcon={<StarIcon />} onClick={handleAdd}>Adicionar</Button>
+        <Button isLoading={isLoading} variant='ghost' onClick={onCloseSelfInvite}>Apenas visualizar</Button>
       </ModalFooter>
     </ModalContent>
   </Modal>

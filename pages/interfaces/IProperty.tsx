@@ -27,7 +27,10 @@ export interface IProperty {
       name: string;
     }[]
   };
-  userId: string;
+  user: {
+    _id: string;
+    name: string;
+  };
   provider: string | "own";
   url?: string;
 }
