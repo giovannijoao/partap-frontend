@@ -57,37 +57,29 @@ export default function HomePage() {
   });
 
   return <>
-    <Grid
-      width={"full"}
-      templateAreas={`"header"
-                  "main"
-                  "footer"`}
-      gridTemplateRows={'auto min-content 1fr 30px'}
-      gridTemplateColumns={'1fr'}
-      gap='1'
+    <Flex
+      direction="column"
+      gap={2}
     >
       <Header />
-      <GridItem
-        area="main"
-        m={4}
+      <Box
+        p={4}
       >
         <Box mb={4}>
           <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
-          <Box mt={2}>
-            <Flex gap={2}>
-              <Box>
-                <InputGroup w={"xs"}>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <SearchIcon color='gray.300' />
-                  </InputLeftElement>
-                  <Input disabled={items?.length === 0} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
-                </InputGroup>
-              </Box>
-              <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
-            </Flex>
-          </Box>
+          <Flex gap={2} mt={2}>
+            <Box w={"xs"}>
+              <InputGroup >
+                <InputLeftElement
+                  pointerEvents='none'
+                >
+                  <SearchIcon color='gray.300' />
+                </InputLeftElement>
+                <Input disabled={items?.length === 0} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+              </InputGroup>
+            </Box>
+            <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
+          </Flex>
         </Box>
         <SimpleGrid
           columns={{
@@ -148,11 +140,11 @@ export default function HomePage() {
             })
           }
         </SimpleGrid>
-      </GridItem>
-    </Grid>
+      </Box>
+    </Flex>
     <Modal isOpen={isAddOpen} onClose={onCloseAdd}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent mx={2}>
         <ModalHeader>Adicionar uma propriedade</ModalHeader>
         <ModalCloseButton />
         <ModalBody display="flex" flexDirection="column">

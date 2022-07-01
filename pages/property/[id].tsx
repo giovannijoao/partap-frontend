@@ -321,7 +321,7 @@ function ShareModal({
 
   return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
     <ModalOverlay />
-    <ModalContent>
+    <ModalContent mx={2}>
       <ModalHeader>Compartilhar</ModalHeader>
       <ModalCloseButton />
       <ModalBody mb={4}>
@@ -406,7 +406,7 @@ function SelfInviteModal({
 
   return <Modal isOpen={isOpenSelfInvite} onClose={onCloseSelfInvite}>
     <ModalOverlay />
-    <ModalContent>
+    <ModalContent mx={2}>
       <ModalHeader>Você recebeu um convite</ModalHeader>
       <ModalCloseButton />
       <ModalBody>
