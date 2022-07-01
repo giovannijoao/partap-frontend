@@ -1,12 +1,12 @@
 import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Menu, MenuButton, MenuItem, MenuList, Select, SimpleGrid, Spinner, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { ApiInstance } from "../../services/api";
 import { CustomSelectField } from "./styles";
 import useSWRImmutable from 'swr/immutable';
 import { useDropzone } from "react-dropzone";
-import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon } from "@chakra-ui/icons";
 import { IProperty } from "../interfaces/IProperty";
 import { AxiosResponse } from "axios";
 import Header from "../../components/Header";
@@ -40,6 +40,57 @@ const allCostsTypes = [{
 
 const ignoreCostsInTotalCost = ["sellPrice"];
 
+const selectFields = [
+  {
+    id: "information.nearSubway",
+    filter: property => property.nearSubway,
+    icon: "/ic_baseline-subway.svg",
+    text: "Metro próximo",
+    options: [{
+      text: "Sim",
+      value: "true"
+    }, {
+      text: "Não",
+      value: "false"
+    }],
+    defaultValue: "false",
+    setValueAs: v => v === "true",
+    isPresentByDefault: true,
+  },
+  {
+    id: "information.isFurnished",
+    filter: property => property.information.isFurnished,
+    icon: "/cil_sofa.svg",
+    text: "Mobiliado",
+    options: [{
+      text: "Sim",
+      value: "true"
+    }, {
+      text: "Não",
+      value: "false"
+    }],
+    defaultValue: "false",
+    setValueAs: v => v === "true",
+    isPresentByDefault: true,
+  },
+  {
+    id: "information.acceptPets",
+    filter: property => property.information.acceptPets,
+    icon: "/dashicons_pets.svg",
+    text: "Aceita pets",
+    options: [{
+      text: "Sim",
+      value: "true"
+    }, {
+      text: "Não",
+      value: "false"
+    }],
+    defaultValue: "false",
+    setValueAs: v => v === "true",
+    isPresentByDefault: true,
+  },
+]
+
 export default function NewPropertyPage(props) {
   const { query, push } = useRouter()
   const { user } = useUser({
@@ -56,6 +107,10 @@ export default function NewPropertyPage(props) {
   const { register, handleSubmit, reset, getValues: getFormValues, setValue: setFieldValue } = useForm({
     defaultValues: property
   })
+  const [selectedCustomFields, setSelectedCustomFields] = useState(selectFields.map(selectField => ({
+    ...selectField,
+    isPresent: selectField.isPresentByDefault || false,
+  })));
 
   const isLoadingImportData = query.url && !property && !error;
 
@@ -75,10 +130,18 @@ export default function NewPropertyPage(props) {
         setImages(data.images)
         setSelectedImage(0)
       }
+      setSelectedCustomFields(selectFields.map(selectField => {
+        const isPresent = !!selectField.filter(property);
+        return {
+          ...selectField,
+          isPresent,
+        }
+      }))
     }
   }, [reset, property])
 
   async function handleAdd(info: IProperty) {
+    return console.log(141, info)
     const { modo, ...restInfo } = info;
     const totalCost = allCostsTypes.filter(cost => !ignoreCostsInTotalCost.includes(cost.name)).reduce((a, c) => a + (info.costs && info.costs[c.name] || 0), 0);
     const parsedInfo = {
@@ -142,10 +205,39 @@ export default function NewPropertyPage(props) {
     }))
   }, [])
 
+  const addCustomField = useCallback((id) => {
+    setSelectedCustomFields(fields => fields.map(field => {
+      if (field.id !== id) return field;
+      field.isPresent = true;
+      return field;
+    }))
+  }, [])
+
   const formValues = getFormValues();
   const presentCostsTypes = costsTypes.filter(field => field.isPresent);
   const missingCostsTypes = costsTypes.filter(field => !field.isPresent);
 
+  const missingCustomFields = selectedCustomFields.filter(field => !field.isPresent);
+
+  const shownCustomSelectFields = useMemo(() => selectedCustomFields.filter(field => field.isPresent).map((customSelectField, i) => <CustomSelectField key={customSelectField.id} gap={1} px={2}>
+    <Image mx={1} src={customSelectField.icon} alt="Field" />
+    <Text fontSize={"xs"}>{customSelectField.text}</Text>
+    {/* @ts-ignore */}
+    <Select defaultValue={customSelectField.defaultValue} m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register(customSelectField.id, { setValueAs: customSelectField.setValueAs })}>
+      {customSelectField.options.map(option => <option key={`${customSelectField.id}-${option.value}`} value={option.value}>{option.text}</option>)}
+    </Select>
+    <DeleteIcon onClick={() => {
+      {/* @ts-ignore */ }
+      setFieldValue(customSelectField.id, undefined);
+      setSelectedCustomFields((fields) => fields.map((field, ii) => {
+        if (i !== ii) return field;
+        return {
+          ...field,
+          isPresent: false,
+        }
+      }))
+    }} />
+  </CustomSelectField>), [register, selectedCustomFields, setFieldValue])
   return <>
     <Grid
       templateAreas={`"header"
@@ -161,11 +253,11 @@ export default function NewPropertyPage(props) {
           <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
           <Heading fontSize={"2xl"}>Acompanhar novo imóvel</Heading>
         </Flex>
-        { isLoadingImportData && <Box>
+        {isLoadingImportData && <Box>
           <Spinner size="xl" />
           <Text>Importando dados...</Text>
-          </Box>}
-        { !isLoadingImportData && <Box gap={2}>
+        </Box>}
+        {!isLoadingImportData && <Box gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
               <Select defaultValue="false" width={"32"} {...register('modo')} required>
@@ -229,31 +321,8 @@ export default function NewPropertyPage(props) {
                 </InputGroup>
               </FormControl>
             </Flex>
-            <Wrap gap={2} w="2xl">
-              <CustomSelectField gap={1}>
-                <Image mx={1} src="/ic_baseline-subway.svg" alt="Field" />
-                <Text fontSize={"xs"}>Metro próximo</Text>
-                <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.nearSubway', { setValueAs: (v) => v === "true" })}>
-                  <option value='true'>Sim</option>
-                  <option value='false'>Não</option>
-                </Select>
-              </CustomSelectField>
-              <CustomSelectField gap={1}>
-                <Image mx={1} src="/cil_sofa.svg" alt="Field" />
-                <Text fontSize={"xs"}>Mobiliado</Text>
-                <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.isFurnished', { setValueAs: (v) => v === "true" })}>
-                  <option value='true'>Sim</option>
-                  <option value='false'>Não</option>
-                </Select>
-              </CustomSelectField>
-              <CustomSelectField gap={1}>
-                <Image mx={1} src="/dashicons_pets.svg" alt="Field" />
-                <Text fontSize={"xs"}>Aceita pets</Text>
-                <Select defaultValue="false" m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register('information.acceptPets', { setValueAs: (v) => v === "true" })}>
-                  <option value='true'>Sim</option>
-                  <option value='false'>Não</option>
-                </Select>
-              </CustomSelectField>
+            <Wrap gap={2} w="3xl">
+              {shownCustomSelectFields}
               {formValues?.information?.floor && <FormControl>
                 <InputGroup w={40}>
                   <InputLeftElement
@@ -270,23 +339,35 @@ export default function NewPropertyPage(props) {
               {
                 presentCostsTypes.map(costType => {
                   return <InputGroup w={64} key={costType.name}>
-                      <InputLeftAddon>R$</InputLeftAddon>
-                      {/* @ts-ignore */}
-                      <Input type='number' step={".01"} {...register(`costs.${costType.name}`, { setValueAs: (v) => parseFloat(v) })} />
-                      <InputRightAddon>{costType.text}</InputRightAddon>
-                    </InputGroup>
+                    <InputLeftAddon>R$</InputLeftAddon>
+                    {/* @ts-ignore */}
+                    <Input type='number' step={".01"} {...register(`costs.${costType.name}`, { setValueAs: (v) => parseFloat(v) })} />
+                    <InputRightAddon>{costType.text}</InputRightAddon>
+                  </InputGroup>
                 })
               }
-              {missingCostsTypes.length > 0 && <Box w="xs">
-                <Menu>
-                  <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-                    Adicionar custo
-                  </MenuButton>
-                  <MenuList>
-                    {missingCostsTypes.map(field => <MenuItem onClick={() => addCostType(field.name)} key={field.text}>{field.text}</MenuItem>)}
-                  </MenuList>
-                </Menu>
-              </Box>}
+              <Flex gap={2}>
+                {missingCustomFields.length > 0 && <Box>
+                  <Menu>
+                    <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+                      Adicionar campo
+                    </MenuButton>
+                    <MenuList>
+                      {missingCustomFields.map(field => <MenuItem onClick={() => addCustomField(field.id)} key={field.id}>{field.text}</MenuItem>)}
+                    </MenuList>
+                  </Menu>
+                </Box>}
+                {missingCostsTypes.length > 0 && <Box>
+                  <Menu>
+                    <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+                      Adicionar custo
+                    </MenuButton>
+                    <MenuList>
+                      {missingCostsTypes.map(field => <MenuItem onClick={() => addCostType(field.name)} key={field.text}>{field.text}</MenuItem>)}
+                    </MenuList>
+                  </Menu>
+                </Box>}
+              </Flex>
             </Wrap>
             <Flex>
               <Textarea placeholder='Descrição' w="lg" {...register(`information.description`)} />
