@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { mutate } from "swr";
 import Header from "../../components/Header"
-import BlockIconSVG from "../../components/js-icons/Block";
 import MoneyIconSVG from "../../components/js-icons/Money";
 import ShareIconSVG from "../../components/js-icons/Share";
 import useProperty from "../../lib/useProperty";
