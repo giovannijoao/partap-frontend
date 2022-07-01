@@ -23,7 +23,7 @@ type DisplayInfo = {
 
 const displayInfo: DisplayInfo[] = [{
   key: 'availability',
-  icon: () => <BlockIconSVG color="red.500" />,
+  icon: () => <LockIcon color="red.500" />,
   value: property => "Não disponível",
   filter: property => !property?.isAvailable,
   borderColor: "red.500",
