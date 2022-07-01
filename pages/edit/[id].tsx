@@ -91,15 +91,17 @@ const selectFields = [
   },
 ]
 
-export default function NewPropertyPage() {
+export default function EditPropertyPage() {
   const { query, push } = useRouter()
   const { user } = useUser({
     redirectTo: "/login"
   })
 
-  const { property, error } = usePropertyExtractor({
-    url: query.url as string,
+  const propertyId = query.id as string;
+  const { property, mutateProperty } = useProperty({
+    propertyId,
   })
+
   const [isPosting, setIsPosting] = useState(false);
   const [images, setImages] = useState<IImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<number>();
@@ -111,8 +113,6 @@ export default function NewPropertyPage() {
     ...selectField,
     isPresent: selectField.isPresentByDefault || false,
   })));
-
-  const isLoadingImportData = query.url && !property && !error;
 
   useEffect(() => {
     const data = property;
@@ -153,15 +153,17 @@ export default function NewPropertyPage() {
       },
       provider: restInfo.provider || "own",
       images,
+      user: restInfo.user._id,
     }
     setIsPosting(true);
     try {
-      await ApiInstance.post(`/properties`, parsedInfo, {
+      await ApiInstance.put(`/properties/${propertyId}`, parsedInfo, {
         headers: {
           Authorization: user.token
         }
       });
-      push(`/home`);
+      mutateProperty(propertyId);
+      push(`/property/${propertyId}`);
     } catch (error) {
       console.log("error")
     }
@@ -249,14 +251,10 @@ export default function NewPropertyPage() {
       <Header />
       <GridItem px={4} gridArea="main">
         <Flex alignItems="center" gap={2} mb={4}>
-          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-          <Heading fontSize={"2xl"}>Acompanhar novo imóvel</Heading>
+          <IconButton aria-label="Go back home" onClick={() => push(`/property/${propertyId}`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+          <Heading fontSize={"2xl"}>Editar imóvel</Heading>
         </Flex>
-        {isLoadingImportData && <Box>
-          <Spinner size="xl" />
-          <Text>Importando dados...</Text>
-        </Box>}
-        {!isLoadingImportData && <Box gap={2}>
+        <Box gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
             <Flex direction={"row"} gap={2}>
               <Select defaultValue="false" width={"32"} {...register('modo')} required>
@@ -425,10 +423,10 @@ export default function NewPropertyPage() {
               }
             </Box>
             <Button colorScheme="purple" isLoading={isPosting} w={"min-content"} mx="auto" type="submit">
-              Adicionar
+              Salvar
             </Button>
           </Flex>
-        </Box>}
+        </Box>
       </GridItem>
     </Grid>
   </>

@@ -1,4 +1,4 @@
-import { AddIcon, ChevronLeftIcon, DeleteIcon, EmailIcon, LinkIcon, StarIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, LinkIcon, StarIcon } from "@chakra-ui/icons";
 import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -200,7 +200,10 @@ export default function PropertyPage() {
             {costsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
-              {isAdminUser  && <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenAdminInvite}>Compartilhar com alguém</Button>}
+              {isAdminUser  && <>
+                <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenAdminInvite}>Compartilhar com alguém</Button>
+                <Button leftIcon={<EditIcon />} onClick={() => push(`/edit/${propertyId}`)}>Editar imóvel</Button>
+              </>}
               {!isAdminUser && <Tooltip label='Você foi convidado pelo responsável'><Box p={4} border="1px" borderColor={"gray.300"} borderRadius="md">
                 <Text>Responsável: {property?.user.name}</Text>
               </Box></Tooltip>}
