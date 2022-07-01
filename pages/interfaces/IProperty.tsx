@@ -33,6 +33,7 @@ export interface IProperty {
   };
   provider: string | "own";
   url?: string;
+  isAvailable: boolean;
 }
 
 export interface IPropertySaved extends IProperty {

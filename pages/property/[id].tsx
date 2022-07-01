@@ -1,9 +1,10 @@
-import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, LinkIcon, StarIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
 import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { mutate } from "swr";
 import Header from "../../components/Header"
+import BlockIconSVG from "../../components/js-icons/Block";
 import MoneyIconSVG from "../../components/js-icons/Money";
 import ShareIconSVG from "../../components/js-icons/Share";
 import useProperty from "../../lib/useProperty";
@@ -16,10 +17,19 @@ type DisplayInfo = {
   key: string;
   value: (property: IPropertySaved) => string
   filter: (property: IPropertySaved) => boolean
-  icon: string;
+  icon: string | (() => JSX.Element);
+  borderColor?: string;
+  color?: string;
 }
 
 const displayInfo: DisplayInfo[] = [{
+  key: 'availability',
+  icon: () => <BlockIconSVG color="red.500" />,
+  value: property => "Não disponível",
+  filter: property => !property?.isAvailable,
+  borderColor: "red.500",
+  color: "red.500"
+}, {
   key: 'totalArea',
   icon: '/bx_ruler.svg',
   value: property => `${property?.information.totalArea}m²`,
@@ -86,7 +96,7 @@ export default function PropertyPage() {
 
   const propertyId = query.id as string;
   const token = query.token as string;
-  const { property } = useProperty({
+  const { property, mutateProperty } = useProperty({
     propertyId,
     token,
   });
@@ -133,6 +143,21 @@ export default function PropertyPage() {
     })
   , [property])
 
+  const toggleAvailability = useCallback(async () => {
+    try {
+      await ApiInstance.put(`/properties/${propertyId}`, {
+        isAvailable: !property?.isAvailable
+      }, {
+        headers: {
+          Authorization: user.token
+        }
+      });
+      mutateProperty(propertyId);
+    } catch (error) {
+      console.log("error")
+    }
+  }, [mutateProperty, property?.isAvailable, propertyId, user?.token])
+
   if (!property) {
     return <Flex w="100vw" h="100vh" alignItems="center" justifyContent="center">
       <Box textAlign="center">
@@ -164,6 +189,7 @@ export default function PropertyPage() {
           <Box flex={2}>
             <Wrap mb={4}>
               {displayInformationGroups.map(d => {
+                const Icon = d.icon;
                 return <WrapItem
                   display={"flex"}
                   flexDirection="column"
@@ -173,11 +199,11 @@ export default function PropertyPage() {
                   alignItems="center"
                   boxShadow="sm"
                   border="1px"
-                  borderColor="gray.300"
+                  borderColor={d.borderColor || "gray.300"}
                   borderRadius="lg"
                 >
-                  <Image src={d.icon} alt="Icon" />
-                  <Text>{d.value}</Text>
+                  {typeof(Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
+                  <Text color={d.color}>{d.value}</Text>
                 </WrapItem>
               })}
             </Wrap>
@@ -204,6 +230,7 @@ export default function PropertyPage() {
                 <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenAdminInvite}>Compartilhar com alguém</Button>
                 <Button leftIcon={<EditIcon />} onClick={() => push(`/edit/${propertyId}`)}>Editar imóvel</Button>
               </>}
+              <Button colorScheme={property?.isAvailable ? "red" : "green"} variant="outline" leftIcon={property?.isAvailable ? <LockIcon color="red.500" /> : <UnlockIcon color="green.500" />} onClick={toggleAvailability}>Marcar como {property?.isAvailable ? "indisponível" : "disponível"}</Button>
               {!isAdminUser && <Tooltip label='Você foi convidado pelo responsável'><Box p={4} border="1px" borderColor={"gray.300"} borderRadius="md">
                 <Text>Responsável: {property?.user.name}</Text>
               </Box></Tooltip>}
