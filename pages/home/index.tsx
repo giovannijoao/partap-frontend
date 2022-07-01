@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Checkbox, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
 import { SearchIcon } from "@chakra-ui/icons";
@@ -22,17 +22,25 @@ export default function HomePage() {
   const { mutatePropertyExtractor } = usePropertyExtractor()
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
-  const [addressFilter, setAddressFilter] = useState("");
+  const [filters, setFilters] = useState({
+    isAvailable: [true]
+  } as {
+    address?: string,
+    isAvailable?: boolean[]
+  })
   const [importUrl, setImportUrl] = useState("");
   const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
-
-  const { properties } = useProperties({
-    addressFilter,
+  const { properties, mutateProperties } = useProperties({
+    filters,
   });
+
 
   useEffect(() => {
     let timeout;
-    timeout = setTimeout(() => setAddressFilter(addressFieldValue), 500)
+    timeout = setTimeout(() => setFilters(s => ({
+      ...s,
+      address: addressFieldValue
+    })), 500)
     return () => clearTimeout(timeout)
   }, [addressFieldValue])
 
@@ -45,7 +53,7 @@ export default function HomePage() {
     router.prefetch('/new')
   }, [router])
 
-  const items = properties?.data.data.map(item => {
+  const items = properties?.data.map(item => {
     const costs = Object.fromEntries(Object.entries(item.costs).map(([key, value]) => [key, {
       isPresent: value && value != 0,
       formatted: formatNumber.format(value)
@@ -55,6 +63,19 @@ export default function HomePage() {
       costs
     };
   });
+
+  const toggleAvailabilityFilter = useCallback(() => {
+    setFilters(filters => {
+      const newFilters = {...filters}
+      if (newFilters.isAvailable.includes(false)) {
+        newFilters.isAvailable = [true]
+      } else {
+        newFilters.isAvailable = [true, false]
+      }
+      mutateProperties(newFilters)
+      return newFilters;
+    })
+  }, [mutateProperties])
 
   return <>
     <Flex
@@ -67,19 +88,39 @@ export default function HomePage() {
       >
         <Box mb={4}>
           <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
-          <Flex gap={2} mt={2}>
-            <Box w={"xs"}>
+          <Grid
+            mt={2}
+            alignItems="center"
+            gridTemplateAreas={{
+              base: `
+                "search add"
+                "filters filters"
+              `,
+              md: `
+                "search filters add"
+              `
+            }}
+            gridTemplateColumns={{
+              base: "2fr 1fr",
+              md: "repeat(3, 1fr)"
+            }}
+            gap={2}
+          >
+            <Box gridArea="search">
               <InputGroup >
                 <InputLeftElement
                   pointerEvents='none'
                 >
                   <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input disabled={items?.length === 0} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+                <Input disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
               </InputGroup>
             </Box>
-            <Button ml="auto" onClick={onOpenAdd}>Adicionar</Button>
-          </Flex>
+            <Button ml="auto" onClick={onOpenAdd} gridArea="add">Adicionar</Button>
+            <Box gridArea="filters">
+              <Checkbox defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
+            </Box>
+          </Grid>
         </Box>
         <SimpleGrid
           columns={{
@@ -127,6 +168,9 @@ export default function HomePage() {
                     { item.information.bedrooms && <WrapItem>
                       <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
                     </WrapItem> }
+                    {!item.isAvailable && <WrapItem>
+                      <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
+                    </WrapItem>}
                     {item.costs.totalCost?.isPresent && <WrapItem flexGrow="1" >
                       <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost.formatted}</Text>
                     </WrapItem>}
