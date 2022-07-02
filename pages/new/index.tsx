@@ -43,7 +43,7 @@ const ignoreCostsInTotalCost = ["sellPrice"];
 const selectFields = [
   {
     id: "information.nearSubway",
-    filter: property => property.nearSubway,
+    filter: property => property.information.nearSubway,
     icon: "/ic_baseline-subway.svg",
     text: "Metro próximo",
     options: [{
@@ -131,7 +131,7 @@ export default function NewPropertyPage() {
         setSelectedImage(0)
       }
       setSelectedCustomFields(selectFields.map(selectField => {
-        const isPresent = !!selectField.filter(property);
+        const isPresent = selectField.filter(property);
         return {
           ...selectField,
           isPresent,
@@ -218,9 +218,12 @@ export default function NewPropertyPage() {
 
   const missingCustomFields = selectedCustomFields.filter(field => !field.isPresent);
 
-  const shownCustomSelectFields = useMemo(() => selectedCustomFields.filter(field => field.isPresent).map((customSelectField, i) => <CustomSelectField key={customSelectField.id} gap={1} px={2}>
+  const shownCustomSelectFields = useMemo(() => selectedCustomFields.filter(field => field.isPresent).map((customSelectField, i) => <CustomSelectField key={customSelectField.id} gap={1} px={2} display={"flex"} w={{
+    base: "full",
+    md: "xs"
+  }}>
     <Image mx={1} src={customSelectField.icon} alt="Field" />
-    <Text fontSize={"xs"}>{customSelectField.text}</Text>
+    <Text flex={1} fontSize={"xs"}>{customSelectField.text}</Text>
     {/* @ts-ignore */}
     <Select defaultValue={customSelectField.defaultValue} m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register(customSelectField.id, { setValueAs: customSelectField.setValueAs })}>
       {customSelectField.options.map(option => <option key={`${customSelectField.id}-${option.value}`} value={option.value}>{option.text}</option>)}
@@ -238,16 +241,13 @@ export default function NewPropertyPage() {
     }} />
   </CustomSelectField>), [register, selectedCustomFields, setFieldValue])
   return <>
-    <Grid
-      templateAreas={`"header"
-                  "main"`}
-      gridTemplateRows={'auto 1fr'}
-      gridTemplateColumns={'1fr'}
-      gap='1'
+    <Flex
+      direction="column"
+      gap={2}
       mb={2}
     >
       <Header />
-      <GridItem px={4} gridArea="main">
+      <Box px={4} >
         <Flex alignItems="center" gap={2} mb={4}>
           <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
           <Heading fontSize={"2xl"}>Acompanhar novo imóvel</Heading>
@@ -258,12 +258,29 @@ export default function NewPropertyPage() {
         </Box>}
         {!isLoadingImportData && <Box gap={2}>
           <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
-            <Flex direction={"row"} gap={2}>
-              <Select defaultValue="false" width={"32"} {...register('modo')} required>
+            <Grid
+              gridTemplateAreas={{
+                base: `
+                  "address address"
+                  "modo metragem"
+                `,
+                md: `"modo address address metragem"`
+              }}
+              gridTemplateColumns={{
+                base: "repeat(2, 1fr)",
+                md: "repeat(4, 1fr)"
+              }}
+              gap={2}
+              w={{
+                base: "full",
+                lg: "2xl"
+              }}
+             >
+              <Select gridArea="modo" defaultValue="false" {...register('modo')} required>
                 <option value='aluguel'>Aluguel</option>
                 <option value='compra'>Compra</option>
               </Select>
-              <FormControl w={{ base: "70%", md: "sm" }}>
+              <FormControl gridArea="address">
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -273,7 +290,7 @@ export default function NewPropertyPage() {
                   <Input id="endereco" type='text' placeholder='Endereço' {...register('address')} required />
                 </InputGroup>
               </FormControl>
-              <FormControl w={{ base: "30%", md: "40" }}>
+              <FormControl gridArea="metragem">
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents='none'
@@ -284,60 +301,73 @@ export default function NewPropertyPage() {
                   <InputRightAddon>m²</InputRightAddon>
                 </InputGroup>
               </FormControl>
-            </Flex>
-            <Flex gap={2} direction={{ base: 'row', md: "row" }} >
-              <FormControl w={"44"}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/cil_bed.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="bedrooms" type='number' placeholder='0' {...register('information.bedrooms')} />
-                  <InputRightAddon>quartos</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-              <FormControl w={"44"}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/cil_shower.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="bedrooms" type='number' placeholder='0' {...register('information.bathrooms')} />
-                  <InputRightAddon>banheiros</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-              <FormControl w={"36"}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/bxs_car-garage.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="bedrooms" max="9" type='number' placeholder='0' {...register('information.parkingSlots')} />
-                  <InputRightAddon>vagas</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-            </Flex>
-            <Wrap gap={2} w="3xl">
-              {shownCustomSelectFields}
-              {formValues?.information?.floor && <FormControl>
-                <InputGroup w={40}>
+            </Grid>
+            <Wrap gap={2} w={{
+              base: `full`,
+            }} >
+              {
+                [
+                  {
+                    icon: "/cil_bed.svg",
+                    id: "information.bedrooms",
+                    label: "quartos"
+                  },
+                  {
+                    icon: "/cil_shower.svg",
+                    id: "information.bathrooms",
+                    label: "banheiros"
+                  },
+                  {
+                    icon: "/bxs_car-garage.svg",
+                    id: "information.parkingSlots",
+                    label: "vagas"
+                  },
+                ].map(element => <FormControl key={element.id} w={{
+                  base: "full",
+                  sm: "48",
+                }}>
+                  <InputGroup>
+                    <InputLeftElement
+                      pointerEvents='none'
+                    >
+                      <Image src={element.icon} alt="Field" />
+                    </InputLeftElement>
+                    {/* @ts-ignore */}
+                    <Input id={element.id} type='number' placeholder='0' {...register(element.id)} />
+                    <InputRightAddon>{element.label}</InputRightAddon>
+                  </InputGroup>
+                </FormControl>)
+              }
+            </Wrap>
+            <Wrap gap={2} w={{
+              base: `full`,
+            }} >
+              {formValues?.information?.floor && <FormControl w={{
+                base: "full",
+                md: "xs"
+              }}>
+                <InputGroup display={"flex"}>
                   <InputLeftElement
                     pointerEvents='none'
                   >
                     <Image src="/bi_door-open.svg" alt="Field" />
                   </InputLeftElement>
-                  <Input id="floor" type='number' placeholder='0' {...register('information.floor')} />
+                  <Input flex={1} id="floor" type='number' placeholder='0' {...register('information.floor')} />
                   <InputRightAddon>andar</InputRightAddon>
                 </InputGroup>
               </FormControl>}
+              {shownCustomSelectFields}
             </Wrap>
-            <Wrap gap={2} w="2xl">
+            <Wrap gap={2} w={{
+              base: `full`,
+              lg: "2xl"
+            }}>
               {
                 presentCostsTypes.map(costType => {
-                  return <InputGroup w={64} key={costType.name}>
+                  return <InputGroup key={costType.name} w={{
+                    base: "full",
+                    md: "xs",
+                  }}>
                     <InputLeftAddon>R$</InputLeftAddon>
                     {/* @ts-ignore */}
                     <Input type='number' step={".01"} {...register(`costs.${costType.name}`, { setValueAs: (v) => parseFloat(v) })} />
@@ -429,7 +459,7 @@ export default function NewPropertyPage() {
             </Button>
           </Flex>
         </Box>}
-      </GridItem>
-    </Grid>
+      </Box>
+    </Flex>
   </>
 }

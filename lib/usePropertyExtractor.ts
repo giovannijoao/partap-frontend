@@ -29,7 +29,7 @@ export default function usePropertyExtractor({ url }: UsePropertyExtractorProps 
     (url) => fetchProperty(url),
     {
       revalidateOnFocus: false,
-      revalidateOnMount:false,
+      revalidateOnMount: true,
       revalidateOnReconnect: false,
       refreshWhenOffline: false,
       refreshWhenHidden: false,
