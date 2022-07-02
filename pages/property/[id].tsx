@@ -197,7 +197,7 @@ export default function PropertyPage() {
           }}
           gridTemplateColumns={{
             base: "1fr",
-            md: "2fr 1fr"
+            md: "3fr 1fr"
           }}
         >
           <Box gridArea="info">
@@ -235,8 +235,6 @@ export default function PropertyPage() {
           </Box>
           <Chat gridArea="chat" property={property} />
           <Flex gridArea="sidePanel" maxW={{
-            base: "full",
-            sm: "xs",
           }} flex={1} direction="column" gap={2}>
             {costsElements}
             <Divider my={2} />
@@ -311,7 +309,13 @@ function Chat({
       })}
     >
       <Text>{message.message}</Text>
-      <Flex alignItems="center" gap={2}>
+      <Flex alignItems="center" gap={2} mt={2}>
+        <Image
+          borderRadius='full'
+          boxSize='6'
+          src={`https://ui-avatars.com/api/?name=${message.user.name}`}
+          alt='Profile'
+        />
         <Text flex={1} fontWeight={"bold"}>{message.user.name}</Text>
         <Text color="gray.500">{new Date(message.date).toLocaleString()}</Text>
       </Flex>
