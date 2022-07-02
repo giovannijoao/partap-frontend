@@ -5,6 +5,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
+import SendIconSVG from "../../components/js-icons/Send";
 import ShareIconSVG from "../../components/js-icons/Share";
 import useProperty from "../../lib/useProperty";
 import useUser from "../../lib/useUser";
@@ -140,7 +141,7 @@ export default function PropertyPage() {
         >{cost}</Text>
       </Flex>
     })
-  , [property])
+    , [property])
 
   const toggleAvailability = useCallback(async () => {
     try {
@@ -201,7 +202,7 @@ export default function PropertyPage() {
                   borderColor={d.borderColor || "gray.300"}
                   borderRadius="lg"
                 >
-                  {typeof(Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
+                  {typeof (Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
                   <Text color={d.color}>{d.value}</Text>
                 </WrapItem>
               })}
@@ -217,6 +218,7 @@ export default function PropertyPage() {
               <Text fontWeight="bold">Descrição</Text>
               {property.information.description}
             </Box>
+            <Chat property={property} />
           </Box>
           <Flex maxW={{
             base: "full",
@@ -225,7 +227,7 @@ export default function PropertyPage() {
             {costsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
-              {isAdminUser  && <>
+              {isAdminUser && <>
                 <Button colorScheme='purple' leftIcon={<ShareIconSVG />} onClick={onOpenAdminInvite}>Compartilhar com alguém</Button>
                 <Button leftIcon={<EditIcon />} onClick={() => push(`/edit/${propertyId}`)}>Editar imóvel</Button>
               </>}
@@ -236,19 +238,111 @@ export default function PropertyPage() {
             </Flex>
           </Flex>
         </Flex>
+
       </Box>
     </Flex>
-    {isAdminUser  && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
+    {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
     {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
 
+const AlwaysScrollToBottom = () => {
+
+};
+
+function Chat({
+  property: _property
+}) {
+  const property = _property as IPropertySaved;
+  const { user } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleSendMessage = useCallback(async (e) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      await ApiInstance.post(`/messages/${property._id}`, {
+        message,
+      }, {
+        headers: {
+          Authorization: user?.token
+        }
+      });
+      setMessage("")
+      mutate(`/properties/${property._id}`)
+    } catch (error) {
+      console.log("error")
+    }
+    setIsLoading(false)
+  }, [message, property._id, user?.token])
+
+
+  const messageElements = useMemo(() => property?.messages.map(message => {
+    const isFromMe = message.user._id === user?.id;
+    return <Box
+      key={message._id}
+      w={{
+        base: "90%",
+        md: "80%",
+        lg: "70%"
+      }}
+      h="fit-content"
+      border="1px"
+      borderColor="gray.300"
+      borderRadius="lg"
+      backgroundColor={"gray.100"}
+      p={4}
+      {...isFromMe ? ({
+        ml: "auto"
+      }) : ({
+        mr: "auto"
+      })}
+    >
+      <Text>{message.message}</Text>
+      <Flex alignItems="center" gap={2}>
+        <Text flex={1} fontWeight={"bold"}>{message.user.name}</Text>
+        <Text color="gray.500">{new Date(message.date).toLocaleString()}</Text>
+      </Flex>
+    </Box>
+  }), [property?.messages, user?.id])
+
+  return <Box mt={4}>
+    <Heading fontSize="lg">Chat do imóvel</Heading>
+    <Flex
+      direction="column"
+      mt={2}
+      border="1px"
+      borderColor="gray.300"
+      borderRadius="lg"
+      w={{
+        base: "full",
+      }}
+      h="sm"
+      >
+      <Flex
+        direction="column"
+        p={4}
+        gap={2}
+        flex={1}
+        overflowY="auto"
+      >
+        {messageElements}
+      </Flex>
+      <Divider />
+      <Flex as="form" m={2} gap={2} onSubmit={handleSendMessage}>
+        <Input isDisabled={isLoading} type='text' placeholder='Envie uma mensagem' onChange={e => setMessage(e.target.value)} value={message || ""} />
+        <IconButton isLoading={isLoading} aria-label="Enviar mensagem" icon={<SendIconSVG />} type="submit" />
+      </Flex>
+    </Flex>
+  </Box>
+}
 
 function ShareModal({
   isOpenInvite,
   onCloseInvite,
   property: _property,
- }) {
+}) {
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("")
@@ -342,22 +436,22 @@ function ShareModal({
           {property.share.users.map((user, i) => {
             return <Fragment key={user._id}>
               <Flex flex={1} alignItems="center" gap={4}>
-              <Image
-                borderRadius='full'
-                boxSize='8'
-                src={`https://ui-avatars.com/api/?name=${user.name}`}
-                alt='Profile'
-              />
-              <Text>{user.name}</Text>
-              <IconButton ml="auto" aria-label={`Remover usuário ${user.name}`} icon={<DeleteIcon />} onClick={() => handleRemove(user._id)} />
-            </Flex>
-            {property.share.users.length !== i - 1 && <Divider my={0.5} />}
+                <Image
+                  borderRadius='full'
+                  boxSize='8'
+                  src={`https://ui-avatars.com/api/?name=${user.name}`}
+                  alt='Profile'
+                />
+                <Text>{user.name}</Text>
+                <IconButton ml="auto" aria-label={`Remover usuário ${user.name}`} icon={<DeleteIcon />} onClick={() => handleRemove(user._id)} />
+              </Flex>
+              {property.share.users.length !== i - 1 && <Divider my={0.5} />}
             </Fragment>
           })}
         </Flex>
       </ModalBody>
       <ModalFooter>
-        <Button isLoading={isLoading} leftIcon={<LinkIcon />}  colorScheme='purple' onClick={handleCopyLink}>
+        <Button isLoading={isLoading} leftIcon={<LinkIcon />} colorScheme='purple' onClick={handleCopyLink}>
           {linkCopied ? "Link copiado" : "Copiar link"}
         </Button>
       </ModalFooter>
@@ -410,7 +504,7 @@ function SelfInviteModal({
       <ModalHeader>Você recebeu um convite</ModalHeader>
       <ModalCloseButton />
       <ModalBody>
-        <Text><span style={{fontWeight: 500}}>{property.user.name}</span> te enviou esse imóvel.</Text>
+        <Text><span style={{ fontWeight: 500 }}>{property.user.name}</span> te enviou esse imóvel.</Text>
         <Text>Deseja adicionar aos seus imóveis para fácil acesso na tela inicial?</Text>
       </ModalBody>
 

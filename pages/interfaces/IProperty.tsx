@@ -34,6 +34,15 @@ export interface IProperty {
   provider: string | "own";
   url?: string;
   isAvailable: boolean;
+  messages: {
+    user: {
+      _id: string;
+      name: string;
+    }
+    message: string;
+    _id: string;
+    date: string;
+  }[]
 }
 
 export interface IPropertySaved extends IProperty {
