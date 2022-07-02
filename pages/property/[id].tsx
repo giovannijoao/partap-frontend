@@ -181,12 +181,26 @@ export default function PropertyPage() {
         >
           {property.images.map((image, i) => <Image maxH={"sm"} key={image.url} src={image.url} alt={image.description} />)}
         </Flex>
-        <Flex my={4} gap={6} direction={{
-          base: "column",
-          md: "row",
-          lg: "row"
-        }}>
-          <Box flex={2}>
+        <Grid
+          my={4}
+          gap={6}
+          gridTemplateAreas={{
+            base: `
+              "info"
+              "sidePanel"
+              "chat"
+            `,
+            md: `
+              "info sidePanel"
+              "chat sidePanel"
+            `
+          }}
+          gridTemplateColumns={{
+            base: "1fr",
+            md: "2fr 1fr"
+          }}
+        >
+          <Box gridArea="info">
             <Wrap mb={4}>
               {displayInformationGroups.map(d => {
                 const Icon = d.icon;
@@ -218,9 +232,9 @@ export default function PropertyPage() {
               <Text fontWeight="bold">Descrição</Text>
               {property.information.description}
             </Box>
-            <Chat property={property} />
           </Box>
-          <Flex maxW={{
+          <Chat gridArea="chat" property={property} />
+          <Flex gridArea="sidePanel" maxW={{
             base: "full",
             sm: "xs",
           }} flex={1} direction="column" gap={2}>
@@ -237,7 +251,7 @@ export default function PropertyPage() {
               </Box></Tooltip>}
             </Flex>
           </Flex>
-        </Flex>
+        </Grid>
 
       </Box>
     </Flex>
@@ -246,12 +260,9 @@ export default function PropertyPage() {
   </>;
 }
 
-const AlwaysScrollToBottom = () => {
-
-};
-
 function Chat({
-  property: _property
+  property: _property,
+  gridArea,
 }) {
   const property = _property as IPropertySaved;
   const { user } = useUser();
@@ -307,7 +318,7 @@ function Chat({
     </Box>
   }), [property?.messages, user?.id])
 
-  return <Box mt={4}>
+  return <Box mt={4} gridArea={gridArea}>
     <Heading fontSize="lg">Chat do imóvel</Heading>
     <Flex
       direction="column"
