@@ -147,7 +147,7 @@ export default function HomePage() {
             items?.map(item => {
               return <Box
                 w={"100%"}
-                boxShadow='base'
+                boxShadow='lg'
                 borderRadius="sm"
                 key={item._id}
                 display="flex"
@@ -156,7 +156,7 @@ export default function HomePage() {
                 onClick={() => router.push(`/property/${item._id}`)}
                 onMouseEnter={() => mutateProperty(item._id)}
               >
-                {item.images && item.images[0]  && <Image src={item.images[0].url} alt="Image" width="100%" />}
+                {item.images && item.images[0]  && <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />}
                 <Flex p={2}
                   direction="column"
                   grow="1">
