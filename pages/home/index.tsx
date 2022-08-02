@@ -1,8 +1,8 @@
-import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
 import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
@@ -20,21 +20,18 @@ export default function HomePage() {
   })
   const { mutateProperty } = useProperty();
   const { mutatePropertyExtractor } = usePropertyExtractor()
-  const { isOpen: isOpenFilters, onOpen: onOpenFilters, onClose: onCloseFilters } = useDisclosure()
+  const filtersRef = useRef(null);
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [filters, setFilters] = useState({
-    isAvailable: [true]
-  } as {
-    address?: string,
-    isAvailable?: boolean[]
-  })
+    address: ""
+  } as any);
+
   const [importUrl, setImportUrl] = useState("");
   const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
   const { properties, mutateProperties } = useProperties({
     filters,
   });
-
 
   useEffect(() => {
     let timeout;
@@ -53,6 +50,13 @@ export default function HomePage() {
   useEffect(() => {
     router.prefetch('/new')
   }, [router])
+
+  const onChangeFilters = useCallback((newFilters: object) => {
+    setFilters(s => ({
+      address: s.address,
+      ...newFilters
+    }))
+  }, [])
 
   const items = properties?.data.map(item => {
     const costs = Object.fromEntries(Object.entries(item.costs).map(([key, value]) => [key, {
@@ -113,7 +117,7 @@ export default function HomePage() {
             md: 'row'
           }}
         >
-          <Filters mutateProperties={mutateProperties} />
+          <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
           <SimpleGrid
             flex={2}
             columns={{
@@ -134,6 +138,10 @@ export default function HomePage() {
                 <Heading fontSize={"md"}>Parece que não temos nada por aqui...</Heading>
                 <Text>Adicione uma nova propriedade</Text>
                 <Button onClick={onOpenAdd}>Adicionar</Button>
+                {filtersRef.current?.isFiltersApplied && <>
+                  <Text>Ou remova os filtros</Text>
+                  <Button size="sm" onClick={filtersRef.current.cleanFilters}>Remover filtros</Button>
+                </>}
               </Flex>
             }
             {
@@ -200,13 +208,13 @@ export default function HomePage() {
   </>
 }
 
-const Filters = ({
-  mutateProperties
-}) => {
+const Filters = forwardRef(({
+  mutateProperties,
+  onChangeFilters,
+}, ref) => {
   const [filters, setFilters] = useState({
     isAvailable: [true],
   } as {
-    address?: string,
     isAvailable?: boolean[]
     minBedrooms?: number
     minBathrooms?: number
@@ -214,6 +222,16 @@ const Filters = ({
     isNearSubway?: boolean
     isFurnished?: boolean
   })
+
+  // Used by parent element
+  const isFiltersApplied = useMemo(() =>
+    filters.minBedrooms ||
+    filters.minBathrooms ||
+    filters.minParkingSlots ||
+    filters.isNearSubway ||
+    filters.isFurnished
+    , [filters.isFurnished, filters.isNearSubway, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
+
 
   const toggleAvailabilityFilter = useCallback(() => {
     setFilters(filters => {
@@ -229,7 +247,22 @@ const Filters = ({
 
   useEffect(() => {
     mutateProperties(filters)
-  }, [mutateProperties, filters])
+    onChangeFilters(filters)
+  }, [mutateProperties, onChangeFilters, filters])
+
+  const handleCleanFilters = useCallback(() => {
+    setFilters(f => ({
+      isAvailable: f.isAvailable
+    }))
+  }, [])
+
+  // Used by parent element
+  useImperativeHandle(ref, () => ({
+    isFiltersApplied,
+    cleanFilters() {
+      handleCleanFilters()
+    },
+  }));
 
   const mainOptions = useMemo(() => [{
     name: 'bedrooms',
@@ -301,7 +334,6 @@ const Filters = ({
         } else {
           newFilters[option.name] = true;
         }
-        console.log(300, newFilters)
         return newFilters;
       })
     }
@@ -335,7 +367,8 @@ const Filters = ({
       borderRadius="md"
       boxShadow="md"
     >
-      <Checkbox defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
+      <Checkbox checked={filters.isAvailable.includes(false)} defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
     </Box>
+    <Button size="xs" onClick={handleCleanFilters}>Limpar filtros</Button>
   </Flex>
-}
+})
