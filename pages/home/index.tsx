@@ -104,7 +104,7 @@ export default function HomePage() {
                 >
                   <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+                <Input w="xs" disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
               </InputGroup>
             </Box>
             <Button ml="auto" onClick={onOpenAdd} gridArea="add">Adicionar</Button>
@@ -223,7 +223,11 @@ const Filters = forwardRef(({
     isFurnished?: boolean
     minValue?: number
     maxValue?: number
+    isSell?: boolean
+    isRent?: boolean
+    isBoth?: boolean
   })
+  const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isRent')
 
   const [minValue, setMinValue] = useState<number | undefined>();
   const [maxValue, setMaxValue] = useState<number | undefined>();
@@ -239,6 +243,31 @@ const Filters = forwardRef(({
     }, 1000)
     return () => clearTimeout(timeout)
   }, [minValue, maxValue])
+
+  useEffect(() => {
+    if (modoVisualizacao === 'isRent') {
+      setFilters((s) => ({
+        ...s,
+        isSell: undefined,
+        isRent: true,
+        isBoth: undefined
+      }))
+    } else if (modoVisualizacao === 'isSell') {
+      setFilters((s) => ({
+        ...s,
+        isSell: true,
+        isRent: undefined,
+        isBoth: undefined
+      }))
+    } else {
+      setFilters((s) => ({
+        ...s,
+        isSell: undefined,
+        isRent: undefined,
+        isBoth: true
+      }))
+    }
+  }, [modoVisualizacao])
 
   // Used by parent element
   const isFiltersApplied = useMemo(() =>
@@ -343,7 +372,9 @@ const Filters = forwardRef(({
 
   const handleCleanFilters = useCallback(() => {
     setFilters(f => ({
-      isAvailable: f.isAvailable
+      isAvailable: f.isAvailable,
+      isSell: f.isSell,
+      isRent: f.isRent,
     }))
     setMinValue(0)
     setMaxValue(0)
@@ -370,6 +401,19 @@ const Filters = forwardRef(({
     direction={"column"}
     gap={2}
   >
+    <Flex
+      p={2}
+      borderRadius="md"
+      boxShadow={"xs"}
+      direction="column"
+    >
+      <Text fontSize={"xs"}>Modo de Visualização</Text>
+      <Flex gap={1}>
+        <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isBoth' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isBoth')}>Ambos</Button>
+        <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isRent' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isRent')}>Aluguel</Button>
+        <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isSell' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isSell')}>Compra</Button>
+      </Flex>
+    </Flex>
     {mainOptions}
     <Wrap>
       {toggleOptions}
