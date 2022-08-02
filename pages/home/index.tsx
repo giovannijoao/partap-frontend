@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
 import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons";
@@ -15,6 +15,7 @@ const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currenc
 
 export default function HomePage() {
   const router = useRouter();
+  const [isMobileDevice] = useMediaQuery('(max-width: 420px)')
   useUser({
     redirectTo: '/login',
   })
@@ -29,6 +30,7 @@ export default function HomePage() {
 
   const [importUrl, setImportUrl] = useState("");
   const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
+  const { isOpen: isOpenFilters, onOpen: onOpenFilters, onClose: onCloseFilters } = useDisclosure()
   const { properties, mutateProperties } = useProperties({
     filters,
   });
@@ -69,6 +71,8 @@ export default function HomePage() {
     };
   });
 
+  const isDesktop = !isMobileDevice;
+
   return <>
     <Flex
       direction="column"
@@ -85,7 +89,8 @@ export default function HomePage() {
             alignItems="center"
             gridTemplateAreas={{
               base: `
-                "search add"
+                "search search"
+                "add filters"
               `,
               md: `
                 "search add"
@@ -104,10 +109,14 @@ export default function HomePage() {
                 >
                   <SearchIcon color='gray.300' />
                 </InputLeftElement>
-                <Input w="xs" disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+                <Input w={{
+                  base: 'full',
+                  md: "xs"
+                }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
               </InputGroup>
             </Box>
-            <Button ml="auto" onClick={onOpenAdd} gridArea="add">Adicionar</Button>
+            <Button ml={{ base: undefined, md: 'auto' }} onClick={onOpenAdd} gridArea="add">Adicionar</Button>
+            { isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button> }
           </Grid>
         </Box>
         <Flex
@@ -117,7 +126,7 @@ export default function HomePage() {
             md: 'row'
           }}
         >
-          <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
+          {isDesktop && <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} /> }
           <SimpleGrid
             flex={2}
             columns={{
@@ -188,6 +197,29 @@ export default function HomePage() {
         </Flex>
       </Box>
     </Flex>
+    {
+      isMobileDevice && <Drawer
+        isOpen={isOpenFilters}
+        placement='right'
+        onClose={onCloseFilters}
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Filtros</DrawerHeader>
+
+          <DrawerBody>
+            <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
+          </DrawerBody>
+
+          <DrawerFooter>
+            <Button variant='outline' mr={3} onClick={onCloseFilters}>
+              Cancelar
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    }
     <Modal isOpen={isAddOpen} onClose={onCloseAdd}>
       <ModalOverlay />
       <ModalContent mx={2}>
