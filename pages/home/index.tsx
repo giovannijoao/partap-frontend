@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
 import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons";
@@ -172,7 +172,7 @@ export default function HomePage() {
                       {!item.isAvailable && <WrapItem>
                         <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
                       </WrapItem>}
-                      {item.costs.totalCost?.isPresent && <WrapItem flexGrow="1" >
+                      {item.isRent && item.costs.totalCost?.isPresent && <WrapItem flexGrow="1" >
                         <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost.formatted}</Text>
                       </WrapItem>}
                       {item.isSell && !item.isRent && item.costs.sellPrice?.isPresent && <WrapItem flexGrow="1" >
@@ -221,7 +221,24 @@ const Filters = forwardRef(({
     minParkingSlots?: number
     isNearSubway?: boolean
     isFurnished?: boolean
+    minValue?: number
+    maxValue?: number
   })
+
+  const [minValue, setMinValue] = useState<number | undefined>();
+  const [maxValue, setMaxValue] = useState<number | undefined>();
+
+  useEffect(() => {
+    mutateProperties(filters)
+    onChangeFilters(filters)
+  }, [mutateProperties, onChangeFilters, filters])
+
+  useEffect(() => {
+    let timeout = setTimeout(() => {
+      setFilters(s => ({ ...s, minValue, maxValue }))
+    }, 1000)
+    return () => clearTimeout(timeout)
+  }, [minValue, maxValue])
 
   // Used by parent element
   const isFiltersApplied = useMemo(() =>
@@ -231,38 +248,6 @@ const Filters = forwardRef(({
     filters.isNearSubway ||
     filters.isFurnished
     , [filters.isFurnished, filters.isNearSubway, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
-
-
-  const toggleAvailabilityFilter = useCallback(() => {
-    setFilters(filters => {
-      const newFilters = { ...filters }
-      if (newFilters.isAvailable.includes(false)) {
-        newFilters.isAvailable = [true]
-      } else {
-        newFilters.isAvailable = [true, false]
-      }
-      return newFilters;
-    })
-  }, [])
-
-  useEffect(() => {
-    mutateProperties(filters)
-    onChangeFilters(filters)
-  }, [mutateProperties, onChangeFilters, filters])
-
-  const handleCleanFilters = useCallback(() => {
-    setFilters(f => ({
-      isAvailable: f.isAvailable
-    }))
-  }, [])
-
-  // Used by parent element
-  useImperativeHandle(ref, () => ({
-    isFiltersApplied,
-    cleanFilters() {
-      handleCleanFilters()
-    },
-  }));
 
   const mainOptions = useMemo(() => [{
     name: 'bedrooms',
@@ -342,8 +327,35 @@ const Filters = forwardRef(({
       <TagLabel>{option.text}</TagLabel>
       {filters[option.name] && <TagRightIcon boxSize='12px' as={DeleteIcon} />}
     </Tag>
-  })
-    , [filters]);
+  }), [filters]);
+
+  const toggleAvailabilityFilter = useCallback(() => {
+    setFilters(filters => {
+      const newFilters = { ...filters }
+      if (newFilters.isAvailable.includes(false)) {
+        newFilters.isAvailable = [true]
+      } else {
+        newFilters.isAvailable = [true, false]
+      }
+      return newFilters;
+    })
+  }, [])
+
+  const handleCleanFilters = useCallback(() => {
+    setFilters(f => ({
+      isAvailable: f.isAvailable
+    }))
+    setMinValue(0)
+    setMaxValue(0)
+  }, [])
+
+  // Used by parent element
+  useImperativeHandle(ref, () => ({
+    isFiltersApplied,
+    cleanFilters() {
+      handleCleanFilters()
+    },
+  }));
 
   return <Flex
     flex={1}
@@ -362,6 +374,17 @@ const Filters = forwardRef(({
     <Wrap>
       {toggleOptions}
     </Wrap>
+    <Flex maxW="xs" gap={2}>
+      <Flex direction="column">
+        <Text fontSize="xs">Preço Minimo</Text>
+        <Input type="number" placeholder='0.00' value={minValue} defaultValue={minValue} onChange={(e) => setMinValue(Number(e.target.value))} min={0} />
+      </Flex>
+      <Flex direction="column">
+        <Text fontSize="xs">Preço Maximo</Text>
+        <Input type="number" placeholder='0.00' value={maxValue} defaultValue={maxValue} onChange={(e) => setMaxValue(Number(e.target.value))} min={0} />
+      </Flex>
+    </Flex>
+    <Button size="xs" onClick={handleCleanFilters} opacity={isFiltersApplied ? 1 : 0.5}>Limpar filtros</Button>
     <Box
       p={2}
       borderRadius="md"
@@ -369,6 +392,5 @@ const Filters = forwardRef(({
     >
       <Checkbox checked={filters.isAvailable.includes(false)} defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
     </Box>
-    <Button size="xs" onClick={handleCleanFilters}>Limpar filtros</Button>
   </Flex>
 })
