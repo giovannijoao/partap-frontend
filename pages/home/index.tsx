@@ -1,7 +1,7 @@
-import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
-import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons";
+import { AddIcon, DeleteIcon, InfoOutlineIcon, SearchIcon } from "@chakra-ui/icons";
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Header from "../../components/Header";
@@ -157,6 +157,7 @@ export default function HomePage() {
               items?.map(item => {
                 return <Box
                   w={"100%"}
+                  h="xs"
                   boxShadow='lg'
                   borderRadius="sm"
                   key={item._id}
@@ -258,11 +259,13 @@ const Filters = forwardRef(({
     isSell?: boolean
     isRent?: boolean
     isBoth?: boolean
+    keywords?: string
   })
   const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isRent')
 
   const [minValue, setMinValue] = useState<number | undefined>();
   const [maxValue, setMaxValue] = useState<number | undefined>();
+  const [keywords, setKeywords] = useState('');
 
   useEffect(() => {
     mutateProperties(filters)
@@ -271,10 +274,10 @@ const Filters = forwardRef(({
 
   useEffect(() => {
     let timeout = setTimeout(() => {
-      setFilters(s => ({ ...s, minValue, maxValue }))
+      setFilters(s => ({ ...s, minValue, maxValue, keywords: keywords.trim() !== '' ? keywords : undefined }))
     }, 1000)
     return () => clearTimeout(timeout)
-  }, [minValue, maxValue])
+  }, [minValue, maxValue, keywords])
 
   useEffect(() => {
     if (modoVisualizacao === 'isRent') {
@@ -450,7 +453,13 @@ const Filters = forwardRef(({
     <Wrap>
       {toggleOptions}
     </Wrap>
-    <Flex maxW="xs" gap={2}>
+    <Flex
+      maxW="xs"
+      gap={2}
+      boxShadow='xs'
+      p={2}
+      borderRadius="md"
+    >
       <Flex direction="column">
         <Text fontSize="xs">Preço Minimo</Text>
         <Input type="number" placeholder='0.00' value={minValue} defaultValue={minValue} onChange={(e) => setMinValue(Number(e.target.value))} min={0} />
@@ -458,6 +467,19 @@ const Filters = forwardRef(({
       <Flex direction="column">
         <Text fontSize="xs">Preço Maximo</Text>
         <Input type="number" placeholder='0.00' value={maxValue} defaultValue={maxValue} onChange={(e) => setMaxValue(Number(e.target.value))} min={0} />
+      </Flex>
+    </Flex>
+    <Flex
+      maxW="xs"
+      gap={2}
+      boxShadow='xs'
+      p={2}
+      borderRadius="md"
+      direction="column"
+    >
+      <Input placeholder="Palavras-chaves (case insensitive)" value={keywords} onChange={e => setKeywords(e.target.value)} />
+      <Flex alignItems="center" gap={2}>
+        <Text ml="auto" fontSize="xs">Use vírgulas para separar as palavras</Text>
       </Flex>
     </Flex>
     <Button size="xs" onClick={handleCleanFilters} opacity={isFiltersApplied ? 1 : 0.5}>Limpar filtros</Button>
