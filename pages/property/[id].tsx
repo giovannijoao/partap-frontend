@@ -1,4 +1,4 @@
-import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
 import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -244,6 +244,7 @@ export default function PropertyPage() {
                 <Button leftIcon={<EditIcon />} onClick={() => push(`/edit/${propertyId}`)}>Editar imóvel</Button>
               </>}
               <Button colorScheme={property?.isAvailable ? "red" : "green"} variant="outline" leftIcon={property?.isAvailable ? <LockIcon color="red.500" /> : <UnlockIcon color="green.500" />} onClick={toggleAvailability}>Marcar como {property?.isAvailable ? "indisponível" : "disponível"}</Button>
+              {property.url && <Button as="a" leftIcon={<ExternalLinkIcon />} href={property.url} target="_blank" rel="noopener noreferrer">Abrir site do imóvel</Button>}
               {!isAdminUser && <Tooltip label='Você foi convidado pelo responsável'><Box p={4} border="1px" borderColor={"gray.300"} borderRadius="md">
                 <Text>Responsável: {property?.user.name}</Text>
               </Box></Tooltip>}
