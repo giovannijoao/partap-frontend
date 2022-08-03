@@ -73,12 +73,18 @@ export default function HomePage() {
   const isDesktop = !isMobileDevice;
 
   return <>
-    <Flex
-      direction="column"
+    <Grid
       gap={2}
+      templateAreas={`
+        "header"
+        "body"
+      `}
+      templateRows="auto 1fr"
+      templateColumns="1fr"
     >
       <Header />
       <Box
+        gridArea="body"
         p={4}
       >
         <Grid
@@ -241,7 +247,7 @@ export default function HomePage() {
           </SimpleGrid>
         </Flex>
       </Box>
-    </Flex>
+    </Grid>
     {
       isMobileDevice && <Drawer
         isOpen={isOpenFilters}
