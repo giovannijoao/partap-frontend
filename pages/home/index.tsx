@@ -81,43 +81,41 @@ export default function HomePage() {
       <Box
         p={4}
       >
-        <Box mb={4}>
-          <Heading fontSize={"2xl"}>Imóveis que estou acompanhando</Heading>
-          <Grid
-            mt={2}
-            alignItems="center"
-            gridTemplateAreas={{
-              base: `
+        <Grid
+          alignItems="center"
+          gridTemplateAreas={{
+            base: `
+                "title title"
                 "search search"
                 "add filters"
               `,
-              md: `
-                "search add"
+            md: `
+                "title add"
               `
-            }}
-            gridTemplateColumns={{
-              base: "2fr 1fr",
-              md: "repeat(2, 1fr)"
-            }}
-            gap={2}
-          >
-            <Box gridArea="search">
-              <InputGroup >
-                <InputLeftElement
-                  pointerEvents='none'
-                >
-                  <SearchIcon color='gray.300' />
-                </InputLeftElement>
-                <Input w={{
-                  base: 'full',
-                  md: "xs"
-                }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
-              </InputGroup>
-            </Box>
-            <Button ml={{ base: undefined, md: 'auto' }} onClick={onOpenAdd} gridArea="add">Adicionar</Button>
-            { isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button> }
-          </Grid>
-        </Box>
+          }}
+          gridTemplateColumns={{
+            base: "2fr 1fr",
+            md: "repeat(2, 1fr)"
+          }}
+          gap={2}
+        >
+          <Heading fontSize={"2xl"} gridArea="title">Imóveis que estou acompanhando</Heading>
+          <Box gridArea="search">
+            {isMobileDevice && <InputGroup >
+              <InputLeftElement
+                pointerEvents='none'
+              >
+                <SearchIcon color='gray.300' />
+              </InputLeftElement>
+              <Input w={{
+                base: 'full',
+                md: "xs"
+              }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+            </InputGroup>}
+          </Box>
+          <Button ml={{ base: undefined, md: 'auto' }} onClick={onOpenAdd} gridArea="add">Adicionar</Button>
+          {isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button>}
+        </Grid>
         <Flex
           gap={4}
           direction={{
@@ -125,7 +123,34 @@ export default function HomePage() {
             md: 'row'
           }}
         >
-          {isDesktop && <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} /> }
+          {isDesktop && <Flex
+            direction="column"
+            position="sticky"
+            top={4}
+            alignSelf="flex-start"
+            w={{
+              base: '100%',
+              md: '30%'
+            }}
+            maxW={{
+              base: undefined,
+              md: "fit-content"
+            }}
+          >
+            <InputGroup mb={2}>
+              <InputLeftElement
+                pointerEvents='none'
+              >
+                <SearchIcon color='gray.300' />
+              </InputLeftElement>
+              <Input w={{
+                base: 'full',
+                md: "xs"
+              }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+            </InputGroup>
+            <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
+          </Flex>
+          }
           <SimpleGrid
             flex={2}
             columns={{
@@ -169,10 +194,10 @@ export default function HomePage() {
                   {item.images && item.images[0] && <Box width="100%" height="3xs" position="relative">
                     <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />
                     <Flex position="absolute" bottom={1} left={1} gap={1}>
-                      { item.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
+                      {item.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
                         <TagLeftIcon boxSize='12px' as={FaTrain} />
                         <TagLabel>Metro próx.</TagLabel>
-                      </Tag> }
+                      </Tag>}
                       {item.information.isFurnished && <Tag size={"md"} variant='subtle' colorScheme='orange' >
                         <TagLeftIcon boxSize='12px' as={FaCouch} />
                         <TagLabel>Mobiliado</TagLabel>
@@ -272,7 +297,7 @@ const Filters = forwardRef(({
     isBoth?: boolean
     keywords?: string
   })
-  const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isRent')
+  const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isBoth')
 
   const [minValue, setMinValue] = useState<number | undefined>();
   const [maxValue, setMaxValue] = useState<number | undefined>();
@@ -421,6 +446,7 @@ const Filters = forwardRef(({
       isAvailable: f.isAvailable,
       isSell: f.isSell,
       isRent: f.isRent,
+      isBoth: f.isBoth,
     }))
     setMinValue(0)
     setMaxValue(0)
@@ -436,14 +462,6 @@ const Filters = forwardRef(({
 
   return <Flex
     flex={1}
-    w={{
-      base: '100%',
-      md: '30%'
-    }}
-    maxW={{
-      base: undefined,
-      md: "fit-content"
-    }}
     direction={"column"}
     gap={2}
   >
