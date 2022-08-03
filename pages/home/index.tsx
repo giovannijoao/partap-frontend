@@ -171,6 +171,7 @@ export default function HomePage() {
                 boxShadow='base'
                 borderRadius="sm"
                 p={4}
+                h="fit-content"
               >
                 <Heading fontSize={"md"}>Parece que não temos nada por aqui...</Heading>
                 <Text>Adicione uma nova propriedade</Text>
