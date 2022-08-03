@@ -114,7 +114,7 @@ export default function HomePage() {
               <Input w={{
                 base: 'full',
                 md: "xs"
-              }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+              }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
             </InputGroup>}
           </Box>
           <Button ml={{ base: undefined, md: 'auto' }} onClick={onOpenAdd} gridArea="add">Adicionar</Button>
