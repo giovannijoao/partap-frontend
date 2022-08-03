@@ -82,6 +82,10 @@ export default function HomePage() {
         p={4}
       >
         <Grid
+          mb={{
+            base: 2,
+            md: 0
+          }}
           alignItems="center"
           gridTemplateAreas={{
             base: `
