@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
+import { Badge, Box, Button, Center, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
 import { AddIcon, DeleteIcon, InfoOutlineIcon, SearchIcon } from "@chakra-ui/icons";
@@ -9,7 +9,7 @@ import useUser from "../../lib/useUser";
 import useProperties from "../../lib/useProperties";
 import useProperty from "../../lib/useProperty";
 import usePropertyExtractor from "../../lib/usePropertyExtractor";
-import { FaCouch, FaTrain } from "react-icons/fa";
+import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 export default function HomePage() {
@@ -196,7 +196,7 @@ export default function HomePage() {
                   onClick={() => router.push(`/property/${item._id}`)}
                   onMouseEnter={() => mutateProperty(item._id)}
                 >
-                  {item.images && item.images[0] && <Box width="100%" height="3xs" position="relative">
+                  {item.images && item.images[0] ? <Box width="100%" height="3xs" position="relative">
                     <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />
                     <Flex position="absolute" bottom={1} left={1} gap={1}>
                       {item.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
@@ -208,7 +208,10 @@ export default function HomePage() {
                         <TagLabel>Mobiliado</TagLabel>
                       </Tag>}
                     </Flex>
-                  </Box>}
+                  </Box> : <Center width="100%" height="3xs" flexDirection="column" gap={2}>
+                    <Icon as={FaHome} h={16} w={16} />
+                    <Text>Sem imagem</Text>
+                  </Center>}
                   <Flex p={2}
                     direction="column"
                     grow="1">
