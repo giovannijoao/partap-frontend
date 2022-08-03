@@ -9,8 +9,7 @@ import useUser from "../../lib/useUser";
 import useProperties from "../../lib/useProperties";
 import useProperty from "../../lib/useProperty";
 import usePropertyExtractor from "../../lib/usePropertyExtractor";
-
-
+import { FaCouch, FaTrain } from "react-icons/fa";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 export default function HomePage() {
@@ -132,7 +131,7 @@ export default function HomePage() {
             columns={{
               base: 1,
               sm: 2,
-              md: 4,
+              md: 3,
             }}
             gap={4}
           >
@@ -167,7 +166,19 @@ export default function HomePage() {
                   onClick={() => router.push(`/property/${item._id}`)}
                   onMouseEnter={() => mutateProperty(item._id)}
                 >
-                  {item.images && item.images[0] && <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />}
+                  {item.images && item.images[0] && <Box width="100%" height="3xs" position="relative">
+                    <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />
+                    <Flex position="absolute" bottom={1} left={1} gap={1}>
+                      { item.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
+                        <TagLeftIcon boxSize='12px' as={FaTrain} />
+                        <TagLabel>Metro próx.</TagLabel>
+                      </Tag> }
+                      {item.information.isFurnished && <Tag size={"md"} variant='subtle' colorScheme='orange' >
+                        <TagLeftIcon boxSize='12px' as={FaCouch} />
+                        <TagLabel>Mobiliado</TagLabel>
+                      </Tag>}
+                    </Flex>
+                  </Box>}
                   <Flex p={2}
                     direction="column"
                     grow="1">
