@@ -1,12 +1,14 @@
 import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
-import { Box, Button, Container, Divider, Flex, Grid, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Text, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FaHospital, FaSchool, FaStore } from "react-icons/fa";
 import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
 import SendIconSVG from "../../components/js-icons/Send";
 import ShareIconSVG from "../../components/js-icons/Share";
+import useNearbyData from "../../lib/useNearby";
 import useProperty from "../../lib/useProperty";
 import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
@@ -188,11 +190,11 @@ export default function PropertyPage() {
             base: `
               "info"
               "sidePanel"
-              "chat"
+              "more"
             `,
             md: `
               "info sidePanel"
-              "chat sidePanel"
+              "more sidePanel"
             `
           }}
           gridTemplateColumns={{
@@ -233,7 +235,21 @@ export default function PropertyPage() {
               {property.information.description}
             </Box>
           </Box>
-          <Chat gridArea="chat" property={property} />
+          <Tabs gridArea="more">
+            <TabList>
+              <Tab>Chat</Tab>
+              <Tab>Por perto</Tab>
+            </TabList>
+
+            <TabPanels>
+              <TabPanel>
+                <Chat gridArea="chat" property={property} />
+              </TabPanel>
+              <TabPanel>
+                <Nearby propertyId={propertyId} token={token} />
+                </TabPanel>
+            </TabPanels>
+          </Tabs>
           <Flex gridArea="sidePanel" maxW={{
           }} flex={1} direction="column" gap={2}>
             {costsElements}
@@ -257,6 +273,83 @@ export default function PropertyPage() {
     {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
     {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
+}
+
+const formatter = new Intl.ListFormat('pt', {
+  style: 'long',
+  type: 'conjunction'
+});
+
+function Nearby({
+  propertyId,
+  token,
+}) {
+  const { nearbyData } = useNearbyData({
+    propertyId,
+    token,
+  })
+  const nearbyPlaces = useMemo(() => [{
+    placeId: 'hospital',
+    icon: FaHospital,
+    text: 'Hospitais'
+  }, {
+    placeId: 'school',
+      icon: FaSchool,
+      text: 'Escolas'
+    }, {
+    placeId: 'drugstore',
+      icon: FaStore,
+      text: 'Drogarias'
+  }].map(place => {
+    const list = nearbyData?.places
+      .filter((p) => p.types.includes(place.placeId))
+      .filter((_, i) => i < 3)
+    if (list?.length === 0) return <></>
+    return <Box
+      flex={1}
+      key={place.placeId}
+      p={4}
+      boxShadow="xs"
+    >
+      <Flex alignItems="center" gap={2}>
+        <Icon as={place.icon} w={8} h={8} />
+        <Heading fontSize="lg">{place.text}</Heading>
+      </Flex>
+      <Accordion mt={2} allowMultiple>
+        {list?.map(item => {
+          return <AccordionItem key={item.place_id}>
+            <h2>
+              <AccordionButton>
+                <Box flex='1' textAlign='left'>
+                  {item.name}
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel pb={4}>
+              {item.address}
+            </AccordionPanel>
+          </AccordionItem>
+        })}
+      </Accordion>
+    </Box>
+  }), [nearbyData])
+
+  return <Box gridArea="nearby" p={4} borderRadius="md" boxShadow='md'>
+    {
+      !nearbyData && <Center h="full" w="full">
+        <CircularProgress isIndeterminate color='green.300' />
+      </Center>
+    }
+    {
+      nearbyData && <Flex gap={2} direction={{
+        base: 'column',
+        md: 'row'
+      }}>
+        {nearbyPlaces}
+      </Flex>
+    }
+  </Box>
 }
 
 function Chat({
@@ -297,7 +390,7 @@ function Chat({
         md: "80%",
         lg: "70%"
       }}
-      h="fit-content"
+      h='fit-content'
       border="1px"
       borderColor="gray.300"
       borderRadius="lg"
@@ -323,8 +416,7 @@ function Chat({
     </Box>
   }), [property?.messages, user?.id])
 
-  return <Box mt={4} gridArea={gridArea}>
-    <Heading fontSize="lg">Chat do imóvel</Heading>
+  return <Flex gridArea={gridArea} h="full" minH="lg" direction="column">
     <Flex
       direction="column"
       mt={2}
@@ -334,8 +426,9 @@ function Chat({
       w={{
         base: "full",
       }}
-      h="sm"
-      >
+      h="full"
+      flex={1}
+    >
       <Flex
         direction="column"
         p={4}
@@ -351,7 +444,7 @@ function Chat({
         <IconButton isLoading={isLoading} aria-label="Enviar mensagem" icon={<SendIconSVG />} type="submit" />
       </Flex>
     </Flex>
-  </Box>
+  </Flex>
 }
 
 function ShareModal({
