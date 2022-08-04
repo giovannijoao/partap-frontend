@@ -10,6 +10,7 @@ import useProperties from "../../lib/useProperties";
 import useProperty from "../../lib/useProperty";
 import usePropertyExtractor from "../../lib/usePropertyExtractor";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
+import AddPropertyModal from "../../components/AddPropertyModal";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 export default function HomePage() {
@@ -28,7 +29,7 @@ export default function HomePage() {
   } as any);
 
   const [importUrl, setImportUrl] = useState("");
-  const { isOpen: isAddOpen, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
+  const { isOpen: isOpenAdd, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
   const { isOpen: isOpenFilters, onOpen: onOpenFilters, onClose: onCloseFilters } = useDisclosure()
   const { properties, mutateProperties } = useProperties({
     filters,
@@ -123,7 +124,7 @@ export default function HomePage() {
               }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
             </InputGroup>}
           </Box>
-          <Button ml={{ base: undefined, md: 'auto' }} onClick={onOpenAdd} gridArea="add">Adicionar</Button>
+          <Button ml={{ base: undefined, md: 'auto' }} onClick={() => router.push('/new')} gridArea="add">Adicionar</Button>
           {isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button>}
         </Grid>
         <Flex
@@ -271,23 +272,6 @@ export default function HomePage() {
         </DrawerContent>
       </Drawer>
     }
-    <Modal isOpen={isAddOpen} onClose={onCloseAdd}>
-      <ModalOverlay />
-      <ModalContent mx={2}>
-        <ModalHeader>Adicionar uma propriedade</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody display="flex" flexDirection="column">
-          <FormControl>
-            <FormLabel textAlign="center">Importe a partir de uma URL ou<br />crie manualmente o imóvel</FormLabel>
-            <Input placeholder='Importar de site' onChange={e => setImportUrl(e.target.value)} />
-          </FormControl>
-          <Button colorScheme='blue' mr="auto" mx="auto" mt={2} onClick={handleImport}>
-            Importar
-          </Button>
-          <Link href="/new" textAlign={"center"}>Criar manualmente</Link>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
   </>
 }
 
