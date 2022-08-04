@@ -84,8 +84,8 @@ export default function NewV2() {
       modo: 'aluguel',
       address: '',
       information: {
-        bedrooms: '',
-        bathrooms: '',
+        bedrooms: null,
+        bathrooms: null,
         parkingSlots: 0,
         nearSubway: false,
         isFurnished: false,
