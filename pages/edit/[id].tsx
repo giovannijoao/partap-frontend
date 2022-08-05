@@ -410,10 +410,10 @@ export default function NewV2() {
                       </Wrap>
                     </Flex>
                   </Flex>
-                  <Button mt={2} colorScheme={"green"} type="submit">Salvar</Button>
+                  <Button mt={2} colorScheme={"green"} type="submit"isLoading={isLoading} >Salvar</Button>
                   <Flex gap={2}>
-                    <Button flex={1} mt={2} onClick={() => dispatchStep({ next: 'options' })}>Voltar</Button>
-                    <Button flex={1} mt={2} colorScheme="purple" variant="outline" onClick={() => dispatchStep({ next: 'photos' })}>Editar fotos</Button>
+                    <Button isDisabled={isLoading} flex={1} mt={2} onClick={() => dispatchStep({ next: 'options' })}>Voltar</Button>
+                    <Button isDisabled={isLoading} flex={1} mt={2} colorScheme="purple" variant="outline" onClick={() => dispatchStep({ next: 'photos' })}>Editar fotos</Button>
                   </Flex>
                 </Flex>
               </Flex>
