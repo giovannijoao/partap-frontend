@@ -231,7 +231,7 @@ export default function HomePage() {
                         </Flex>
                         <Flex direction="column" flex={1} alignItems="end">
                           {['isBoth', 'isRent'].includes(filtersRef.current?.selectedVisualizationMode) && item.isRent && item.costs.totalCost?.isPresent &&
-                            <Text fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost.formatted}</Text>
+                            <Text fontWeight="bold" color="green" fontSize={"xs"}>Total Aluguel {item.costs.totalCost.formatted}</Text>
                           }
                           {['isBoth', 'isSell'].includes(filtersRef.current?.selectedVisualizationMode) && item.isSell && item.costs.sellPrice?.isPresent &&
                             <Text fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
