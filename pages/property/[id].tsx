@@ -49,7 +49,7 @@ const displayInfo: DisplayInfo[] = [{
 }, {
   key: 'parkingSlots',
   icon: '/bxs_car-garage.svg',
-  value: property => `${property?.information.parkingSlots} vagas${property?.information.parkingSlots > 1 ? 's' : ''}`,
+  value: property => `${property?.information.parkingSlots} vaga${property?.information.parkingSlots > 1 ? 's' : ''}`,
   filter: property => !!property?.information.parkingSlots,
 }, {
   key: 'acceptPets',
