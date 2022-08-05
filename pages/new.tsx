@@ -171,7 +171,6 @@ export default function NewV2() {
   }, [trigger])
 
   const formValues = getValues();
-  console.log(170, errors)
   return <>
     <Grid
       gap={2}
@@ -451,16 +450,23 @@ export default function NewV2() {
                     }
                   </Center>
                 </Flex>
-                <Flex maxW="100%" overflow="auto" gap={2} p={2}>
+                <Flex
+                  maxW="100%"
+                  h="2xs"
+                  gap={2}
+                  p={2}
+                  overflowX="scroll"
+                  scrollSnapType={"x mandatory"}
+                  scrollPadding={4}
+                >
                   {images.map(image => {
                     return <Image
                       key={image.url}
                       alt={image.description || 'Imagem'}
                       src={image.url}
-                      h="2xs"
-                      w="2xs"
                       boxShadow="md"
                       borderRadius="md"
+                      scrollSnapAlign={"start"}
                     />
                   })}
                 </Flex>

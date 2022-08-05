@@ -178,10 +178,21 @@ export default function PropertyPage() {
           <Heading fontSize={"2xl"}>{property.address}</Heading>
         </Flex>
         <Flex
-          gap={1}
-          overflowX="auto"
+          gap={2}
+          p={2}
+          overflowX="scroll"
+          scrollSnapType={"x mandatory"}
+          scrollPadding={4}
         >
-          {property.images.map((image, i) => <Image maxH={"sm"} key={image.url} src={image.url} alt={image.description} />)}
+          {property.images.map((image, i) => <Image
+            key={image.url}
+            maxH={"sm"}
+            src={image.url}
+            alt={image.description}
+            boxShadow="md"
+            borderRadius="md"
+            scrollSnapAlign={"start"}
+          />)}
         </Flex>
         <Grid
           my={4}
@@ -274,11 +285,6 @@ export default function PropertyPage() {
     {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
-
-const formatter = new Intl.ListFormat('pt', {
-  style: 'long',
-  type: 'conjunction'
-});
 
 function Nearby({
   propertyId,
