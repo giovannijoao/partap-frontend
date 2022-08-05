@@ -177,7 +177,7 @@ export default function PropertyPage() {
           <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
           <Heading fontSize={"2xl"}>{property.address}</Heading>
         </Flex>
-        <Flex
+        {property.images.length > 0 && <Flex
           gap={2}
           p={2}
           overflowX="scroll"
@@ -193,7 +193,7 @@ export default function PropertyPage() {
             borderRadius="md"
             scrollSnapAlign={"start"}
           />)}
-        </Flex>
+        </Flex>}
         <Grid
           my={4}
           gap={6}
