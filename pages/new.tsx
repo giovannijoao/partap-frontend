@@ -131,12 +131,17 @@ export default function NewV2() {
   }, [importUrl, reset, user?.token])
 
   const handleSubmit = useCallback(async (values) => {
+    const totalCost = allCostsTypes.filter(cost => !['sellPrice'].includes(cost.name)).reduce((a, c) => a + (values.costs && values.costs[c.name] || 0), 0);
     const newValues = {
       ...values,
+      provider: values.provider || "own",
       images,
-      provider: values.provider || 'own',
       isSell: ['compra', 'both'].includes(values.modo),
-      isRent: ['aluguel', 'both'].includes(values.modo)
+      isRent: ['aluguel', 'both'].includes(values.modo),
+      costs: {
+        ...values.costs,
+        totalCost,
+      }
     }
     setIsLoading(true)
     try {

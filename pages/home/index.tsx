@@ -66,6 +66,7 @@ export default function HomePage() {
 
   const isDesktop = !isMobileDevice;
 
+  console.log(69, filtersRef.current)
   return <>
     <Grid
       gap={2}
@@ -186,7 +187,6 @@ export default function HomePage() {
               items?.map(item => {
                 return <Box
                   w={"100%"}
-                  h="xs"
                   boxShadow='lg'
                   borderRadius="sm"
                   key={item._id}
@@ -216,23 +216,29 @@ export default function HomePage() {
                     direction="column"
                     grow="1">
                     <Heading fontSize="md" flex="1" flexGrow="1">{item.address}</Heading>
-                    <Wrap mt={1}>
-                      {item.information.totalArea && <WrapItem>
-                        <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
-                      </WrapItem>}
-                      {item.information.bedrooms && <WrapItem>
-                        <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
-                      </WrapItem>}
-                      {!item.isAvailable && <WrapItem>
-                        <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
-                      </WrapItem>}
-                      {item.isRent && item.costs.totalCost?.isPresent && <WrapItem flexGrow="1" >
-                        <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost.formatted}</Text>
-                      </WrapItem>}
-                      {item.isSell && !item.isRent && item.costs.sellPrice?.isPresent && <WrapItem flexGrow="1" >
-                        <Text width={"100%"} textAlign={"right"} fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
-                      </WrapItem>}
-                    </Wrap>
+                    <Flex direction="column" gap={2}>
+                      <Flex mt={1} alignItems="center">
+                        <Flex>
+                          {item.information.totalArea &&
+                            <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
+                          }
+                          {item.information.bedrooms &&
+                            <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
+                          }
+                          {!item.isAvailable &&
+                            <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
+                          }
+                        </Flex>
+                        <Flex direction="column" flex={1} alignItems="end">
+                          {['isBoth', 'isRent'].includes(filtersRef.current?.selectedVisualizationMode) && item.isRent && item.costs.totalCost?.isPresent &&
+                            <Text fontWeight="bold" color="green" fontSize={"xs"}>Total {item.costs.totalCost.formatted}</Text>
+                          }
+                          {['isBoth', 'isSell'].includes(filtersRef.current?.selectedVisualizationMode) && item.isSell && item.costs.sellPrice?.isPresent &&
+                            <Text fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
+                          }
+                        </Flex>
+                      </Flex>
+                    </Flex>
                   </Flex>
 
                 </Box>
@@ -340,6 +346,8 @@ const Filters = forwardRef(({
     filters.isFurnished
     , [filters.isFurnished, filters.isNearSubway, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
 
+  const selectedVisualizationMode = useMemo(() => modoVisualizacao, [modoVisualizacao])
+
   const mainOptions = useMemo(() => [{
     name: 'bedrooms',
     text: 'Quartos',
@@ -445,6 +453,7 @@ const Filters = forwardRef(({
 
   // Used by parent element
   useImperativeHandle(ref, () => ({
+    selectedVisualizationMode,
     isFiltersApplied,
     cleanFilters() {
       handleCleanFilters()
