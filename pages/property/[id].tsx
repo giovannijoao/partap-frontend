@@ -97,6 +97,7 @@ export default function PropertyPage() {
   const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
   const descriptionRef = useRef<any>();
+  const imagesRef = useRef<HTMLDivElement | undefined>();
 
   const propertyId = query.id as string;
   const token = query.token as string;
@@ -117,6 +118,15 @@ export default function PropertyPage() {
       descriptionRef.current.style.height = `${descriptionRef.current.scrollHeight + 5}px`
     }
   }, [descriptionRef])
+
+  useEffect(() => {
+    if (imagesRef.current) {
+      imagesRef.current.scrollTo({
+        left: 0,
+        behavior: 'smooth'
+      })
+    }
+  }, [property.images, imagesRef])
 
 
   const displayInformationGroups = useMemo(() => displayInfo.filter(d => d.filter(property)).map(d => {
@@ -186,6 +196,7 @@ export default function PropertyPage() {
           <Heading fontSize={"2xl"}>{property.address}</Heading>
         </Flex>
         {property.images.length > 0 && <Flex
+          ref={imagesRef}
           gap={2}
           p={2}
           overflowX="scroll"
