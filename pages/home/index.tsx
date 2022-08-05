@@ -187,6 +187,7 @@ export default function HomePage() {
               items?.map(item => {
                 return <Box
                   w={"100%"}
+                  maxH="xs"
                   boxShadow='lg'
                   borderRadius="sm"
                   key={item._id}
