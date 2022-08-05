@@ -20,12 +20,12 @@ export default function HomePage() {
     redirectTo: '/login',
   })
   const { mutateProperty } = useProperty();
-  const { mutatePropertyExtractor } = usePropertyExtractor()
   const filtersRef = useRef(null);
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
   const [filters, setFilters] = useState({
-    address: ""
+    address: "",
+    isAvailable: [true],
   } as any);
 
   const { isOpen: isOpenFilters, onOpen: onOpenFilters, onClose: onCloseFilters } = useDisclosure()
@@ -66,7 +66,68 @@ export default function HomePage() {
 
   const isDesktop = !isMobileDevice;
 
-  console.log(69, filtersRef.current)
+  const itemsElements = useMemo(() => {
+    return items?.map(item => {
+      return <Box
+        w={"100%"}
+        maxH="xs"
+        boxShadow='lg'
+        borderRadius="sm"
+        key={item._id}
+        display="flex"
+        flexDirection="column"
+        cursor={"pointer"}
+        onClick={() => router.push(`/property/${item._id}`)}
+        onMouseEnter={() => mutateProperty(item._id)}
+      >
+        {item.images && item.images[0] ? <Box width="100%" height="3xs" position="relative">
+          <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />
+          <Flex position="absolute" bottom={1} left={1} gap={1}>
+            {item.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
+              <TagLeftIcon boxSize='12px' as={FaTrain} />
+              <TagLabel>Metro próx.</TagLabel>
+            </Tag>}
+            {item.information.isFurnished && <Tag size={"md"} variant='subtle' colorScheme='orange' >
+              <TagLeftIcon boxSize='12px' as={FaCouch} />
+              <TagLabel>Mobiliado</TagLabel>
+            </Tag>}
+          </Flex>
+        </Box> : <Center width="100%" height="3xs" flexDirection="column" gap={2}>
+          <Icon as={FaHome} h={16} w={16} />
+          <Text>Sem imagem</Text>
+        </Center>}
+        <Flex p={2}
+          direction="column"
+          grow="1">
+          <Heading fontSize="md" flex="1" flexGrow="1">{item.address}</Heading>
+          <Flex direction="column" gap={2}>
+            <Flex mt={1} alignItems="center">
+              <Flex>
+                {item.information.totalArea &&
+                  <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
+                }
+                {item.information.bedrooms &&
+                  <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
+                }
+                {!item.isAvailable &&
+                  <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
+                }
+              </Flex>
+              <Flex direction="column" flex={1} alignItems="end">
+                {['isBoth', 'isRent'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isRent && item.costs.totalCost?.isPresent &&
+                  <Text fontWeight="bold" color="green" fontSize={"xs"}>Total Aluguel {item.costs.totalCost.formatted}</Text>
+                }
+                {['isBoth', 'isSell'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isSell && item.costs.sellPrice?.isPresent &&
+                  <Text fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
+                }
+              </Flex>
+            </Flex>
+          </Flex>
+        </Flex>
+
+      </Box>
+    })
+  }, [items, mutateProperty, router])
   return <>
     <Grid
       gap={2}
@@ -184,66 +245,7 @@ export default function HomePage() {
               </Flex>
             }
             {
-              items?.map(item => {
-                return <Box
-                  w={"100%"}
-                  maxH="xs"
-                  boxShadow='lg'
-                  borderRadius="sm"
-                  key={item._id}
-                  display="flex"
-                  flexDirection="column"
-                  cursor={"pointer"}
-                  onClick={() => router.push(`/property/${item._id}`)}
-                  onMouseEnter={() => mutateProperty(item._id)}
-                >
-                  {item.images && item.images[0] ? <Box width="100%" height="3xs" position="relative">
-                    <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />
-                    <Flex position="absolute" bottom={1} left={1} gap={1}>
-                      {item.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
-                        <TagLeftIcon boxSize='12px' as={FaTrain} />
-                        <TagLabel>Metro próx.</TagLabel>
-                      </Tag>}
-                      {item.information.isFurnished && <Tag size={"md"} variant='subtle' colorScheme='orange' >
-                        <TagLeftIcon boxSize='12px' as={FaCouch} />
-                        <TagLabel>Mobiliado</TagLabel>
-                      </Tag>}
-                    </Flex>
-                  </Box> : <Center width="100%" height="3xs" flexDirection="column" gap={2}>
-                    <Icon as={FaHome} h={16} w={16} />
-                    <Text>Sem imagem</Text>
-                  </Center>}
-                  <Flex p={2}
-                    direction="column"
-                    grow="1">
-                    <Heading fontSize="md" flex="1" flexGrow="1">{item.address}</Heading>
-                    <Flex direction="column" gap={2}>
-                      <Flex mt={1} alignItems="center">
-                        <Flex>
-                          {item.information.totalArea &&
-                            <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
-                          }
-                          {item.information.bedrooms &&
-                            <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
-                          }
-                          {!item.isAvailable &&
-                            <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
-                          }
-                        </Flex>
-                        <Flex direction="column" flex={1} alignItems="end">
-                          {['isBoth', 'isRent'].includes(filtersRef.current?.selectedVisualizationMode) && item.isRent && item.costs.totalCost?.isPresent &&
-                            <Text fontWeight="bold" color="green" fontSize={"xs"}>Total Aluguel {item.costs.totalCost.formatted}</Text>
-                          }
-                          {['isBoth', 'isSell'].includes(filtersRef.current?.selectedVisualizationMode) && item.isSell && item.costs.sellPrice?.isPresent &&
-                            <Text fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
-                          }
-                        </Flex>
-                      </Flex>
-                    </Flex>
-                  </Flex>
-
-                </Box>
-              })
+              itemsElements
             }
           </SimpleGrid>
         </Flex>
@@ -281,6 +283,9 @@ const Filters = forwardRef(({
 }, ref) => {
   const [filters, setFilters] = useState({
     isAvailable: [true],
+    isSell: undefined,
+    isRent: undefined,
+    isBoth: true
   } as {
     isAvailable?: boolean[]
     minBedrooms?: number
@@ -301,12 +306,9 @@ const Filters = forwardRef(({
   const [maxValue, setMaxValue] = useState<number | undefined>();
   const [keywords, setKeywords] = useState('');
 
-  useEffect(() => {
-    mutateProperties(filters)
-    onChangeFilters(filters)
-  }, [mutateProperties, onChangeFilters, filters])
 
   useEffect(() => {
+    if (!minValue && !maxValue) return;
     let timeout = setTimeout(() => {
       setFilters(s => ({ ...s, minValue, maxValue, keywords: keywords.trim() !== '' ? keywords : undefined }))
     }, 1000)
@@ -346,6 +348,12 @@ const Filters = forwardRef(({
     filters.isNearSubway ||
     filters.isFurnished
     , [filters.isFurnished, filters.isNearSubway, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
+
+  useEffect(() => {
+    mutateProperties(filters)
+    onChangeFilters(filters)
+  }, [mutateProperties, onChangeFilters, filters])
+
 
   const selectedVisualizationMode = useMemo(() => modoVisualizacao, [modoVisualizacao])
 
