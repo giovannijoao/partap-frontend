@@ -82,10 +82,10 @@ const allCostsTypes = [{
   "text": "Compra"
 }, {
   "name": "totalCost",
-  "text": "Total",
+  "text": (property: IPropertySaved) => property.modo === "both" ? "Total Aluguel" : "Total",
   "bgColor": "linear-gradient(to-r, pink.400, pink.600)",
   "fontColor": "white",
-  "filter": (property: IPropertySaved) => property.modo === "aluguel"
+  "filter": (property: IPropertySaved) => ['both', 'aluguel'].includes(property.modo)
 }]
 
 export default function PropertyPage() {
@@ -133,7 +133,7 @@ export default function PropertyPage() {
         behavior: 'smooth'
       })
     }
-  }, [property.images, imagesRef])
+  }, [property?.images, imagesRef])
 
 
   const displayInformationGroups = useMemo(() => displayInfo.filter(d => d.filter(property)).map(d => {
@@ -160,7 +160,7 @@ export default function PropertyPage() {
         color={costType.fontColor || "black"}
       >
         <MoneyIconSVG fill={costType.fontColor} />
-        <Text fontWeight={"semibold"} flex={1}>{costType.text}</Text>
+        <Text fontWeight={"semibold"} flex={1}>{typeof costType.text === "function" ? costType.text(property) : costType.text}</Text>
         <Text
           color={costType.fontColor || "purple.500"}
           fontWeight={"bold"}

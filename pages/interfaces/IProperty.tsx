@@ -3,7 +3,7 @@ export interface IProperty {
   address: string;
   isRent: boolean;
   isSell: boolean;
-  modo?: 'aluguel' | 'compra';
+  modo?: 'aluguel' | 'compra' | 'both';
   information: {
     bedrooms: number;
     parkingSlots: number;
