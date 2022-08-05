@@ -28,8 +28,6 @@ export default function HomePage() {
     address: ""
   } as any);
 
-  const [importUrl, setImportUrl] = useState("");
-  const { isOpen: isOpenAdd, onOpen: onOpenAdd, onClose: onCloseAdd } = useDisclosure()
   const { isOpen: isOpenFilters, onOpen: onOpenFilters, onClose: onCloseFilters } = useDisclosure()
   const { properties, mutateProperties } = useProperties({
     filters,
@@ -43,11 +41,6 @@ export default function HomePage() {
     })), 500)
     return () => clearTimeout(timeout)
   }, [addressFieldValue])
-
-  const handleImport = useCallback(async () => {
-    mutatePropertyExtractor(importUrl);
-    router.push(`/new?url=${importUrl}`)
-  }, [mutatePropertyExtractor, importUrl, router])
 
   useEffect(() => {
     router.prefetch('/new')
@@ -182,7 +175,7 @@ export default function HomePage() {
               >
                 <Heading fontSize={"md"}>Parece que não temos nada por aqui...</Heading>
                 <Text>Adicione uma nova propriedade</Text>
-                <Button onClick={onOpenAdd}>Adicionar</Button>
+                <Button onClick={() => router.push('/new')}>Adicionar</Button>
                 {filtersRef.current?.isFiltersApplied && <>
                   <Text>Ou remova os filtros</Text>
                   <Button size="sm" onClick={filtersRef.current.cleanFilters}>Remover filtros</Button>
