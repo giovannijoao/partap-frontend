@@ -21,6 +21,10 @@ const allCostsTypes = [{
   availableIn: ['aluguel', 'both'],
   isRequired: true,
 }, {
+  "name": "sellPrice",
+  "text": "Compra",
+  availableIn: ['compra', 'both']
+}, {
   "name": "condominiumValue",
   "text": "Condomínio",
   availableIn: ['aluguel', 'compra', 'both'],
@@ -30,10 +34,6 @@ const allCostsTypes = [{
   "text": "IPTU",
   availableIn: ['aluguel', 'compra', 'both'],
   isRequired: false,
-}, {
-  "name": "sellPrice",
-  "text": "Compra",
-  availableIn: ['compra', 'both']
 }]
 
 type IImage = {
@@ -129,6 +129,7 @@ export default function NewV2() {
     const newValues = {
       ...values,
       images,
+      provider: values.provider || 'own',
       isSell: ['compra', 'both'].includes(values.modo),
       isRent: ['aluguel', 'both'].includes(values.modo)
     }

@@ -1,385 +1,455 @@
-import { Box, Button, Flex, FormControl, FormLabel, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Menu, MenuButton, MenuItem, MenuList, Select, SimpleGrid, Spinner, Text, Textarea, Wrap } from "@chakra-ui/react";
+import { AttachmentIcon, ExternalLinkIcon } from "@chakra-ui/icons";
+import { Box, Button, Center, Flex, FormControl, FormErrorMessage, Grid, Heading, Icon, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Text, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { ApiInstance } from "../../services/api";
-import { CustomSelectField } from "./styles";
-import useSWRImmutable from 'swr/immutable';
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { AttachmentIcon, ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon } from "@chakra-ui/icons";
-import { IProperty } from "../interfaces/IProperty";
-import { AxiosResponse } from "axios";
-import Header from "../../components/Header";
+import { useForm } from "react-hook-form";
+import { FaBed, FaCamera, FaCar, FaClock, FaCouch, FaDog, FaDollarSign, FaHome, FaInfo, FaRuler, FaShower, FaSubway } from "react-icons/fa";
 import useProperty from "../../lib/useProperty";
-import usePropertyExtractor from "../../lib/usePropertyExtractor";
+import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
+import { ApiInstance } from "../../services/api";
+
+const formSteps = [
+  'options',
+  'form',
+  'photos'
+]
+
+const allCostsTypes = [{
+  "name": "rentValue",
+  "text": "Aluguel",
+  availableIn: ['aluguel', 'both'],
+  isRequired: true,
+}, {
+  "name": "sellPrice",
+  "text": "Compra",
+  availableIn: ['compra', 'both']
+}, {
+  "name": "condominiumValue",
+  "text": "Condomínio",
+  availableIn: ['aluguel', 'compra', 'both'],
+  isRequired: false,
+}, {
+  "name": "iptuValue",
+  "text": "IPTU",
+  availableIn: ['aluguel', 'compra', 'both'],
+  isRequired: false,
+}]
 
 type IImage = {
   url: string,
   description?: string
 }
-type ICostType = {
-  name: string;
-  text: string;
-  isPresent?: boolean;
-}
 
-const allCostsTypes = [{
-  "name": "rentValue",
-  "text": "Aluguel"
-}, {
-  "name": "condominiumValue",
-  "text": "Condomínio"
-}, {
-  "name": "iptuValue",
-  "text": "IPTU"
-}, {
-  "name": "sellPrice",
-  "text": "Compra"
-}]
-
-const ignoreCostsInTotalCost = ["sellPrice"];
-
-const selectFields = [
-  {
-    id: "information.nearSubway",
-    filter: property => property.nearSubway,
-    icon: "/ic_baseline-subway.svg",
-    text: "Metro próximo",
-    options: [{
-      text: "Sim",
-      value: "true"
-    }, {
-      text: "Não",
-      value: "false"
-    }],
-    defaultValue: "false",
-    setValueAs: v => v === "true",
-    isPresentByDefault: true,
-  },
-  {
-    id: "information.isFurnished",
-    filter: property => property.information.isFurnished,
-    icon: "/cil_sofa.svg",
-    text: "Mobiliado",
-    options: [{
-      text: "Sim",
-      value: "true"
-    }, {
-      text: "Não",
-      value: "false"
-    }],
-    defaultValue: "false",
-    setValueAs: v => v === "true",
-    isPresentByDefault: true,
-  },
-  {
-    id: "information.acceptPets",
-    filter: property => property.information.acceptPets,
-    icon: "/dashicons_pets.svg",
-    text: "Aceita pets",
-    options: [{
-      text: "Sim",
-      value: "true"
-    }, {
-      text: "Não",
-      value: "false"
-    }],
-    defaultValue: "false",
-    setValueAs: v => v === "true",
-    isPresentByDefault: true,
-  },
-]
-
-export default function EditPropertyPage() {
-  const { query, push } = useRouter()
+export default function NewV2() {
   const { user } = useUser({
-    redirectTo: "/login"
-  })
-
-  const propertyId = query.id as string;
+    redirectTo: '/login'
+  });
+  const router = useRouter()
+  const [importUrl, setImportUrl] = useState("");
+  const [step, dispatchStep] = useReducer((state, action) => {
+    let nextInd;
+    if (action === 'next') {
+      nextInd = formSteps.indexOf(state) + 1
+    } else if (action === "back") {
+      nextInd = formSteps.indexOf(state) - 1
+    } else if (action === "start") {
+      nextInd = 0;
+    } else if (action.next) {
+      nextInd = formSteps.indexOf(action.next)
+    }
+    return formSteps[nextInd]
+  }, 'options')
+  const [images, setImages] = useState<IImage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const propertyId = router.query.id as string;
   const { property, mutateProperty } = useProperty({
     propertyId,
   })
-
-  const [isPosting, setIsPosting] = useState(false);
-  const [images, setImages] = useState<IImage[]>([]);
-  const [selectedImage, setSelectedImage] = useState<number>();
-  const [costsTypes, setCostsTypes] = useState<ICostType[]>(allCostsTypes);
-  const { register, handleSubmit, reset, getValues: getFormValues, setValue: setFieldValue } = useForm({
-    defaultValues: property
+  const { register, handleSubmit: handleFormSubmit, reset, getValues, setValue, watch, trigger, formState: { errors } } = useForm<{
+    modo: string;
+    address: string;
+    information: {
+      bedrooms: number;
+      bathrooms: number;
+      parkingSlots: number;
+      nearSubway: boolean;
+      isFurnished: boolean;
+      acceptPets: boolean;
+      totalArea: number;
+    }
+    costs: {
+      rentValue: number
+      condominiumValue: number
+      iptuValue: number
+      sellPrice: number
+    }
+    [key: string]: any
+  }>({
+    defaultValues: {
+      modo: 'aluguel',
+      address: '',
+      information: {
+        bedrooms: null,
+        bathrooms: null,
+        parkingSlots: 0,
+        nearSubway: false,
+        isFurnished: false,
+        acceptPets: false,
+        totalArea: null,
+      },
+      costs: {
+        rentValue: null,
+        condominiumValue: null,
+        iptuValue: null,
+        sellPrice: null,
+      }
+    }
   })
-  const [selectedCustomFields, setSelectedCustomFields] = useState(selectFields.map(selectField => ({
-    ...selectField,
-    isPresent: selectField.isPresentByDefault || false,
-  })));
+  const modoSelecionado = watch('modo', 'aluguel');
 
   useEffect(() => {
-    const data = property;
-    if (data) {
-      reset(data);
-      setCostsTypes(allCostsTypes.map(field => {
-        let costs = data.costs || {};
-        const isPresent = costs[field.name] || costs[field.name] === 0
-        return {
-          ...field,
-          isPresent
-        }
-      }))
-      if (data.images) {
-        setImages(data.images)
-        setSelectedImage(0)
-      }
-      setSelectedCustomFields(selectFields.map(selectField => {
-        const isPresent = !!selectField.filter(property);
-        return {
-          ...selectField,
-          isPresent,
-        }
-      }))
-    }
-  }, [reset, property])
+    reset(property)
+    setImages(property.images)
+  }, [property, reset])
 
-  async function handleAdd(info: IProperty) {
-    const { modo, ...restInfo } = info;
-    const totalCost = allCostsTypes.filter(cost => !ignoreCostsInTotalCost.includes(cost.name)).reduce((a, c) => a + (info.costs && info.costs[c.name] || 0), 0);
-    const parsedInfo = {
-      ...restInfo,
-      isRent: modo === "aluguel",
-      isSell: modo === "compra",
-      costs: {
-        ...restInfo.costs,
-        totalCost
-      },
-      provider: restInfo.provider || "own",
+  const handleSubmit = useCallback(async (values) => {
+    const newValues = {
+      ...values,
+      provider: values.provider || "own",
       images,
-      user: restInfo.user._id,
+      isSell: ['compra', 'both'].includes(values.modo),
+      isRent: ['aluguel', 'both'].includes(values.modo)
     }
-    setIsPosting(true);
+    setIsLoading(true)
     try {
-      await ApiInstance.put(`/properties/${propertyId}`, parsedInfo, {
+      await ApiInstance.put(`/properties/${propertyId}`, newValues, {
         headers: {
-          Authorization: user.token
+          Authorization: user?.token
         }
       });
       mutateProperty(propertyId);
-      push(`/property/${propertyId}`);
+      router.replace('/property/'.concat(propertyId))
     } catch (error) {
       console.log("error")
     }
-    setIsPosting(false)
-  }
+    setIsLoading(false)
+  }, [images, propertyId, user?.token, mutateProperty, router]);
 
   const onDrop = useCallback(async acceptedFiles => {
     const formData = new FormData();
     acceptedFiles.forEach(file => {
       formData.append('photos', file)
     })
-    const result = await ApiInstance.post('/file-upload', formData);
-    setImages([...images, ...result.data.map(x => ({
+    const result = await ApiInstance.post('/file-upload', formData, {
+      headers: {
+        Authorization: user.token,
+      },
+    });
+    console.log(result.data.map(x => ({
+      url: x.location
+    })))
+    setImages(state => [...state, ...result.data.map(x => ({
       url: x.location
     }))])
-    if (!selectedImage && selectedImage !== 0) setSelectedImage(0)
-  }, [selectedImage, images])
-
+  }, [user?.token])
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
-  const handleImageSelection = useCallback((dir: "left" | "right") => {
-    if (dir === "right") {
-      setSelectedImage(c => {
-        if (c + 1 >= images.length) return 0;
-        return c + 1;
-      })
-    } else {
-      setSelectedImage(c => {
-        if (c - 1 < 0) return images.length - 1;
-        return c - 1;
-      })
-    }
-  }, [images])
-
-  const addCostType = useCallback((typeToAdd) => {
-    setCostsTypes(types => types.map(type => {
-      if (type.name !== typeToAdd) return type;
-      type.isPresent = true;
-      return type;
-    }))
-  }, [])
-
-  const addCustomField = useCallback((id) => {
-    setSelectedCustomFields(fields => fields.map(field => {
-      if (field.id !== id) return field;
-      field.isPresent = true;
-      return field;
-    }))
-  }, [])
-
-  const formValues = getFormValues();
-  const presentCostsTypes = costsTypes.filter(field => field.isPresent);
-  const missingCostsTypes = costsTypes.filter(field => !field.isPresent);
-
-  const missingCustomFields = selectedCustomFields.filter(field => !field.isPresent);
-
-  const shownCustomSelectFields = useMemo(() => selectedCustomFields.filter(field => field.isPresent).map((customSelectField, i) => <CustomSelectField key={customSelectField.id} gap={1} px={2}>
-    <Image mx={1} src={customSelectField.icon} alt="Field" />
-    <Text fontSize={"xs"}>{customSelectField.text}</Text>
-    {/* @ts-ignore */}
-    <Select defaultValue={customSelectField.defaultValue} m={0.5} width={"24"} height="8" fontSize={"xs"}  {...register(customSelectField.id, { setValueAs: customSelectField.setValueAs })}>
-      {customSelectField.options.map(option => <option key={`${customSelectField.id}-${option.value}`} value={option.value}>{option.text}</option>)}
-    </Select>
-    <DeleteIcon onClick={() => {
-      {/* @ts-ignore */ }
-      setFieldValue(customSelectField.id, undefined);
-      setSelectedCustomFields((fields) => fields.map((field, ii) => {
-        if (i !== ii) return field;
-        return {
-          ...field,
-          isPresent: false,
-        }
-      }))
-    }} />
-  </CustomSelectField>), [register, selectedCustomFields, setFieldValue])
+  const formValues = getValues();
   return <>
     <Grid
-      templateAreas={`"header"
-                  "main"`}
-      gridTemplateRows={'auto 1fr'}
-      gridTemplateColumns={'1fr'}
-      gap='1'
-      mb={2}
+      gap={2}
+      templateAreas={`
+        "header"
+        "body"
+      `}
+      templateRows="auto 1fr"
+      templateColumns="1fr"
     >
       <Header />
-      <GridItem px={4} gridArea="main">
-        <Flex alignItems="center" gap={2} mb={4}>
-          <IconButton aria-label="Go back home" onClick={() => push(`/property/${propertyId}`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-          <Heading fontSize={"2xl"}>Editar imóvel</Heading>
-        </Flex>
-        <Box gap={2}>
-          <Flex as="form" direction="column" gap={2} onSubmit={handleSubmit(handleAdd)}>
-            <Flex direction={"row"} gap={2}>
-              <Select defaultValue="false" width={"32"} {...register('modo')} required>
-                <option value='aluguel'>Aluguel</option>
-                <option value='compra'>Compra</option>
-              </Select>
-              <FormControl w={{ base: "70%", md: "sm" }}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
+      <Center
+        flexDirection="column"
+        gridArea="body"
+        p={4}
+        gap={4}
+      >
+        <ShowIf value={step === "options"}>
+          <Center>
+            <Flex
+              direction={"column"}
+              w="md"
+              boxShadow={"lg"}
+              borderRadius="md"
+            >
+              <Center
+                w="full"
+                bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                p={4}
+                borderTopRadius="lg"
+              >
+                <Heading fontSize="lg" color="white">Editar imóvel</Heading>
+              </Center>
+              <Flex direction="column" p={4} my={4} gap={2}>
+                <Text textAlign="center">O que você deseja editar?</Text>
+                <Flex gap={2} justifyContent="space-evenly">
+                  <Center
+                    flexDirection="column"
+                    boxShadow={"md"}
+                    borderRadius="md"
+                    p={4}
+                    border={'2px'}
+                    borderColor={'gray'}
+                    cursor="pointer"
+                    boxSizing="border-box"
+                    onClick={() => dispatchStep({ next: 'form' })}
                   >
-                    <Image src="/bx_home.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="endereco" type='text' placeholder='Endereço' {...register('address')} required />
-                </InputGroup>
-              </FormControl>
-              <FormControl w={{ base: "30%", md: "40" }}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
+                    <Icon as={FaInfo} h={4} w={4} />
+                    <Text>Informações básicas</Text>
+                  </Center>
+                  <Center
+                    flexDirection="column"
+                    boxShadow={"md"}
+                    borderRadius="md"
+                    p={4}
+                    border={'2px'}
+                    borderColor={'gray'}
+                    cursor="pointer"
+                    boxSizing="border-box"
+                    onClick={() => dispatchStep({ next: 'photos' })}
                   >
-                    <Image src="/bx_ruler.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="metragem" type='number' placeholder='0' {...register('information.totalArea')} />
-                  <InputRightAddon>m²</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-            </Flex>
-            <Flex gap={2} direction={{ base: 'row', md: "row" }} >
-              <FormControl w={"44"}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/cil_bed.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="bedrooms" type='number' placeholder='0' {...register('information.bedrooms')} />
-                  <InputRightAddon>quartos</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-              <FormControl w={"44"}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/cil_shower.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="bedrooms" type='number' placeholder='0' {...register('information.bathrooms')} />
-                  <InputRightAddon>banheiros</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-              <FormControl w={"36"}>
-                <InputGroup>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/bxs_car-garage.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="bedrooms" max="9" type='number' placeholder='0' {...register('information.parkingSlots')} />
-                  <InputRightAddon>vagas</InputRightAddon>
-                </InputGroup>
-              </FormControl>
-            </Flex>
-            <Wrap gap={2} w="3xl">
-              {shownCustomSelectFields}
-              {formValues?.information?.floor && <FormControl>
-                <InputGroup w={40}>
-                  <InputLeftElement
-                    pointerEvents='none'
-                  >
-                    <Image src="/bi_door-open.svg" alt="Field" />
-                  </InputLeftElement>
-                  <Input id="floor" type='number' placeholder='0' {...register('information.floor')} />
-                  <InputRightAddon>andar</InputRightAddon>
-                </InputGroup>
-              </FormControl>}
-            </Wrap>
-            <Wrap gap={2} w="2xl">
-              {
-                presentCostsTypes.map(costType => {
-                  return <InputGroup w={64} key={costType.name}>
-                    <InputLeftAddon>R$</InputLeftAddon>
-                    {/* @ts-ignore */}
-                    <Input type='number' step={".01"} {...register(`costs.${costType.name}`, { setValueAs: (v) => parseFloat(v) })} />
-                    <InputRightAddon>{costType.text}</InputRightAddon>
-                  </InputGroup>
-                })
-              }
-              <Flex gap={2}>
-                {missingCustomFields.length > 0 && <Box>
-                  <Menu>
-                    <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-                      Adicionar campo
-                    </MenuButton>
-                    <MenuList>
-                      {missingCustomFields.map(field => <MenuItem onClick={() => addCustomField(field.id)} key={field.id}>{field.text}</MenuItem>)}
-                    </MenuList>
-                  </Menu>
-                </Box>}
-                {missingCostsTypes.length > 0 && <Box>
-                  <Menu>
-                    <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-                      Adicionar custo
-                    </MenuButton>
-                    <MenuList>
-                      {missingCostsTypes.map(field => <MenuItem onClick={() => addCostType(field.name)} key={field.text}>{field.text}</MenuItem>)}
-                    </MenuList>
-                  </Menu>
-                </Box>}
+                    <Icon as={FaCamera} h={4} w={4} />
+                    <Text>Adicionar fotos</Text>
+                  </Center>
+                </Flex>
               </Flex>
-            </Wrap>
-            <Flex>
-              <Textarea placeholder='Descrição' w="lg" {...register(`information.description`)} />
             </Flex>
-            <Box>
-              <Flex gap={2} alignItems="center">
-                <Heading fontSize={"md"}>Caixa de fotos</Heading>
-                <Box {...getRootProps()} flexShrink={1}>
+          </Center>
+        </ShowIf>
+        <form onSubmit={handleFormSubmit(handleSubmit)}>
+          <ShowIf value={step === "form"}>
+            <Center>
+              <Flex
+                w={{
+                  base: 'full',
+                  md: '2xl'
+                }}
+                boxShadow={"lg"}
+                gap={4}
+                borderRadius="md"
+                direction="column"
+              >
+                <Center
+                  w="full"
+                  bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                  p={4}
+                  borderTopRadius="lg"
+                >
+                  <Heading fontSize="lg" color="white">Editar imóvel</Heading>
+                </Center>
+
+                <Flex p={4} direction="column">
+                  <Flex direction="column" gap={2}>
+                    <Flex direction="column" gap={2}>
+                      <Text>Informações básicas</Text>
+                      <FormControl isInvalid={!!errors.address}>
+                        <InputGroup>
+                          <InputLeftElement>
+                            <FaHome />
+                          </InputLeftElement>
+                          <Input id="endereco" type='text' placeholder='Endereço' {...register('address', {
+                            required: true
+                          })} />
+                          <FormErrorMessage>
+                            <Text>
+                              {errors.address && errors.address.message}
+                            </Text>
+                          </FormErrorMessage>
+                        </InputGroup>
+                      </FormControl>
+                      <Flex gap={2}>
+                        <FormControl isInvalid={!!errors.modo}>
+                          <Select gridArea="modo" defaultValue="false" {...register('modo', {
+                            required: true
+                          })} required>
+                            <option value='aluguel'>Aluguel</option>
+                            <option value='compra'>Compra</option>
+                            <option value='both'>Ambos</option>
+                          </Select>
+                          <FormErrorMessage>
+                            <Text>
+                              {errors.modo && errors.modo.message}
+                            </Text>
+                          </FormErrorMessage>
+                        </FormControl>
+                        <FormControl isInvalid={!!errors.information?.totalArea}>
+                          <InputGroup w="fit-content">
+                            <InputLeftElement
+                              pointerEvents='none'
+                            >
+                              <FaRuler />
+                            </InputLeftElement>
+                            <Input textAlign="left" id="metragem" type='number' placeholder='0' {...register('information.totalArea', {
+                              required: true,
+                              setValueAs: v => v === null ? null : Number(v),
+                            })} />
+                            <InputRightAddon>m²</InputRightAddon>
+                          </InputGroup>
+                          <FormErrorMessage>
+                            <Text>
+                              {errors.information?.totalArea && errors.information?.totalArea?.message}
+                            </Text>
+                          </FormErrorMessage>
+                        </FormControl>
+                      </Flex>
+                      <Flex justifyContent="space-around" gap={4}>
+                        {
+                          [{
+                            icon: FaBed,
+                            text: 'Quartos',
+                            id: 'bedrooms'
+                          }, {
+                            icon: FaShower,
+                            text: 'Banheiros',
+                            id: 'bathrooms'
+                          }, {
+                            icon: FaCar,
+                            text: 'Vagas',
+                            id: 'parkingSlots'
+                          }].map(item => {
+                            const Icon = item.icon;
+                            return <FormControl isInvalid={!!errors.information?.[item.id]} key={item.id}><Center
+                              flexDirection="column"
+                              gap={1}
+                              boxShadow={"md"}
+                              p={4}
+                              borderRadius="md"
+                            >
+                              <Flex alignItems="center" gap={2}>
+                                <Icon />
+                                <Text>{item.text}</Text>
+                              </Flex>
+                              <Input placeholder="0" {...register('information.'.concat(item.id), {
+                                required: true
+                              })} textAlign="center" />
+                            </Center></FormControl>
+                          })
+                        }
+                      </Flex>
+                    </Flex>
+                    <Flex direction="column" gap={2}>
+                      <Text>Outras informações</Text>
+                      <Flex justifyContent={"space-around"}>
+                        {
+                          [
+                            {
+                              icon: FaSubway,
+                              label: 'Metro próximo',
+                              id: 'information.nearSubway',
+                              defaultValue: formValues.information?.nearSubway
+                            },
+                            {
+                              icon: FaDog,
+                              label: 'Aceita pets',
+                              id: 'information.acceptPets',
+                              defaultValue: formValues.information?.acceptPets
+                            },
+                            {
+                              icon: FaCouch,
+                              label: 'Mobiliado',
+                              id: 'information.isFurnished',
+                              defaultValue: formValues.information?.isFurnished
+                            },
+                          ].map(item => {
+                            return <ActivateSecondaryInfoComponent
+                              key={item.id}
+                              icon={item.icon}
+                              label={item.label}
+                              defaultValue={item.defaultValue}
+                              onChange={value => setValue(item.id, value)}
+                            />
+                          })
+                        }
+                      </Flex>
+                    </Flex>
+                    <Flex direction="column" gap={2}>
+                      <Text>Informe os custos principais</Text>
+                      <Wrap p={{
+                        base: 1,
+                        md: 4
+                      }} rowGap={{
+                        base: 1,
+                        md: 4
+                      }} justify="center">
+                        {
+                          allCostsTypes.filter(cost => cost.availableIn.includes(modoSelecionado)).map(cost => {
+                            return <Center
+                              key={cost.name}
+                              flexDirection="column"
+                              gap={1}
+                              boxShadow={"md"}
+                              borderRadius="md"
+                              p={4}
+                            >
+                              <Flex alignItems={"center"} gap={2}>
+                                <Icon as={FaDollarSign} />
+                                <Text>{cost.text}</Text>
+                              </Flex>
+                              <FormControl isInvalid={!!errors.costs?.[cost.name]}>
+                                <InputGroup w={36}>
+                                  <InputLeftAddon>R$</InputLeftAddon>
+                                  <Input type='number' placeholder='0.00' {...register('costs.'.concat(cost.name), {
+                                    setValueAs: v => v === null ? null : Number(v),
+                                    required: cost.isRequired
+                                  })} />
+                                </InputGroup>
+                              </FormControl>
+                            </Center>
+                          })
+                        }
+                      </Wrap>
+                    </Flex>
+                  </Flex>
+                  <Button mt={2} colorScheme={"green"} type="submit">Salvar</Button>
+                  <Flex gap={2}>
+                    <Button flex={1} mt={2} onClick={() => dispatchStep({ next: 'options' })}>Voltar</Button>
+                    <Button flex={1} mt={2} colorScheme="purple" variant="outline" onClick={() => dispatchStep({ next: 'photos' })}>Editar fotos</Button>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </Center>
+          </ShowIf>
+          <ShowIf value={step === "photos"}>
+            <Flex
+              direction={"column"}
+              w="md"
+              boxShadow={"lg"}
+              gap={4}
+              borderRadius="md"
+            >
+              <Center
+                w="full"
+                bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                p={4}
+                borderTopRadius="lg"
+              >
+                <Heading fontSize="lg" color="white">Adicionar fotos</Heading>
+              </Center>
+              <Flex
+                direction="column"
+                p={4}
+              >
+                <Flex {...getRootProps()} flex={1} width={"full"}>
                   <input {...getInputProps()} />
-                  <Box
+                  <Center
+                    width={"full"}
                     border="1px"
                     borderColor={"gray.300"}
+                    borderStyle="dashed"
                     borderRadius={"md"}
                     padding={"2"}
                     textAlign="center"
+                    flexDirection={"column"}
                   >
                     <AttachmentIcon w={6} h={6} />
                     {
@@ -387,47 +457,72 @@ export default function EditPropertyPage() {
                         <Text>Coloque os arquivos arqui</Text> :
                         <Text>Arraste e solte aqui arquivos<br />ou clique para selecionar</Text>
                     }
-                  </Box>
-                </Box>
-              </Flex>
-              {images.length > 0 &&
-                <Box
-                  alignItems={"center"}
-                  border="1px"
-                  borderColor={"gray.300"}
-                  borderRadius={"md"}
-                  padding={"2"}
-                  mt={2}
-                  maxW={"lg"}
+                  </Center>
+                </Flex>
+                <Flex
+                  maxW="100%"
+                  h="2xs"
+                  gap={2}
+                  p={2}
+                  overflowX="scroll"
+                  scrollSnapType={"x mandatory"}
+                  scrollPadding={4}
                 >
-                  <Flex
-                    flex={1}
-                    alignItems="center"
-                    gap={1}
-                  >
-                    <IconButton aria-label="Previous Image" onClick={() => handleImageSelection(`left`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-                    <Box flex={1}>
-                      <Image h={64} mx="auto" src={images[selectedImage] ? images[selectedImage].url : ""} alt="Image" />
-                    </Box>
-                    <IconButton aria-label="Next Image" onClick={() => handleImageSelection(`right`)} icon={<ChevronRightIcon h={8} w={8} />} />
-                  </Flex>
-                  <Flex
-                    mt={2}
-                    overflowX={"auto"}
-                    gap={1}
-                    w="100%"
-                  >
-                    {images.map((image, i) => <Image onClick={() => setSelectedImage(i)} key={image.url} boxSize="150px" src={image.url} alt={image.description} />)}
-                  </Flex>
-                </Box>
-              }
-            </Box>
-            <Button colorScheme="purple" isLoading={isPosting} w={"min-content"} mx="auto" type="submit">
-              Salvar
-            </Button>
-          </Flex>
-        </Box>
-      </GridItem>
+                  {images.map(image => {
+                    return <Image
+                      key={image.url}
+                      alt={image.description || 'Imagem'}
+                      src={image.url}
+                      boxShadow="md"
+                      borderRadius="md"
+                      scrollSnapAlign={"start"}
+                    />
+                  })}
+                </Flex>
+                <Button mt={2} colorScheme={"green"} type="submit" w="full" isLoading={isLoading}>Salvar</Button>
+                <Button mt={2} variant="ghost" size="sm" w="full" onClick={() => dispatchStep('back')} isDisabled={isLoading}>Voltar</Button>
+              </Flex>
+            </Flex>
+          </ShowIf>
+        </form>
+      </Center>
     </Grid>
   </>
+}
+
+const ActivateSecondaryInfoComponent = ({
+  onChange,
+  defaultValue = false,
+  label,
+  icon,
+}) => {
+  const [isActive, setIsActive] = useState(defaultValue);
+  const handleChange = useCallback(() => {
+    const newState = !isActive;
+    setIsActive(newState);
+    onChange(newState)
+  }, [isActive, onChange])
+  return <Center
+    flexDirection="column"
+    gap={1}
+    boxShadow={"md"}
+    borderRadius="md"
+    p={4}
+    border={isActive ? '2px' : '2px'}
+    borderColor={isActive ? "green" : 'gray'}
+    cursor="pointer"
+    onClick={handleChange}
+    boxSizing="border-box"
+  >
+    <Icon as={icon} w={6} h={6} color={isActive ? 'green' : "gray"} />
+    <Text userSelect={"none"} color={isActive ? 'green' : "gray"}>{label}</Text>
+  </Center>
+}
+
+const ShowIf = ({
+  value,
+  children,
+}) => {
+  if (value) return <>{children}</>;
+  return <></>
 }
