@@ -1,7 +1,7 @@
 import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { useRouter } from "next/router";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaHospital, FaSchool, FaStore } from "react-icons/fa";
 import { mutate } from "swr";
 import Header from "../../components/Header"
@@ -96,6 +96,8 @@ export default function PropertyPage() {
   const { isOpen: isOpenAdminInvite, onOpen: onOpenAdminInvite, onClose: onCloseAdminInvite } = useDisclosure()
   const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
+  const descriptionRef = useRef<any>();
+
   const propertyId = query.id as string;
   const token = query.token as string;
   const { property, mutateProperty } = useProperty({
@@ -109,6 +111,12 @@ export default function PropertyPage() {
   useEffect(() => {
     if (isInvitedUser) onOpenSelfInvite()
   }, [isInvitedUser, onOpenSelfInvite])
+
+  useEffect(() => {
+    if (descriptionRef.current) {
+      descriptionRef.current.style.height = `${descriptionRef.current.scrollHeight + 5}px`
+    }
+  }, [descriptionRef])
 
 
   const displayInformationGroups = useMemo(() => displayInfo.filter(d => d.filter(property)).map(d => {
@@ -243,7 +251,7 @@ export default function PropertyPage() {
               mr="auto"
             >
               <Text fontWeight="bold">Descrição</Text>
-              {property.information.description && <Textarea defaultValue={property.information.description} h="sm" isReadOnly={true} />}
+              {property.information.description && <Textarea ref={descriptionRef} resize="none" defaultValue={property.information.description} isReadOnly={true} />}
               {!property.information.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
             </Box>
           </Box>
