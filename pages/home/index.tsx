@@ -118,7 +118,7 @@ export default function HomePage() {
               }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
             </InputGroup>}
           </Box>
-          <Button ml={{ base: undefined, md: 'auto' }} onClick={() => router.push('/new')} gridArea="add">Adicionar</Button>
+          <Button ml={{ base: undefined, md: 'auto' }} onClick={() => router.push('/new')} gridArea="add" colorScheme={'purple'}>Adicionar</Button>
           {isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button>}
         </Grid>
         <Flex
