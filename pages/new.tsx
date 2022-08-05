@@ -1,5 +1,5 @@
-import { AttachmentIcon, ExternalLinkIcon } from "@chakra-ui/icons";
-import { Box, Button, Center, Flex, FormControl, FormErrorMessage, Grid, Heading, Icon, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Text, Wrap } from "@chakra-ui/react";
+import { AttachmentIcon, ChevronLeftIcon, ExternalLinkIcon } from "@chakra-ui/icons";
+import { Box, Button, Center, Flex, FormControl, FormErrorMessage, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -12,6 +12,8 @@ import { ApiInstance } from "../services/api";
 const formSteps = [
   'import',
   'form',
+  'description',
+  'pricing',
   'photos'
 ]
 
@@ -23,7 +25,8 @@ const allCostsTypes = [{
 }, {
   "name": "sellPrice",
   "text": "Compra",
-  availableIn: ['compra', 'both']
+  availableIn: ['compra', 'both'],
+  isRequired: true,
 }, {
   "name": "condominiumValue",
   "text": "Condomínio",
@@ -71,6 +74,7 @@ export default function NewV2() {
       isFurnished: boolean;
       acceptPets: boolean;
       totalArea: number;
+      description: string;
     }
     costs: {
       rentValue: number
@@ -91,6 +95,7 @@ export default function NewV2() {
         isFurnished: false,
         acceptPets: false,
         totalArea: null,
+        description: null,
       },
       costs: {
         rentValue: null,
@@ -167,9 +172,18 @@ export default function NewV2() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
   const handleFormNextButton = useCallback(async () => {
-    const result = await trigger();
-    if (result) dispatchStep('next')
-  }, [trigger])
+    const formFieldsByStep = {
+      form:['address', 'modo', 'information.totalArea', 'information.bedrooms', 'information.bathrooms', 'information.parkingSlots'],
+      pricing: ['costs.rentValue', 'costs.sellPrice']
+    }
+    const validField = formFieldsByStep[step];
+    if (validField) {
+      const result = await trigger(formFieldsByStep[step]);
+      if (result) dispatchStep('next')
+    } else {
+      dispatchStep('next')
+    }
+  }, [step, trigger])
 
   const formValues = getValues();
   return <>
@@ -193,7 +207,10 @@ export default function NewV2() {
           <Center>
             <Flex
               direction={"column"}
-              w="md"
+              w={{
+                base: 'full',
+                md: 'xl'
+              }}
               boxShadow={"lg"}
               gap={4}
               borderRadius="md"
@@ -222,7 +239,7 @@ export default function NewV2() {
             </Flex>
           </Center>
         </ShowIf>
-        <form onSubmit={handleFormSubmit(handleSubmit)}>
+        <Box as="form" w="full" onSubmit={handleFormSubmit(handleSubmit)}>
           <ShowIf value={step === "form"}>
             <Center>
               <Flex
@@ -235,15 +252,15 @@ export default function NewV2() {
                 borderRadius="md"
                 direction="column"
               >
-                <Center
+                <Flex
                   w="full"
                   bgGradient="linear-gradient(to-r, pink.400, pink.600)"
                   p={4}
                   borderTopRadius="lg"
+                  alignItems={"center"}
                 >
-                  <Heading fontSize="lg" color="white">Adicionar imóvel</Heading>
-                </Center>
-
+                  <Heading flex={1} textAlign="center" fontSize="lg" color="white">Adicionar imóvel</Heading>
+                </Flex>
                 <Flex p={4} direction="column">
                   <Flex direction="column" gap={2}>
                     <Flex direction="column" gap={2}>
@@ -298,7 +315,10 @@ export default function NewV2() {
                           </FormErrorMessage>
                         </FormControl>
                       </Flex>
-                      <Flex justifyContent="space-around" gap={4}>
+                      <Flex justifyContent="space-around" gap={4} wrap={{
+                        base: 'wrap',
+                        md: 'nowrap'
+                      }}>
                         {
                           [{
                             icon: FaBed,
@@ -335,7 +355,10 @@ export default function NewV2() {
                     </Flex>
                     <Flex direction="column" gap={2}>
                       <Text>Outras informações</Text>
-                      <Flex justifyContent={"space-around"}>
+                      <Flex justifyContent={"space-around"} wrap={{
+                        base: 'wrap',
+                        md: 'nowrap'
+                      }} rowGap={4}>
                         {
                           [
                             {
@@ -368,7 +391,90 @@ export default function NewV2() {
                         }
                       </Flex>
                     </Flex>
+                  </Flex>
+                  <Button mt={2} colorScheme={"green"} onClick={handleFormNextButton}>Próximo</Button>
+                </Flex>
+              </Flex>
+            </Center>
+          </ShowIf>
+          <ShowIf value={step === "description"}>
+            <Center>
+              <Flex
+                w={{
+                  base: 'full',
+                  md: '2xl'
+                }}
+                boxShadow={"lg"}
+                borderRadius="md"
+                direction="column"
+              >
+                <Flex
+                  w="full"
+                  bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                  p={4}
+                  borderTopRadius="lg"
+                  alignItems={"center"}
+                >
+                  <IconButton icon={<ChevronLeftIcon />} aria-label="Voltar" onClick={() => dispatchStep('back')} isDisabled={isLoading} />
+                  <Heading flex={1} textAlign="center" fontSize="lg" color="white">Adicionar imóvel</Heading>
+                </Flex>
+                <Flex p={4} direction="column">
+                  <Flex direction="column" gap={2}>
                     <Flex direction="column" gap={2}>
+                      <Text>Descrição</Text>
+                      <FormControl isInvalid={!!errors.information?.description}>
+                        <Textarea placeholder='Descrição' w="full" h="sm" {...register(`information.description`)} />
+                      </FormControl>
+                    </Flex>
+                  </Flex>
+                  <Button mt={2} colorScheme={"green"} onClick={handleFormNextButton}>Próximo</Button>
+                  <Flex gap={2}>
+                    <Button isDisabled={isLoading} flex={1} mt={2} onClick={() => dispatchStep('back')}>Voltar</Button>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </Center>
+          </ShowIf>
+          <ShowIf value={step === "pricing"}>
+            <Center>
+              <Flex
+                w={{
+                  base: 'full',
+                  md: '2xl'
+                }}
+                boxShadow={"lg"}
+                gap={4}
+                borderRadius="md"
+                direction="column"
+              >
+                <Flex
+                  w="full"
+                  bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                  p={4}
+                  borderTopRadius="lg"
+                  alignItems={"center"}
+                >
+                  <IconButton icon={<ChevronLeftIcon />} aria-label="Voltar" onClick={() => dispatchStep('back')} isDisabled={isLoading} />
+                  <Heading flex={1} textAlign="center" fontSize="lg" color="white">Editar imóvel</Heading>
+                </Flex>
+                <Flex p={4} direction="column">
+                  <Flex direction="column" gap={2}>
+                    <Flex direction="column" gap={2}>
+                      <Text>Modo</Text>
+                      <FormControl isInvalid={!!errors.modo}>
+                        <Select gridArea="modo" defaultValue="false" {...register('modo', {
+                          required: true
+                        })} required>
+                          <option value='aluguel'>Aluguel</option>
+                          <option value='compra'>Compra</option>
+                          <option value='both'>Ambos</option>
+                        </Select>
+                        <FormErrorMessage>
+                          <Text>
+                            {errors.modo && errors.modo.message}
+                          </Text>
+                        </FormErrorMessage>
+                      </FormControl>
                       <Text>Informe os custos principais</Text>
                       <Wrap p={{
                         base: 1,
@@ -407,76 +513,86 @@ export default function NewV2() {
                     </Flex>
                   </Flex>
                   <Button mt={2} colorScheme={"green"} onClick={handleFormNextButton}>Próximo</Button>
+                  <Flex gap={2}>
+                    <Button isDisabled={isLoading} flex={1} mt={2} onClick={() => dispatchStep('back')}>Voltar</Button>
+                  </Flex>
                 </Flex>
               </Flex>
             </Center>
           </ShowIf>
           <ShowIf value={step === "photos"}>
-            <Flex
-              direction={"column"}
-              w="md"
-              boxShadow={"lg"}
-              gap={4}
-              borderRadius="md"
-            >
-              <Center
-                w="full"
-                bgGradient="linear-gradient(to-r, pink.400, pink.600)"
-                p={4}
-                borderTopRadius="lg"
-              >
-                <Heading fontSize="lg" color="white">Adicionar fotos</Heading>
-              </Center>
+            <Center>
               <Flex
-                direction="column"
-                p={4}
+                direction={"column"}
+                w={{
+                  base: 'full',
+                  md: '2xl'
+                }}
+                boxShadow={"lg"}
+                gap={4}
+                borderRadius="md"
               >
-                <Flex {...getRootProps()} flex={1} width={"full"}>
-                  <input {...getInputProps()} />
-                  <Center
-                    width={"full"}
-                    border="1px"
-                    borderColor={"gray.300"}
-                    borderStyle="dashed"
-                    borderRadius={"md"}
-                    padding={"2"}
-                    textAlign="center"
-                    flexDirection={"column"}
-                  >
-                    <AttachmentIcon w={6} h={6} />
-                    {
-                      isDragActive ?
-                        <Text>Coloque os arquivos arqui</Text> :
-                        <Text>Arraste e solte aqui arquivos<br />ou clique para selecionar</Text>
-                    }
-                  </Center>
+                <Flex
+                  w="full"
+                  bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                  p={4}
+                  borderTopRadius="lg"
+                  alignItems={"center"}
+                >
+                  <IconButton icon={<ChevronLeftIcon />} aria-label="Voltar" onClick={() => dispatchStep('back')} isDisabled={isLoading} />
+                  <Heading flex={1} textAlign="center" fontSize="lg" color="white">Adicionar imóvel</Heading>
                 </Flex>
                 <Flex
-                  maxW="100%"
-                  h="2xs"
-                  gap={2}
-                  p={2}
-                  overflowX="scroll"
-                  scrollSnapType={"x mandatory"}
-                  scrollPadding={4}
+                  direction="column"
+                  p={4}
                 >
-                  {images.map(image => {
-                    return <Image
-                      key={image.url}
-                      alt={image.description || 'Imagem'}
-                      src={image.url}
-                      boxShadow="md"
-                      borderRadius="md"
-                      scrollSnapAlign={"start"}
-                    />
-                  })}
+                  <Flex {...getRootProps()} flex={1} width={"full"}>
+                    <input {...getInputProps()} />
+                    <Center
+                      width={"full"}
+                      border="1px"
+                      borderColor={"gray.300"}
+                      borderStyle="dashed"
+                      borderRadius={"md"}
+                      padding={"2"}
+                      textAlign="center"
+                      flexDirection={"column"}
+                    >
+                      <AttachmentIcon w={6} h={6} />
+                      {
+                        isDragActive ?
+                          <Text>Coloque os arquivos arqui</Text> :
+                          <Text>Arraste e solte aqui arquivos<br />ou clique para selecionar</Text>
+                      }
+                    </Center>
+                  </Flex>
+                  <Flex
+                    maxW="100%"
+                    h="2xs"
+                    gap={2}
+                    p={2}
+                    overflowX="scroll"
+                    scrollSnapType={"x mandatory"}
+                    scrollPadding={4}
+                  >
+                    {images.map(image => {
+                      return <Image
+                        key={image.url}
+                        alt={image.description || 'Imagem'}
+                        src={image.url}
+                        boxShadow="md"
+                        borderRadius="md"
+                        scrollSnapAlign={"start"}
+                      />
+                    })}
+                  </Flex>
+                  <Button mt={2} colorScheme={"green"} type="submit" w="full" isLoading={isLoading}>Salvar</Button>
+                  <Button mt={2} w="full" onClick={() => dispatchStep('back')} isDisabled={isLoading}>Voltar</Button>
                 </Flex>
-                <Button mt={2} colorScheme={"green"} type="submit" w="full" isLoading={isLoading}>Salvar</Button>
-                <Button mt={2} variant="ghost" size="sm" w="full" onClick={() => dispatchStep('back')} isDisabled={isLoading}>Voltar</Button>
               </Flex>
-            </Flex>
+            </Center>
           </ShowIf>
-        </form>
+        </Box>
       </Center>
     </Grid>
   </>
