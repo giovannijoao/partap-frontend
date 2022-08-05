@@ -97,6 +97,7 @@ export default function PropertyPage() {
   const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
   const descriptionRef = useRef<any>();
+  const contactInfoRef = useRef<any>();
   const imagesRef = useRef<HTMLDivElement | undefined>();
 
   const propertyId = query.id as string;
@@ -118,6 +119,12 @@ export default function PropertyPage() {
       descriptionRef.current.style.height = `${descriptionRef.current.scrollHeight + 5}px`
     }
   }, [descriptionRef])
+
+  useEffect(() => {
+    if (contactInfoRef.current) {
+      contactInfoRef.current.style.height = `${contactInfoRef.current.scrollHeight + 5}px`
+    }
+  }, [contactInfoRef])
 
   useEffect(() => {
     if (imagesRef.current) {
@@ -269,12 +276,17 @@ export default function PropertyPage() {
           <Tabs gridArea="more">
             <TabList>
               <Tab>Chat</Tab>
+              <Tab>Informações de Contato</Tab>
               <Tab>Por perto</Tab>
             </TabList>
 
             <TabPanels>
               <TabPanel>
                 <Chat gridArea="chat" property={property} />
+              </TabPanel>
+              <TabPanel>
+                {property.contactInfo.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
+                {!property.contactInfo.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
               </TabPanel>
               <TabPanel>
                 <Nearby propertyId={propertyId} token={token} />

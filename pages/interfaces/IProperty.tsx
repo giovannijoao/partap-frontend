@@ -43,6 +43,9 @@ export interface IProperty {
     _id: string;
     date: string;
   }[]
+  contactInfo: {
+    description?: string
+  }
 }
 
 export interface IPropertySaved extends IProperty {

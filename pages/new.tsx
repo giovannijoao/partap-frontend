@@ -1,5 +1,5 @@
 import { AttachmentIcon, ChevronLeftIcon, ExternalLinkIcon } from "@chakra-ui/icons";
-import { Box, Button, Center, Flex, FormControl, FormErrorMessage, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Text, Textarea, Wrap } from "@chakra-ui/react";
+import { Box, Button, Center, Flex, FormControl, FormErrorMessage, FormLabel, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -14,7 +14,8 @@ const formSteps = [
   'form',
   'description',
   'pricing',
-  'photos'
+  'photos',
+  'contactInfo'
 ]
 
 const allCostsTypes = [{
@@ -50,6 +51,7 @@ export default function NewV2() {
   });
   const router = useRouter()
   const [importUrl, setImportUrl] = useState("");
+  const [importErrorMessage, setImportErrorMessage] = useState('');
   const [step, dispatchStep] = useReducer((state, action: 'next' | 'back' | 'start') => {
     let nextInd;
     if (action === 'next') {
@@ -82,6 +84,10 @@ export default function NewV2() {
       iptuValue: number
       sellPrice: number
     }
+    contactInfo: {
+      description?: string
+    }
+    url?: string
     [key: string]: any
   }>({
     defaultValues: {
@@ -116,7 +122,6 @@ export default function NewV2() {
         },
       })
       const propertyData = result.data.data
-      console.log(propertyData)
       let modo;
       if (propertyData.isRent && propertyData.isSell) modo = "both";
       else if (propertyData.isRent) modo = "aluguel";
@@ -126,6 +131,7 @@ export default function NewV2() {
       setImages(propertyData.images)
       dispatchStep('next')
     } catch (error) {
+      setImportErrorMessage('Infelizmente não conseguimos importar as informações desse site nesse momento. Por gentileza, crie manualmente.')
     }
     setIsLoading(false)
   }, [importUrl, reset, user?.token])
@@ -236,6 +242,17 @@ export default function NewV2() {
                   </InputLeftElement>
                   <Input placeholder='Importar de site' onChange={e => setImportUrl(e.target.value)} />
                 </InputGroup>
+                {
+                  importErrorMessage && <Flex
+                    bgColor="red.200"
+                    w="full"
+                    p={4}
+                    borderRadius="md"
+                    mt={2}
+                  >
+                    {importErrorMessage}
+                  </Flex>
+                }
                 <Flex py={2} alignItems={"center"} gap={2} alignSelf="end">
                   <Button size="xs" onClick={() => dispatchStep('next')} isDisabled={isLoading}>Criar manualmente</Button>
                   <Button colorScheme="green" onClick={handleImport} isDisabled={!importUrl} isLoading={isLoading}>Importar</Button>
@@ -591,8 +608,60 @@ export default function NewV2() {
                       />
                     })}
                   </Flex>
-                  <Button mt={2} colorScheme={"green"} type="submit" w="full" isLoading={isLoading}>Salvar</Button>
+                  <Button mt={2} colorScheme={"green"} onClick={handleFormNextButton}>Próximo</Button>
                   <Button mt={2} w="full" onClick={() => dispatchStep('back')} isDisabled={isLoading}>Voltar</Button>
+                </Flex>
+              </Flex>
+            </Center>
+          </ShowIf>
+          <ShowIf value={step === "contactInfo"}>
+            <Center>
+              <Flex
+                w={{
+                  base: 'full',
+                  md: '2xl'
+                }}
+                boxShadow={"lg"}
+                borderRadius="md"
+                direction="column"
+              >
+                <Flex
+                  w="full"
+                  bgGradient="linear-gradient(to-r, pink.400, pink.600)"
+                  p={4}
+                  borderTopRadius="lg"
+                  alignItems={"center"}
+                >
+                  <Heading flex={1} textAlign="center" fontSize="lg" color="white">Adicionar imóvel</Heading>
+                </Flex>
+                <Flex p={4} direction="column">
+                  <Flex direction="column" gap={2}>
+                    <Flex direction="column" gap={2}>
+                      <Text>Informações de contato/site</Text>
+                      <FormControl isInvalid={!!errors.url}>
+                        <FormLabel>URL</FormLabel>
+                        <InputGroup>
+                          <InputLeftElement>
+                            <ExternalLinkIcon />
+                          </InputLeftElement>
+                          <Input id="url" type='url' placeholder='URL do site' {...register('url')} />
+                          <FormErrorMessage>
+                            <Text>
+                              {errors.url && errors.url.message}
+                            </Text>
+                          </FormErrorMessage>
+                        </InputGroup>
+                      </FormControl>
+                      <FormControl isInvalid={!!errors.information?.description}>
+                        <FormLabel>Informações de contato</FormLabel>
+                        <Textarea placeholder='Ex.: números de telefone, endereço imobiliaria, nome corretor e outras informações.' w="full" h={36} {...register(`contactInfo.description`)} />
+                      </FormControl>
+                    </Flex>
+                  </Flex>
+                  <Button mt={2} colorScheme={"green"} type="submit" w="full" isLoading={isLoading}>Salvar</Button>
+                  <Flex gap={2}>
+                    <Button isDisabled={isLoading} flex={1} mt={2} onClick={() => dispatchStep('back')}>Voltar</Button>
+                  </Flex>
                 </Flex>
               </Flex>
             </Center>
