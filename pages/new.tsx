@@ -1,14 +1,16 @@
 import { AttachmentIcon, ChevronLeftIcon, ExternalLinkIcon } from "@chakra-ui/icons";
-import { Box, Button, Center, Flex, FormControl, FormErrorMessage, FormLabel, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Text, Textarea, Wrap } from "@chakra-ui/react";
+import { Box, Button, Center, Flex, FormControl, FormErrorMessage, FormLabel, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, InputRightAddon, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Tag, TagLabel, TagLeftIcon, Text, Textarea, Wrap } from "@chakra-ui/react";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useCallback, useReducer, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useForm } from "react-hook-form";
-import { FaBed, FaCar, FaClock, FaCouch, FaDog, FaDollarSign, FaHome, FaRuler, FaShower, FaSubway } from "react-icons/fa";
+import { FaBed, FaCar, FaCouch, FaDog, FaDollarSign, FaHome, FaRuler, FaShower, FaSubway } from "react-icons/fa";
 import Header from "../components/Header";
+import { ImportProviders } from "../importProviders";
 import useUser from "../lib/useUser";
 import { ApiInstance } from "../services/api";
 
+const supportedImportProviders = ImportProviders;
 const formSteps = [
   'import',
   'form',
@@ -184,7 +186,7 @@ export default function NewV2() {
 
   const handleFormNextButton = useCallback(async () => {
     const formFieldsByStep = {
-      form:['address', 'modo', 'information.totalArea', 'information.bedrooms', 'information.bathrooms', 'information.parkingSlots'],
+      form: ['address', 'modo', 'information.totalArea', 'information.bedrooms', 'information.bathrooms', 'information.parkingSlots'],
       pricing: ['costs.rentValue', 'costs.sellPrice']
     }
     const validField = formFieldsByStep[step];
@@ -242,6 +244,14 @@ export default function NewV2() {
                   </InputLeftElement>
                   <Input placeholder='Importar de site' onChange={e => setImportUrl(e.target.value)} />
                 </InputGroup>
+                <Wrap mt={2}>
+                  {
+                    supportedImportProviders.map(provider => <Link key={provider.name} target="_blank" rel="noopener noreferrer" href={provider.url}><Tag>
+                      <TagLeftIcon boxSize='12px' as={ExternalLinkIcon} />
+                      <TagLabel>{provider.name}</TagLabel>
+                    </Tag></Link>)
+                  }
+                </Wrap>
                 {
                   importErrorMessage && <Flex
                     bgColor="red.200"
