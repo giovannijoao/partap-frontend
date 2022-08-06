@@ -120,7 +120,7 @@ export default function NewV2() {
 
   useEffect(() => {
     reset(property)
-    setImages(property.images)
+    if (property?.images) setImages(property.images)
   }, [property, reset])
 
   const handleSubmit = useCallback(async (values) => {
