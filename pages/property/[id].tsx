@@ -285,8 +285,8 @@ export default function PropertyPage() {
                 <Chat gridArea="chat" property={property} />
               </TabPanel>
               <TabPanel>
-                {property.contactInfo.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
-                {!property.contactInfo.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
+                {property.contactInfo?.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
+                {!property.contactInfo?.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
               </TabPanel>
               <TabPanel>
                 <Nearby propertyId={propertyId} token={token} />

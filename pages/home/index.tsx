@@ -477,6 +477,7 @@ const Filters = forwardRef(({
     }))
     setMinValue('')
     setMaxValue('')
+    setKeywords('')
   }, [])
 
   // Used by parent element
