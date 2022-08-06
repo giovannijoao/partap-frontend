@@ -607,7 +607,7 @@ export default function NewV2() {
                     scrollSnapType={"x mandatory"}
                     scrollPadding={4}
                   >
-                    {images.map(image => {
+                    {images?.map(image => {
                       return <Image
                         key={image.url}
                         alt={image.description || 'Imagem'}

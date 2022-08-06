@@ -306,18 +306,30 @@ const Filters = forwardRef(({
   })
   const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isBoth')
 
-  const [minValue, setMinValue] = useState<number | undefined>();
-  const [maxValue, setMaxValue] = useState<number | undefined>();
+  const [minValue, setMinValue] = useState<number | ''>('');
+  const [maxValue, setMaxValue] = useState<number | ''>('');
   const [keywords, setKeywords] = useState('');
 
-
   useEffect(() => {
-    if (!minValue && !maxValue) return;
     let timeout = setTimeout(() => {
-      setFilters(s => ({ ...s, minValue, maxValue, keywords: keywords.trim() !== '' ? keywords : undefined }))
+      setFilters(s => ({ ...s, minValue: minValue || undefined }))
     }, 1000)
     return () => clearTimeout(timeout)
-  }, [minValue, maxValue, keywords])
+  }, [minValue])
+
+  useEffect(() => {
+    let timeout = setTimeout(() => {
+      setFilters(s => ({ ...s, maxValue: maxValue || undefined }))
+    }, 1000)
+    return () => clearTimeout(timeout)
+  }, [maxValue])
+
+  useEffect(() => {
+    let timeout = setTimeout(() => {
+      setFilters(s => ({ ...s, keywords: keywords.trim() !== '' ? keywords : undefined }))
+    }, 1000)
+    return () => clearTimeout(timeout)
+  }, [keywords])
 
   useEffect(() => {
     if (modoVisualizacao === 'isRent') {
@@ -350,8 +362,11 @@ const Filters = forwardRef(({
     filters.minBathrooms ||
     filters.minParkingSlots ||
     filters.isNearSubway ||
-    filters.isFurnished
-    , [filters.isFurnished, filters.isNearSubway, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
+    filters.isFurnished ||
+    filters.minValue ||
+    filters.maxValue ||
+    filters.keywords
+    , [filters.isFurnished, filters.isNearSubway, filters.keywords, filters.maxValue, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots, filters.minValue])
 
   useEffect(() => {
     mutateProperties(filters)
@@ -403,12 +418,12 @@ const Filters = forwardRef(({
         <Text>{option.text}</Text>
       </Flex>
       <Wrap>
-        {["+1", "+2", "+3", "+4"].map(q => <Button
+        {["1+", "2+", "3+", "4+"].map(q => <Button
           key={q.concat(`-${option.name}-filter`)}
           onClick={() => onChange(q)}
           size="xs"
           colorScheme='purple'
-          variant={'+'.concat(filters[option.filterProp]) !== q ? 'outline' : undefined}
+          variant={(filters[option.filterProp] || '').concat('+') !== q ? 'outline' : undefined}
         >
           {q}
         </Button>)}
@@ -460,8 +475,8 @@ const Filters = forwardRef(({
       isRent: f.isRent,
       isBoth: f.isBoth,
     }))
-    setMinValue(0)
-    setMaxValue(0)
+    setMinValue('')
+    setMaxValue('')
   }, [])
 
   // Used by parent element
@@ -504,11 +519,11 @@ const Filters = forwardRef(({
     >
       <Flex direction="column">
         <Text fontSize="xs">Preço Minimo</Text>
-        <Input type="number" placeholder='0.00' value={minValue} defaultValue={minValue} onChange={(e) => setMinValue(Number(e.target.value))} min={0} />
+        <Input type="number" placeholder='0.00' value={minValue} onChange={(e) => setMinValue(e.target.value ? Number(e.target.value) : '')} min={0} />
       </Flex>
       <Flex direction="column">
         <Text fontSize="xs">Preço Maximo</Text>
-        <Input type="number" placeholder='0.00' value={maxValue} defaultValue={maxValue} onChange={(e) => setMaxValue(Number(e.target.value))} min={0} />
+        <Input type="number" placeholder='0.00' value={maxValue} onChange={(e) => setMaxValue(e.target.value ? Number(e.target.value) : '')} min={0} />
       </Flex>
     </Flex>
     <Flex
