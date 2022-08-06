@@ -233,8 +233,10 @@ export default function NewV2() {
                 bgGradient="linear-gradient(to-r, pink.400, pink.600)"
                 p={4}
                 borderTopRadius="lg"
+                gap={4}
               >
-                <Heading fontSize="lg" color="white">Adicionar imóvel</Heading>
+                <Heading fontSize="lg" color="white">Importar imóvel</Heading>
+                <Tag colorScheme={"green"}>BETA</Tag>
               </Center>
               <Flex direction="column" p={4}>
                 <Text m={4} textAlign="center">Você pode importar de um site ou, se preferir, criar manualmente.</Text>
@@ -259,10 +261,11 @@ export default function NewV2() {
                     p={4}
                     borderRadius="md"
                     mt={2}
-                  >
+                    >
                     {importErrorMessage}
                   </Flex>
                 }
+                <Text m={4} textAlign="center" fontSize="xs">Esse é um recurso que ainda está sendo desenvolvido, mas você já pode tentar utilizá-lo.</Text>
                 <Flex py={2} alignItems={"center"} gap={2} alignSelf="end">
                   <Button size="xs" onClick={() => dispatchStep('next')} isDisabled={isLoading}>Criar manualmente</Button>
                   <Button colorScheme="green" onClick={handleImport} isDisabled={!importUrl} isLoading={isLoading}>Importar</Button>
