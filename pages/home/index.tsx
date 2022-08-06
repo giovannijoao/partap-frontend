@@ -11,6 +11,7 @@ import useProperty from "../../lib/useProperty";
 import usePropertyExtractor from "../../lib/usePropertyExtractor";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
 import AddPropertyModal from "../../components/AddPropertyModal";
+import { GoogleAd } from "../../components/GoogleAd";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 export default function HomePage() {
@@ -217,37 +218,40 @@ export default function HomePage() {
             <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
           </Flex>
           }
-          <SimpleGrid
-            flex={2}
-            columns={{
-              base: 1,
-              sm: 2,
-              md: 3,
-            }}
-            gap={4}
-          >
-            {
-              items?.length === 0 && <Flex
-                direction="column"
-                gap={2}
-                boxShadow='base'
-                borderRadius="sm"
-                p={4}
-                h="fit-content"
-              >
-                <Heading fontSize={"md"}>Parece que não temos nada por aqui...</Heading>
-                <Text>Adicione uma nova propriedade</Text>
-                <Button onClick={() => router.push('/new')}>Adicionar</Button>
-                {filtersRef.current?.isFiltersApplied && <>
-                  <Text>Ou remova os filtros</Text>
-                  <Button size="sm" onClick={filtersRef.current.cleanFilters}>Remover filtros</Button>
-                </>}
-              </Flex>
-            }
-            {
-              itemsElements
-            }
-          </SimpleGrid>
+          <Flex>
+            <SimpleGrid
+              flex={2}
+              columns={{
+                base: 1,
+                sm: 2,
+                md: 3,
+              }}
+              gap={4}
+            >
+              {
+                items?.length === 0 && <Flex
+                  direction="column"
+                  gap={2}
+                  boxShadow='base'
+                  borderRadius="sm"
+                  p={4}
+                  h="fit-content"
+                >
+                  <Heading fontSize={"md"}>Parece que não temos nada por aqui...</Heading>
+                  <Text>Adicione uma nova propriedade</Text>
+                  <Button onClick={() => router.push('/new')}>Adicionar</Button>
+                  {filtersRef.current?.isFiltersApplied && <>
+                    <Text>Ou remova os filtros</Text>
+                    <Button size="sm" onClick={filtersRef.current.cleanFilters}>Remover filtros</Button>
+                  </>}
+                </Flex>
+              }
+              {
+                itemsElements
+              }
+            </SimpleGrid>
+            <GoogleAd adSlot={"9985735186"}/>
+          </Flex>
         </Flex>
       </Box>
     </Grid>
