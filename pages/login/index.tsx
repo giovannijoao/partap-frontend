@@ -1,11 +1,12 @@
 import { Box, Button, Center, Flex, FormControl, FormLabel, Grid, Heading, Icon, Input, SimpleGrid, Text, useToast } from '@chakra-ui/react'
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useForm } from "react-hook-form";
 import { ApiInstance } from '../../services/api';
 import { OwnAPI } from '../../services/own-api';
 import useUser from '../../lib/useUser';
 import { FaHome } from 'react-icons/fa';
+import useLocalStorage from '../../lib/useLocalStorage';
 
 export default function Home() {
   const router = useRouter()
@@ -13,9 +14,10 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [signUpForm, setSignUpForm] = useState(false);
+  const [hasCompletedStart] = useLocalStorage('partap-has-completed-start', false);
 
   const { mutateUser, error } = useUser({
-    redirectTo: '/home',
+    redirectTo: hasCompletedStart ? '/home' : '/start/1',
     redirectIfFound: true,
   })
 
