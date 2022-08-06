@@ -231,7 +231,7 @@ export default function NewV2() {
                       },
                       {
                         icon: FaDollarSign,
-                        text: 'Editar preços',
+                        text: 'Preços',
                         next: 'pricing',
                       },
                       {
