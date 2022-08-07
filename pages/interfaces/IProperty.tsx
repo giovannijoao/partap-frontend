@@ -50,13 +50,16 @@ export interface IProperty {
 
 export interface IPropertySaved extends IProperty {
   _id?: string;
-  costs: {
-    rentValue?: number;
-    condominiumValue?: number;
-    iptuValue?: number;
-    sellPrice?: number;
-    totalCost?: number;
-  };
+  costs: Array<{
+    costId: string;
+    text: string;
+    value: number;
+  }>;
+  totalCost: Array<{
+    costId: string
+    text: string;
+    calc: string[]
+  }>
 }
 
 export default function DefaultComponent() {

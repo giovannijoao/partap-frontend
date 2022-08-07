@@ -55,13 +55,17 @@ export default function HomePage() {
   }, [])
 
   const items = properties?.data.map(item => {
-    const costs = Object.fromEntries(Object.entries(item.costs).map(([key, value]) => [key, {
-      isPresent: value && value != 0,
-      formatted: formatNumber.format(value)
-    }]))
+    const totalCost = item.totalCost.map(cost => {
+      const value = item.costs?.filter(c => cost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+      return {
+        id: cost.costId,
+        text: cost.text,
+        value,
+      }
+    })
     return {
       ...item,
-      costs
+      totalCost,
     };
   });
 
@@ -115,12 +119,12 @@ export default function HomePage() {
                 }
               </Flex>
               <Flex direction="column" flex={1} alignItems="end">
-                {['isBoth', 'isRent'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isRent && item.costs.totalCost?.isPresent &&
+                {/* {['isBoth', 'isRent'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isRent && item.costs.totalCost?.isPresent &&
                   <Text fontWeight="bold" color="green" fontSize={"xs"}>Total Aluguel {item.costs.totalCost.formatted}</Text>
                 }
                 {['isBoth', 'isSell'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isSell && item.costs.sellPrice?.isPresent &&
                   <Text fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
-                }
+                } */}
               </Flex>
             </Flex>
           </Flex>

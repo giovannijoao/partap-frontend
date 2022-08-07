@@ -50,9 +50,9 @@ export default function useProperty({ propertyId, token }: UsePropertyProps = {}
   const propertyData = property?.data;
   let modo;
   if (propertyData) {
-    if (propertyData.isRent && propertyData.isSell) modo = "both";
-    else if (propertyData.isRent) modo = "aluguel";
-    else if (propertyData.isSell) modo = "compra";
+    if (propertyData.isRent && propertyData.isSell) modo = "isBoth";
+    else if (propertyData.isRent) modo = "isRent";
+    else if (propertyData.isSell) modo = "isSell";
     propertyData.modo = modo;
   }
 

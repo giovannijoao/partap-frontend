@@ -144,31 +144,57 @@ export default function PropertyPage() {
     }
   }), [property])
 
-  const costsElements = useMemo(() => allCostsTypes
-    .filter(costType => property?.costs && (property.costs[costType.name] && property.costs[costType.name] !== 0) && (!costType.filter || costType.filter(property)))
-    .map(costType => {
-      const cost = formatNumber.format(property.costs[costType.name]);
+  const costsElements = useMemo(() => {
+    return property.costs?.map(cost => {
       return <Flex
-        key={costType.name}
+        key={cost.costId}
         gap={2}
         alignItems="center"
         p={2}
         border="1px"
         borderColor="gray.300"
         borderRadius="lg"
-        bgGradient={costType.bgColor}
-        color={costType.fontColor || "black"}
       >
-        <MoneyIconSVG fill={costType.fontColor} />
-        <Text fontWeight={"semibold"} flex={1}>{typeof costType.text === "function" ? costType.text(property) : costType.text}</Text>
+        <MoneyIconSVG fill="black" />
+        <Text fontWeight={"semibold"} flex={1}>{cost.text}</Text>
         <Text
-          color={costType.fontColor || "purple.500"}
           fontWeight={"bold"}
           fontSize="lg"
-        >{cost}</Text>
+          color="purple.500"
+        >{cost.value.toLocaleString('pt', {
+          style: 'currency',
+          currency: 'BRL'
+        })}</Text>
       </Flex>
     })
-    , [property])
+  }, [property])
+
+  const totalCostsElements = useMemo(() => {
+    return property.totalCost?.map(cost => {
+      const value = property.costs?.filter(c => cost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+      return <Flex
+        key={cost.costId}
+        gap={2}
+        alignItems="center"
+        p={2}
+        border="1px"
+        borderColor="gray.300"
+        borderRadius="lg"
+        bgGradient={"linear-gradient(to-r, pink.400, pink.600)"}
+        color="white"
+      >
+        <MoneyIconSVG fill="white" />
+        <Text fontWeight={"semibold"} flex={1}>{cost.text}</Text>
+        <Text
+          fontWeight={"bold"}
+          fontSize="lg"
+        >{value.toLocaleString('pt', {
+          style: 'currency',
+          currency: 'BRL'
+        })}</Text>
+      </Flex>
+    })
+  }, [property])
 
   const toggleAvailability = useCallback(async () => {
     try {
@@ -290,12 +316,13 @@ export default function PropertyPage() {
               </TabPanel>
               <TabPanel>
                 <Nearby propertyId={propertyId} token={token} />
-                </TabPanel>
+              </TabPanel>
             </TabPanels>
           </Tabs>
           <Flex gridArea="sidePanel" maxW={{
           }} flex={1} direction="column" gap={2}>
             {costsElements}
+            {totalCostsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
               {isAdminUser && <>
@@ -332,12 +359,12 @@ function Nearby({
     text: 'Hospitais'
   }, {
     placeId: 'school',
-      icon: FaSchool,
-      text: 'Escolas'
-    }, {
+    icon: FaSchool,
+    text: 'Escolas'
+  }, {
     placeId: 'drugstore',
-      icon: FaStore,
-      text: 'Drogarias'
+    icon: FaStore,
+    text: 'Drogarias'
   }].map(place => {
     const list = nearbyData?.places
       .filter((p) => p.types.includes(place.placeId))
