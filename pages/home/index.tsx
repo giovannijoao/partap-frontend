@@ -69,7 +69,7 @@ export default function HomePage() {
 
   const itemsElements = useMemo(() => {
     return items?.map(item => {
-      return <Box
+      return <Link
         w={"100%"}
         maxH="xs"
         boxShadow='lg'
@@ -78,7 +78,10 @@ export default function HomePage() {
         display="flex"
         flexDirection="column"
         cursor={"pointer"}
-        onClick={() => router.push(`/property/${item._id}`)}
+        href={`/property/${item._id}`}
+        _hover={{
+          textDecoration: undefined
+        }}
         onMouseEnter={() => mutateProperty(item._id)}
       >
         {item.images && item.images[0] ? <Box width="100%" height="3xs" position="relative">
@@ -125,10 +128,9 @@ export default function HomePage() {
             </Flex>
           </Flex>
         </Flex>
-
-      </Box>
+      </Link>
     })
-  }, [items, mutateProperty, router])
+  }, [items, mutateProperty])
   return <>
     <Grid
       gap={2}

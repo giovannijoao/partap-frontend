@@ -4,15 +4,16 @@ import { IPropertySaved } from "../pages/interfaces/IProperty";
 import useUser from "./useUser";
 import { useCallback } from "react";
 interface UsePropertyProps {
-  propertyId?: string,
+  propertyId?: string;
   token?: string;
+  fallback?: PropertyInformationResponse;
 }
 
 type PropertyInformationResponse = {
   data: IPropertySaved;
 };
 
-export default function useProperty({ propertyId, token }: UsePropertyProps = {}) {
+export default function useProperty({ propertyId, token, fallback }: UsePropertyProps = {}) {
   const { user } = useUser();
 
   const fetchProperty = useCallback((url: string) =>
@@ -29,6 +30,7 @@ export default function useProperty({ propertyId, token }: UsePropertyProps = {}
       (url) =>
         fetchProperty(url),
       {
+        fallbackData: fallback,
         onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
           // TODO: implementar logica para nao buscar mais caso a propriedade nao exista
           if (retryCount >= 10) return;

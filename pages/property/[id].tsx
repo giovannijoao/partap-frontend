@@ -1,5 +1,6 @@
 import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaHospital, FaSchool, FaStore } from "react-icons/fa";
@@ -8,11 +9,13 @@ import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
 import SendIconSVG from "../../components/js-icons/Send";
 import ShareIconSVG from "../../components/js-icons/Share";
+import { sessionOptions } from "../../lib/session";
 import useNearbyData from "../../lib/useNearby";
 import useProperty from "../../lib/useProperty";
 import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
+import { ApiURL } from '../../config'
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 type DisplayInfo = {
@@ -88,11 +91,16 @@ const allCostsTypes = [{
   "filter": (property: IPropertySaved) => ['both', 'aluguel'].includes(property.modo)
 }]
 
-export default function PropertyPage() {
+export default function PropertyPage({
+  userServerData,
+  propertyServerData,
+}) {
   const { query, push } = useRouter();
   const { user } = useUser({
-    redirectTo: `/login`
+    redirectTo: `/login`,
+    fallback: userServerData
   })
+
   const { isOpen: isOpenAdminInvite, onOpen: onOpenAdminInvite, onClose: onCloseAdminInvite } = useDisclosure()
   const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
@@ -105,7 +113,9 @@ export default function PropertyPage() {
   const { property, mutateProperty } = useProperty({
     propertyId,
     token,
+    fallback: propertyServerData,
   });
+
   const isAdminUser = user && user.id === property?.user._id;
   const isInvitedUser = !!token && user.id !== property?.user._id && !property?.share?.users.find(u => u._id === user.id);
 
@@ -318,6 +328,27 @@ export default function PropertyPage() {
   </>;
 }
 
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  const [, id] = req.url.match(/property\/(.*)/)
+  const result = await fetch(`${ApiURL}/properties/${id}`, {
+    headers: {
+      Authorization: req.session.user.token,
+    },
+  })
+  const data = await result.json()
+  return {
+    props: {
+      userServerData: {
+        ...req.session.user
+      },
+      propertyServerData: data
+    }, // will be passed to the page component as props
+  }
+}, sessionOptions)
+
 function Nearby({
   propertyId,
   token,
@@ -499,6 +530,7 @@ function ShareModal({
 
   const mutateProperty = useCallback(() => mutate(`/properties/${property._id}`), [property._id]);
   const handleAdd = useCallback(async (e) => {
+    if (!loggedUser) return;
     e.preventDefault()
     setErrorMsg("")
     setIsLoading(true)
@@ -528,9 +560,10 @@ function ShareModal({
       else setErrorMsg("Ocorreu um erro")
     }
     setIsLoading(false)
-  }, [email, loggedUser.token, mutateProperty, property._id])
+  }, [email, loggedUser, mutateProperty, property._id])
 
   const handleRemove = useCallback(async (userId) => {
+    if (!loggedUser) return;
     await ApiInstance.delete(`/share/${property._id}`, {
       params: {
         user: userId,
@@ -540,7 +573,7 @@ function ShareModal({
       },
     }).then(res => res.data);
     mutateProperty()
-  }, [loggedUser.token, mutateProperty, property._id])
+  }, [loggedUser, mutateProperty, property._id])
 
   const handleCopyLink = useCallback(async () => {
     if (!property.share.token) {
@@ -556,7 +589,7 @@ function ShareModal({
     const link = `${window.location.origin}/property/${property._id}?token=${property.share.token}`
     navigator.clipboard.writeText(link)
     setLinkCopied(true)
-  }, [loggedUser.token, property._id, property.share])
+  }, [loggedUser, property._id, property.share])
 
 
 
