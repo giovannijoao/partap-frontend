@@ -515,9 +515,25 @@ export default function NewV2() {
                             </Text>
                           </FormErrorMessage>
                         </FormControl>
-                        <Text>Informe os custos principais</Text>
+                        <Flex
+                          direction="column"
+                          bgColor="gray.100"
+                          p={2}
+                          borderRadius="md"
+                        >
+                          <Text fontWeight={"bold"}>Custos</Text>
+                          <Text fontSize="sm">Informe aqui todo e qualquer custo com o imóvel</Text>
+                        </Flex>
                         <CostsTable />
-                        <Text>Informe os custos totais</Text>
+                        <Flex
+                          direction="column"
+                          bgColor="gray.100"
+                          p={2}
+                          borderRadius="md"
+                        >
+                          <Text fontWeight={"bold"}>Custos Totais</Text>
+                          <Text fontSize="sm">Agrupe custos para totalizar o valor. Eles podem ser exibidos no cartão do imóvel.</Text>
+                        </Flex>
                         <TotalCosts />
                       </Flex>
                     </Flex>
@@ -748,6 +764,7 @@ const TotalCosts = () => {
         </FormControl>
       </Flex>
       <Box p={2} boxShadow="xs">
+        <Text fontSize="sm">Custos</Text>
         <TotalCostCheckboxes i={i} />
       </Box>
       <Flex alignItems="center" justifyContent={"space-around"} direction={{
