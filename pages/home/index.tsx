@@ -56,11 +56,15 @@ export default function HomePage() {
 
   const items = properties?.data.map(item => {
     const totalCost = item.totalCost.map(cost => {
-      const value = item.costs?.filter(c => cost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+      const value = item.costs?.filter(c => cost.calc?.includes(c.costId)).reduce((a, c) => a + c.value, 0);
       return {
         id: cost.costId,
         text: cost.text,
-        value,
+        value: value.toLocaleString('pt', {
+          style: 'currency',
+          currency: "BRL"
+        }),
+        showIn: cost.showInMainCard?.views || []
       }
     })
     return {
@@ -75,12 +79,12 @@ export default function HomePage() {
     return items?.map(item => {
       return <Link
         w={"100%"}
-        maxH="xs"
         boxShadow='lg'
         borderRadius="sm"
         key={item._id}
         display="flex"
         flexDirection="column"
+        alignItems="flex-start"
         cursor={"pointer"}
         href={`/property/${item._id}`}
         _hover={{
@@ -105,9 +109,8 @@ export default function HomePage() {
           <Text>Sem imagem</Text>
         </Center>}
         <Flex p={2}
-          direction="column"
-          grow="1">
-          <Heading fontSize="md" flex="1" flexGrow="1">{item.address}</Heading>
+          direction="column">
+          <Heading fontSize="md">{item.address}</Heading>
           <Flex direction="column" gap={2}>
             <Flex mt={1} alignItems="center">
               <Flex>
@@ -122,12 +125,11 @@ export default function HomePage() {
                 }
               </Flex>
               <Flex direction="column" flex={1} alignItems="end">
-                {/* {['isBoth', 'isRent'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isRent && item.costs.totalCost?.isPresent &&
-                  <Text fontWeight="bold" color="green" fontSize={"xs"}>Total Aluguel {item.costs.totalCost.formatted}</Text>
+                {
+                  item.totalCost.filter(t => t.showIn.includes(filtersRef.current?.selectedVisualizationMode || 'isBoth')).map(totalCost => {
+                    return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
+                  })
                 }
-                {['isBoth', 'isSell'].includes((filtersRef.current?.selectedVisualizationMode || 'isBoth')) && item.isSell && item.costs.sellPrice?.isPresent &&
-                  <Text fontWeight="bold" color="green" fontSize={"xs"}>Compra {item.costs.sellPrice?.formatted}</Text>
-                } */}
               </Flex>
             </Flex>
           </Flex>
@@ -225,13 +227,7 @@ export default function HomePage() {
           </Flex>
           }
           <Flex>
-            <SimpleGrid
-              flex={2}
-              columns={{
-                base: 1,
-                sm: 2,
-                md: 3,
-              }}
+            <Flex
               gap={4}
             >
               {
@@ -255,7 +251,7 @@ export default function HomePage() {
               {
                 itemsElements
               }
-            </SimpleGrid>
+            </Flex>
             <GoogleAd adSlot={"9985735186"}/>
           </Flex>
         </Flex>

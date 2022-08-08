@@ -59,6 +59,9 @@ export interface IPropertySaved extends IProperty {
     costId: string
     text: string;
     calc: string[]
+    showInMainCard: {
+      views: string[]
+    }
   }>
 }
 

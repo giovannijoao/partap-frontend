@@ -43,6 +43,7 @@ export default function useProperties({
     user?.isLoggedIn ? ["/properties", filters] : null,
     (url, args) => fetchProperty(url, args),
     {
+      errorRetryInterval: 5000,
       onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
         if (retryCount >= 10) return;
         revalidate({ retryCount });

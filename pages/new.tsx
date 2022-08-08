@@ -71,7 +71,7 @@ type IForm = {
     calc: string[]
     showInMainCard: {
       checked: boolean
-      view: string
+      views: string[]
     }
   }>
   contactInfo: {
