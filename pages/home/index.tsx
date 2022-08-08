@@ -84,7 +84,6 @@ export default function HomePage() {
         key={item._id}
         display="flex"
         flexDirection="column"
-        alignItems="flex-start"
         cursor={"pointer"}
         href={`/property/${item._id}`}
         _hover={{
@@ -109,28 +108,28 @@ export default function HomePage() {
           <Text>Sem imagem</Text>
         </Center>}
         <Flex p={2}
-          direction="column">
+          direction="column"
+          flexGrow={1}
+        >
           <Heading fontSize="md">{item.address}</Heading>
-          <Flex direction="column" gap={2}>
-            <Flex mt={1} alignItems="center">
-              <Flex>
-                {item.information.totalArea &&
-                  <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
-                }
-                {item.information.bedrooms &&
-                  <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
-                }
-                {!item.isAvailable &&
-                  <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
-                }
-              </Flex>
-              <Flex direction="column" flex={1} alignItems="end">
-                {
-                  item.totalCost.filter(t => t.showIn.includes(filtersRef.current?.selectedVisualizationMode || 'isBoth')).map(totalCost => {
-                    return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
-                  })
-                }
-              </Flex>
+          <Flex mt={1} alignItems="center">
+            <Flex>
+              {item.information.totalArea &&
+                <Badge textTransform={"none"}>{item.information.totalArea}m²</Badge>
+              }
+              {item.information.bedrooms &&
+                <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
+              }
+              {!item.isAvailable &&
+                <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
+              }
+            </Flex>
+            <Flex direction="column" flex={1} alignItems="end">
+              {
+                item.totalCost.filter(t => t.showIn.includes(filtersRef.current?.selectedVisualizationMode || 'isBoth')).map(totalCost => {
+                  return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
+                })
+              }
             </Flex>
           </Flex>
         </Flex>
@@ -227,8 +226,14 @@ export default function HomePage() {
           </Flex>
           }
           <Flex>
-            <Flex
+            <SimpleGrid
               gap={4}
+              alignItems="flex-start"
+              columns={{
+                base: 1,
+                sm: 2,
+                md: 3
+              }}
             >
               {
                 items?.length === 0 && <Flex
@@ -251,7 +256,7 @@ export default function HomePage() {
               {
                 itemsElements
               }
-            </Flex>
+            </SimpleGrid>
             <GoogleAd adSlot={"9985735186"}/>
           </Flex>
         </Flex>
