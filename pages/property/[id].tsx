@@ -3,7 +3,7 @@ import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPane
 import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaHospital, FaSchool, FaStore } from "react-icons/fa";
+import { FaBed, FaCar, FaCouch, FaDog, FaHospital, FaRuler, FaSchool, FaShower, FaStore, FaSubway } from "react-icons/fa";
 import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
@@ -20,7 +20,7 @@ const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currenc
 
 type DisplayInfo = {
   key: string;
-  value: (property: IPropertySaved) => string
+  value: (property: IPropertySaved) => (string | JSX.Element)
   filter: (property: IPropertySaved) => boolean
   icon: string | (() => JSX.Element);
   borderColor?: string;
@@ -36,37 +36,37 @@ const displayInfo: DisplayInfo[] = [{
   color: "red.500"
 }, {
   key: 'totalArea',
-  icon: '/bx_ruler.svg',
+  icon: () => <Icon as={FaRuler} />,
   value: property => `${property?.information.totalArea}m²`,
   filter: property => !!property?.information.totalArea,
 }, {
   key: 'bedrooms',
-  icon: '/cil_bed.svg',
+  icon: () => <Icon as={FaBed} />,
   value: property => `${property?.information.bedrooms} quarto${property?.information.bedrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bedrooms,
 }, {
   key: 'bathrooms',
-  icon: '/cil_shower.svg',
+  icon: () => <Icon as={FaShower} />,
   value: property => `${property?.information.bathrooms} banheiro${property?.information.bathrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bathrooms,
 }, {
   key: 'parkingSlots',
-  icon: '/bxs_car-garage.svg',
+  icon: () => <Icon as={FaCar} />,
   value: property => `${property?.information.parkingSlots} vaga${property?.information.parkingSlots > 1 ? 's' : ''}`,
   filter: property => !!property?.information.parkingSlots,
 }, {
   key: 'acceptPets',
-  icon: '/dashicons_pets.svg',
+  icon: () => <Icon as={FaDog} />,
   value: property => `Aceita pets`,
   filter: property => property?.information.acceptPets,
 }, {
   key: 'nearSubway',
-  icon: '/ic_baseline-subway.svg',
-  value: property => `Metrô próximo`,
+  icon: () => <Icon as={FaSubway} />,
+  value: property => <Text textAlign="center">Metrô<br/>próximo</Text>,
   filter: property => property?.information.nearSubway,
 }, {
   key: 'isFurnished',
-  icon: '/cil_sofa.svg',
+  icon: () => <Icon as={FaCouch} />,
   value: property => `Mobiliado`,
   filter: property => property?.information.isFurnished,
 }]
@@ -205,14 +205,21 @@ export default function PropertyPage({
   }
 
   return <>
-    <Flex gap={2} direction="column" height={"100vh"} mb={16}>
+    <Flex direction="column" height={"100vh"} mb={16}>
       <Header />
-      <Box px={4}>
-        <Flex alignItems="center" gap={2} mb={4}>
-          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-          <Heading fontSize={"2xl"}>{property.address}</Heading>
-        </Flex>
+      <Flex alignItems="center"
+        gap={2}
+        p={4}
+        bgGradient='linear-gradient(to-r, pink.400, pink.600)'
+        position="sticky"
+        top={0}
+      >
+        <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+        <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
+      </Flex>
+      <Flex direction="column">
         {property.images.length > 0 && <Flex
+          bgGradient='linear-gradient(to-r, pink.400, pink.600)'
           ref={imagesRef}
           gap={2}
           p={2}
@@ -228,9 +235,12 @@ export default function PropertyPage({
             boxShadow="md"
             borderRadius="md"
             scrollSnapAlign={"start"}
+            border={"2px"}
+            borderColor="white"
           />)}
         </Flex>}
         <Grid
+          px={4}
           my={4}
           gap={6}
           gridTemplateAreas={{
@@ -253,6 +263,7 @@ export default function PropertyPage({
             <Wrap mb={4}>
               {displayInformationGroups.map(d => {
                 const Icon = d.icon;
+                const Value = d.value;
                 return <WrapItem
                   display={"flex"}
                   flexDirection="column"
@@ -260,13 +271,14 @@ export default function PropertyPage({
                   key={d.key}
                   gap={1}
                   alignItems="center"
+                  justifyContent="center"
                   boxShadow="sm"
                   border="1px"
                   borderColor={d.borderColor || "gray.300"}
                   borderRadius="lg"
                 >
                   {typeof (Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
-                  <Text color={d.color}>{d.value}</Text>
+                  {typeof (Value) === "string" ? <Text color={d.color}>{Value}</Text> : Value}
                 </WrapItem>
               })}
             </Wrap>
@@ -300,7 +312,7 @@ export default function PropertyPage({
               </TabPanel>
               <TabPanel>
                 <Nearby propertyId={propertyId} token={token} />
-                </TabPanel>
+              </TabPanel>
             </TabPanels>
           </Tabs>
           <Flex gridArea="sidePanel" maxW={{
@@ -320,8 +332,7 @@ export default function PropertyPage({
             </Flex>
           </Flex>
         </Grid>
-
-      </Box>
+      </Flex>
     </Flex>
     {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
     {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
@@ -363,12 +374,12 @@ function Nearby({
     text: 'Hospitais'
   }, {
     placeId: 'school',
-      icon: FaSchool,
-      text: 'Escolas'
-    }, {
+    icon: FaSchool,
+    text: 'Escolas'
+  }, {
     placeId: 'drugstore',
-      icon: FaStore,
-      text: 'Drogarias'
+    icon: FaStore,
+    text: 'Drogarias'
   }].map(place => {
     const list = nearbyData?.places
       .filter((p) => p.types.includes(place.placeId))
