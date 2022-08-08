@@ -159,6 +159,7 @@ export default function PropertyPage({
     .map(costType => {
       const cost = formatNumber.format(property.costs[costType.name]);
       return <Flex
+        bgColor="white"
         key={costType.name}
         gap={2}
         alignItems="center"
@@ -315,8 +316,13 @@ export default function PropertyPage({
               </TabPanel>
             </TabPanels>
           </Tabs>
-          <Flex gridArea="sidePanel" maxW={{
-          }} flex={1} direction="column" gap={2}>
+          <Flex
+            position={"sticky"}
+            top={4}
+            flex={1}
+            direction="column"
+            gap={2}
+          >
             {costsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
