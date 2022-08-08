@@ -1,4 +1,4 @@
-import { Button, Flex, GridItem, Heading, Icon, Image } from "@chakra-ui/react";
+import { Button, Flex, GridItem, Heading, Icon, Image, Link } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { FaHome } from "react-icons/fa";
 import useUser from "../lib/useUser";
@@ -14,7 +14,7 @@ export default function Header() {
     py={2}
     px='4'
   >
-    <Button
+    <Link
       display="flex"
       alignItems="center"
       variant="ghost"
@@ -25,11 +25,11 @@ export default function Header() {
         backgroundColor: undefined
       }}
       gap={2}
-      onClick={() => router.push('/home')}
+      href="/home"
       >
       <Icon as={FaHome} color='white' h={6} w={6} />
       <Heading fontSize={"2xl"} color="whiteAlpha.900">PartAp</Heading>
-    </Button>
+    </Link>
     { user && <Flex ml="auto" alignItems="center" gap={2}>
       <Image
         borderRadius='full'

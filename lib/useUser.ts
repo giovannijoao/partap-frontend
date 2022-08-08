@@ -7,8 +7,11 @@ import { OwnAPI } from '../services/own-api'
 export default function useUser({
   redirectTo = '',
   redirectIfFound = false,
+  fallback = null,
 } = {}) {
-  const { data: user, mutate: mutateUser, error } = useSWR<IUser>('/api/user', url => OwnAPI.get(url).then(res => res.data))
+  const { data: user, mutate: mutateUser, error } = useSWR<IUser>('/api/user', url => OwnAPI.get(url).then(res => res.data), {
+    fallbackData: fallback
+  })
 
   useEffect(() => {
     // if no redirect needed, just return (example: already on /dashboard)

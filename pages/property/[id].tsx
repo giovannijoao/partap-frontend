@@ -1,23 +1,26 @@
 import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
 import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaHospital, FaSchool, FaStore } from "react-icons/fa";
+import { FaBed, FaCar, FaCouch, FaDog, FaHospital, FaRuler, FaSchool, FaShower, FaStore, FaSubway } from "react-icons/fa";
 import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
 import SendIconSVG from "../../components/js-icons/Send";
 import ShareIconSVG from "../../components/js-icons/Share";
+import { sessionOptions } from "../../lib/session";
 import useNearbyData from "../../lib/useNearby";
 import useProperty from "../../lib/useProperty";
 import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
+import { ApiURL } from '../../config'
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 type DisplayInfo = {
   key: string;
-  value: (property: IPropertySaved) => string
+  value: (property: IPropertySaved) => (string | JSX.Element)
   filter: (property: IPropertySaved) => boolean
   icon: string | (() => JSX.Element);
   borderColor?: string;
@@ -33,37 +36,37 @@ const displayInfo: DisplayInfo[] = [{
   color: "red.500"
 }, {
   key: 'totalArea',
-  icon: '/bx_ruler.svg',
+  icon: () => <Icon as={FaRuler} color="purple.500" />,
   value: property => `${property?.information.totalArea}m²`,
   filter: property => !!property?.information.totalArea,
 }, {
   key: 'bedrooms',
-  icon: '/cil_bed.svg',
+  icon: () => <Icon as={FaBed} color="purple.500" />,
   value: property => `${property?.information.bedrooms} quarto${property?.information.bedrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bedrooms,
 }, {
   key: 'bathrooms',
-  icon: '/cil_shower.svg',
+  icon: () => <Icon as={FaShower} color="purple.500" />,
   value: property => `${property?.information.bathrooms} banheiro${property?.information.bathrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bathrooms,
 }, {
   key: 'parkingSlots',
-  icon: '/bxs_car-garage.svg',
+  icon: () => <Icon as={FaCar} color="purple.500" />,
   value: property => `${property?.information.parkingSlots} vaga${property?.information.parkingSlots > 1 ? 's' : ''}`,
   filter: property => !!property?.information.parkingSlots,
 }, {
   key: 'acceptPets',
-  icon: '/dashicons_pets.svg',
+  icon: () => <Icon as={FaDog} color="purple.500" />,
   value: property => `Aceita pets`,
   filter: property => property?.information.acceptPets,
 }, {
   key: 'nearSubway',
-  icon: '/ic_baseline-subway.svg',
-  value: property => `Metrô próximo`,
+  icon: () => <Icon as={FaSubway} color="purple.500" />,
+  value: property => <Text textAlign="center">Metrô<br/>próximo</Text>,
   filter: property => property?.information.nearSubway,
 }, {
   key: 'isFurnished',
-  icon: '/cil_sofa.svg',
+  icon: () => <Icon as={FaCouch} color="purple.500" />,
   value: property => `Mobiliado`,
   filter: property => property?.information.isFurnished,
 }]
@@ -88,11 +91,16 @@ const allCostsTypes = [{
   "filter": (property: IPropertySaved) => ['both', 'aluguel'].includes(property.modo)
 }]
 
-export default function PropertyPage() {
+export default function PropertyPage({
+  userServerData,
+  propertyServerData,
+}) {
   const { query, push } = useRouter();
   const { user } = useUser({
-    redirectTo: `/login`
+    redirectTo: `/login`,
+    fallback: userServerData
   })
+
   const { isOpen: isOpenAdminInvite, onOpen: onOpenAdminInvite, onClose: onCloseAdminInvite } = useDisclosure()
   const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
@@ -105,7 +113,9 @@ export default function PropertyPage() {
   const { property, mutateProperty } = useProperty({
     propertyId,
     token,
+    fallback: propertyServerData,
   });
+
   const isAdminUser = user && user.id === property?.user._id;
   const isInvitedUser = !!token && user.id !== property?.user._id && !property?.share?.users.find(u => u._id === user.id);
 
@@ -145,8 +155,9 @@ export default function PropertyPage() {
   }), [property])
 
   const costsElements = useMemo(() => {
-    return property.costs?.map(cost => {
+    return property?.costs?.map(cost => {
       return <Flex
+        bgColor="white"
         key={cost.costId}
         gap={2}
         alignItems="center"
@@ -170,7 +181,7 @@ export default function PropertyPage() {
   }, [property])
 
   const totalCostsElements = useMemo(() => {
-    return property.totalCost?.map(cost => {
+    return property?.totalCost?.map(cost => {
       const value = property.costs?.filter(c => cost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
       return <Flex
         key={cost.costId}
@@ -221,14 +232,21 @@ export default function PropertyPage() {
   }
 
   return <>
-    <Flex gap={2} direction="column" height={"100vh"} mb={16}>
+    <Flex direction="column" height={"100vh"} mb={16}>
       <Header />
-      <Box px={4}>
-        <Flex alignItems="center" gap={2} mb={4}>
-          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-          <Heading fontSize={"2xl"}>{property.address}</Heading>
-        </Flex>
+      <Flex alignItems="center"
+        gap={2}
+        p={4}
+        bgGradient='linear-gradient(to-r, pink.400, pink.600)'
+        position="sticky"
+        top={0}
+      >
+        <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+        <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
+      </Flex>
+      <Flex direction="column">
         {property.images.length > 0 && <Flex
+          bgGradient='linear-gradient(to-r, pink.400, pink.600)'
           ref={imagesRef}
           gap={2}
           p={2}
@@ -244,9 +262,12 @@ export default function PropertyPage() {
             boxShadow="md"
             borderRadius="md"
             scrollSnapAlign={"start"}
+            border={"2px"}
+            borderColor="white"
           />)}
         </Flex>}
         <Grid
+          px={4}
           my={4}
           gap={6}
           gridTemplateAreas={{
@@ -269,6 +290,7 @@ export default function PropertyPage() {
             <Wrap mb={4}>
               {displayInformationGroups.map(d => {
                 const Icon = d.icon;
+                const Value = d.value;
                 return <WrapItem
                   display={"flex"}
                   flexDirection="column"
@@ -276,13 +298,14 @@ export default function PropertyPage() {
                   key={d.key}
                   gap={1}
                   alignItems="center"
+                  justifyContent="center"
                   boxShadow="sm"
                   border="1px"
-                  borderColor={d.borderColor || "gray.300"}
+                  borderColor={d.borderColor || "gray.100"}
                   borderRadius="lg"
                 >
                   {typeof (Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
-                  <Text color={d.color}>{d.value}</Text>
+                  {typeof (Value) === "string" ? <Text color={d.color}>{Value}</Text> : Value}
                 </WrapItem>
               })}
             </Wrap>
@@ -305,7 +328,6 @@ export default function PropertyPage() {
               <Tab>Informações de Contato</Tab>
               <Tab>Por perto</Tab>
             </TabList>
-
             <TabPanels>
               <TabPanel>
                 <Chat gridArea="chat" property={property} />
@@ -319,8 +341,13 @@ export default function PropertyPage() {
               </TabPanel>
             </TabPanels>
           </Tabs>
-          <Flex gridArea="sidePanel" maxW={{
-          }} flex={1} direction="column" gap={2}>
+          <Flex
+            position={"sticky"}
+            top={4}
+            flex={1}
+            direction="column"
+            gap={2}
+          >
             {costsElements}
             {totalCostsElements}
             <Divider my={2} />
@@ -337,13 +364,33 @@ export default function PropertyPage() {
             </Flex>
           </Flex>
         </Grid>
-
-      </Box>
+      </Flex>
     </Flex>
     {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
     {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
+
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  const [, id] = req.url.match(/property\/(.*)/)
+  const result = await fetch(`${ApiURL}/properties/${id}`, {
+    headers: {
+      Authorization: req.session.user.token,
+    },
+  })
+  const data = await result.json()
+  return {
+    props: {
+      userServerData: {
+        ...req.session.user
+      },
+      propertyServerData: data
+    }, // will be passed to the page component as props
+  }
+}, sessionOptions)
 
 function Nearby({
   propertyId,
@@ -526,6 +573,7 @@ function ShareModal({
 
   const mutateProperty = useCallback(() => mutate(`/properties/${property._id}`), [property._id]);
   const handleAdd = useCallback(async (e) => {
+    if (!loggedUser) return;
     e.preventDefault()
     setErrorMsg("")
     setIsLoading(true)
@@ -555,9 +603,10 @@ function ShareModal({
       else setErrorMsg("Ocorreu um erro")
     }
     setIsLoading(false)
-  }, [email, loggedUser.token, mutateProperty, property._id])
+  }, [email, loggedUser, mutateProperty, property._id])
 
   const handleRemove = useCallback(async (userId) => {
+    if (!loggedUser) return;
     await ApiInstance.delete(`/share/${property._id}`, {
       params: {
         user: userId,
@@ -567,7 +616,7 @@ function ShareModal({
       },
     }).then(res => res.data);
     mutateProperty()
-  }, [loggedUser.token, mutateProperty, property._id])
+  }, [loggedUser, mutateProperty, property._id])
 
   const handleCopyLink = useCallback(async () => {
     if (!property.share.token) {
@@ -583,7 +632,7 @@ function ShareModal({
     const link = `${window.location.origin}/property/${property._id}?token=${property.share.token}`
     navigator.clipboard.writeText(link)
     setLinkCopied(true)
-  }, [loggedUser.token, property._id, property.share])
+  }, [loggedUser, property._id, property.share])
 
 
 
