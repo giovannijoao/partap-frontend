@@ -36,37 +36,37 @@ const displayInfo: DisplayInfo[] = [{
   color: "red.500"
 }, {
   key: 'totalArea',
-  icon: () => <Icon as={FaRuler} />,
+  icon: () => <Icon as={FaRuler} color="purple.500" />,
   value: property => `${property?.information.totalArea}m²`,
   filter: property => !!property?.information.totalArea,
 }, {
   key: 'bedrooms',
-  icon: () => <Icon as={FaBed} />,
+  icon: () => <Icon as={FaBed} color="purple.500" />,
   value: property => `${property?.information.bedrooms} quarto${property?.information.bedrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bedrooms,
 }, {
   key: 'bathrooms',
-  icon: () => <Icon as={FaShower} />,
+  icon: () => <Icon as={FaShower} color="purple.500" />,
   value: property => `${property?.information.bathrooms} banheiro${property?.information.bathrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bathrooms,
 }, {
   key: 'parkingSlots',
-  icon: () => <Icon as={FaCar} />,
+  icon: () => <Icon as={FaCar} color="purple.500" />,
   value: property => `${property?.information.parkingSlots} vaga${property?.information.parkingSlots > 1 ? 's' : ''}`,
   filter: property => !!property?.information.parkingSlots,
 }, {
   key: 'acceptPets',
-  icon: () => <Icon as={FaDog} />,
+  icon: () => <Icon as={FaDog} color="purple.500" />,
   value: property => `Aceita pets`,
   filter: property => property?.information.acceptPets,
 }, {
   key: 'nearSubway',
-  icon: () => <Icon as={FaSubway} />,
+  icon: () => <Icon as={FaSubway} color="purple.500" />,
   value: property => <Text textAlign="center">Metrô<br/>próximo</Text>,
   filter: property => property?.information.nearSubway,
 }, {
   key: 'isFurnished',
-  icon: () => <Icon as={FaCouch} />,
+  icon: () => <Icon as={FaCouch} color="purple.500" />,
   value: property => `Mobiliado`,
   filter: property => property?.information.isFurnished,
 }]
@@ -274,7 +274,7 @@ export default function PropertyPage({
                   justifyContent="center"
                   boxShadow="sm"
                   border="1px"
-                  borderColor={d.borderColor || "gray.300"}
+                  borderColor={d.borderColor || "gray.100"}
                   borderRadius="lg"
                 >
                   {typeof (Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
