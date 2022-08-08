@@ -49,6 +49,40 @@ type IImage = {
   description?: string
 }
 
+type IForm = {
+  modo: string;
+  address: string;
+  information: {
+    bedrooms: number;
+    bathrooms: number;
+    parkingSlots: number;
+    nearSubway: boolean;
+    isFurnished: boolean;
+    acceptPets: boolean;
+    totalArea: number;
+    description: string;
+  }
+  costs: Array<{
+    costId: string;
+    text: string
+    value: number;
+  }>
+  totalCost: Array<{
+    costId: string
+    text: string
+    calc: string[]
+    showInMainCard: {
+      checked: boolean
+      view: string
+    }
+  }>
+  contactInfo: {
+    description?: string
+  }
+  url?: string
+  [key: string]: any
+}
+
 const uniqueID = () => Math.floor(Math.random() * Math.floor(Math.random() * Date.now()))
 
 export default function NewV2() {
@@ -76,36 +110,7 @@ export default function NewV2() {
   const { property, mutateProperty } = useProperty({
     propertyId,
   })
-  const formMethods = useForm<{
-    modo: string;
-    address: string;
-    information: {
-      bedrooms: number;
-      bathrooms: number;
-      parkingSlots: number;
-      nearSubway: boolean;
-      isFurnished: boolean;
-      acceptPets: boolean;
-      totalArea: number;
-      description: string;
-    }
-    costs: Array<{
-      costId: string;
-      text: string
-      value: number;
-    }>
-    totalCost: Array<{
-      costId: string
-      text: string
-      calc: string[]
-      showIn: string
-    }>
-    contactInfo: {
-      description?: string
-    }
-    url?: string
-    [key: string]: any
-  }>({
+  const formMethods = useForm<IForm>({
     defaultValues: {
       modo: 'isRent',
       address: '',
@@ -123,14 +128,6 @@ export default function NewV2() {
     }
   })
   const { control, register, handleSubmit: handleFormSubmit, reset, getValues, setValue, watch, formState: { errors } } = formMethods;
-  const { fields: fieldsCosts, append: appendCost, remove: removeCost } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
-    name: "costs", // unique name for your Field Array.
-  });
-  const { fields: fieldsCostsTotal, append: appendCostTotal, remove: removeCostTotal } = useFieldArray({
-    control, // control props comes from useForm (optional: if you are using FormContext)
-    name: "totalCost", // unique name for your Field Array.
-  });
 
   useEffect(() => {
     reset(property)
@@ -179,69 +176,7 @@ export default function NewV2() {
   }, [user?.token])
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
-  const handleAddCost = useCallback(({
-    isTotalCost,
-  }) => {
-    if (isTotalCost) {
-      appendCostTotal({
-        costId: uniqueID().toString(),
-        text: '',
-        calc: [],
-      })
-    } else {
-      appendCost({
-        costId: uniqueID().toString(),
-        text: '',
-        value: 0,
-      })
-    }
-  }, [appendCost, appendCostTotal])
-
   const formValues = getValues();
-  const totalCostElements = useMemo(() => {
-    return fieldsCostsTotal.map((cost, i) => {
-      return <Flex
-        key={cost.id}
-        boxShadow="md"
-        p={4}
-        direction="column"
-        gap={2}
-      >
-        <Flex alignItems="center" gap={2}>
-          <Box h={6} w={6} textAlign="center" backgroundColor="gray.100" borderRadius={'full'}>
-            <Text>{(i + 1).toString().padStart(2, '0')}</Text>
-          </Box>
-          <FormControl isInvalid={errors?.totalCost && !!errors.totalCost[i]?.text}>
-            <Input defaultValue={cost.text} {...register(`totalCost.${i}.text`, {
-              required: true,
-            })} />
-          </FormControl>
-        </Flex>
-        <Box p={2} boxShadow="xs">
-          <TotalCostCheckboxes i={i} />
-        </Box>
-        <Flex justifyContent={"space-around"} direction={{
-          base: 'column',
-          md: 'row'
-        }} gap={{
-          base: 2,
-          md: 0
-        }}>
-          <TotalCostCalculatedValue i={i} />
-          <FormControl maxW="xs" isInvalid={!!errors.totalCost?.[i]}>
-            <Select placeholder='Mostrar em' defaultValue={cost.showIn} {...register(`totalCost.${i}.showIn`, {
-              required: true
-            })}>
-              <option value='isRent'>Aluguel</option>
-              <option value='isSell'>Compra</option>
-              <option value='isBoth'>Ambos</option>
-            </Select>
-          </FormControl>
-          <IconButton icon={<DeleteIcon />} onClick={() => removeCostTotal(i)} aria-label="Deletar" />
-        </Flex>
-      </Flex>
-    })
-  }, [errors.totalCost, fieldsCostsTotal, register, removeCostTotal]);
 
   return <>
     <Grid
@@ -656,71 +591,12 @@ export default function NewV2() {
                           </FormErrorMessage>
                         </FormControl>
                         <Text>Informe os custos principais</Text>
-                        <TableContainer w="full">
-                          <Table>
-                            <Thead>
-                              <Tr>
-                                <Th p={1}>Id</Th>
-                                <Th p={1}>Nome</Th>
-                                <Th p={1}>Valor</Th>
-                                <Th p={1}></Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {
-                                fieldsCosts.map((cost, i) => {
-                                  return <Tr key={cost.id}>
-                                    <Td
-                                      padding={1}
-                                    >{i + 1}</Td>
-                                    <Td
-                                      padding={1}
-                                    >
-                                      <FormControl isInvalid={errors?.costs && !!errors.costs[i]?.text}>
-                                        <Input defaultValue={cost.text} {...register(`costs.${i}.text`, {
-                                          required: true,
-                                        })} />
-                                      </FormControl>
-                                    </Td>
-                                    <Td p={1} display="flex" alignItems="center" gap={2}>
-                                      <FormControl isInvalid={errors?.costs && !!errors.costs[i]?.value}>
-                                        <InputGroup>
-                                          <InputLeftAddon>R$</InputLeftAddon>
-                                          <Input defaultValue={cost.value} type="number" {...register(`costs.${i}.value`, {
-                                            setValueAs: e => Number(e),
-                                            required: true,
-                                          })} />
-                                        </InputGroup>
-                                      </FormControl>
-                                    </Td>
-                                    <Td padding={1} >
-                                      <IconButton icon={<DeleteIcon />} onClick={() => removeCost(i)} aria-label="Deletar" />
-                                    </Td>
-                                  </Tr>
-                                })
-                              }
-                            </Tbody>
-                          </Table>
-                        </TableContainer>
-                        <Center w="full">
-                          <Button size="xs" onClick={() => handleAddCost({
-                            isTotalCost: false,
-                          })}>Adicionar custo</Button>
-                        </Center>
+                        <CostsTable />
                         <Text>Informe os custos totais</Text>
-                        <Flex direction="column" gap={4}>
-                          {
-                            totalCostElements
-                          }
-                        </Flex>
-                        <Center w="full">
-                          <Button size="xs" onClick={() => handleAddCost({
-                            isTotalCost: true,
-                          })}>Adicionar total</Button>
-                        </Center>
+                        <TotalCosts />
                       </Flex>
                     </Flex>
-                    <Button mt={2} colorScheme={"green"} type="submit" isLoading={isLoading} >Salvar</Button>
+                    <Button mt={4} colorScheme={"green"} type="submit" isLoading={isLoading} >Salvar</Button>
                     <Flex gap={2}>
                       <Button isDisabled={isLoading} flex={1} mt={2} onClick={() => dispatchStep({ next: 'options' })}>Voltar</Button>
                       <Button isDisabled={isLoading} flex={1} mt={2} colorScheme="purple" variant="outline" onClick={() => dispatchStep({ next: 'contactInfo' })}>Editar informações de contato</Button>
@@ -789,11 +665,150 @@ export default function NewV2() {
   </>
 }
 
+const CostsTable = () => {
+  const { register, control, formState: { errors } } = useFormContext<IForm>();
+  const { fields: fieldsCosts, append: appendCost, remove: removeCost } = useFieldArray({
+    control, // control props comes from useForm (optional: if you are using FormContext)
+    name: "costs", // unique name for your Field Array.
+  });
+
+  return <>
+  <TableContainer w="full">
+    <Table>
+      <Thead>
+        <Tr>
+          <Th p={1}>Id</Th>
+          <Th p={1}>Nome</Th>
+          <Th p={1}>Valor</Th>
+          <Th p={1}></Th>
+        </Tr>
+      </Thead>
+      <Tbody>
+        {
+          fieldsCosts.map((cost, i) => {
+            return <Tr key={cost.id}>
+              <Td
+                padding={1}
+              >{i + 1}</Td>
+              <Td
+                padding={1}
+              >
+                <FormControl isInvalid={errors?.costs && !!errors.costs[i]?.text}>
+                  <Input defaultValue={cost.text} {...register(`costs.${i}.text`, {
+                    required: true,
+                  })} />
+                </FormControl>
+              </Td>
+              <Td p={1} display="flex" alignItems="center" gap={2}>
+                <FormControl isInvalid={errors?.costs && !!errors.costs[i]?.value}>
+                  <InputGroup>
+                    <InputLeftAddon>R$</InputLeftAddon>
+                    <Input defaultValue={cost.value} type="number" {...register(`costs.${i}.value`, {
+                      setValueAs: e => Number(e),
+                      required: true,
+                    })} />
+                  </InputGroup>
+                </FormControl>
+              </Td>
+              <Td padding={1} >
+                <IconButton icon={<DeleteIcon />} onClick={() => removeCost(i)} aria-label="Deletar" />
+              </Td>
+            </Tr>
+          })
+        }
+      </Tbody>
+    </Table>
+  </TableContainer>
+  <Button onClick={() => {
+    appendCost({
+      costId: uniqueID().toString(),
+      value: 0
+    })
+  }}>Adicionar custo</Button>
+  </>
+}
+
+const TotalCosts = () => {
+  const { register, control, formState: { errors } } = useFormContext<IForm>();
+  const { fields: fieldsCostsTotal, append: appendCostTotal, remove: removeCostTotal } = useFieldArray({
+    control, // control props comes from useForm (optional: if you are using FormContext)
+    name: "totalCost", // unique name for your Field Array.
+  });
+  const elements = useMemo(() => fieldsCostsTotal.map((cost, i) => {
+    return <Flex
+      key={cost.id}
+      boxShadow="md"
+      p={4}
+      direction="column"
+      gap={2}
+    >
+      <Flex alignItems="center" gap={2}>
+        <Box h={6} w={6} textAlign="center" backgroundColor="gray.100" borderRadius={'full'}>
+          <Text>{(i + 1).toString().padStart(2, '0')}</Text>
+        </Box>
+        <FormControl isInvalid={errors?.totalCost && !!errors.totalCost[i]?.text}>
+          <Input defaultValue={cost.text} {...register(`totalCost.${i}.text`, {
+            required: true,
+          })} />
+        </FormControl>
+      </Flex>
+      <Box p={2} boxShadow="xs">
+        <TotalCostCheckboxes i={i} />
+      </Box>
+      <Flex alignItems="center" justifyContent={"space-around"} direction={{
+        base: 'column',
+        md: 'row'
+      }} gap={{
+        base: 2,
+        md: 0
+      }}>
+        <TotalCostCalculatedValue i={i} />
+        <TotalCostViews i={i} />
+        <IconButton icon={<DeleteIcon />} onClick={() => removeCostTotal(i)} aria-label="Deletar" />
+      </Flex>
+    </Flex>
+  }), [errors?.totalCost, fieldsCostsTotal, register, removeCostTotal])
+  return <>
+    {elements}
+    <Button onClick={() => {
+      appendCostTotal({
+        costId: uniqueID().toString(),
+        calc: [],
+      })
+    }}>Adicionar total</Button>
+  </>
+}
+
+const TotalCostCheckbox = ({
+  costId,
+  text,
+  i,
+  onChange,
+}) => {
+  const { watch } = useFormContext();
+  const totalCost = watch(`totalCost.${i}`);
+  const calc = totalCost.calc;
+  const isPresentInCalc = calc.includes(costId);
+  return <Checkbox defaultChecked={isPresentInCalc} onChange={(e) => {
+    let newCalc: string[];
+    if (!isPresentInCalc && e.target.checked) {
+      newCalc = [...calc, costId]
+    } else {
+      newCalc = calc.filter(id => id !== costId)
+    }
+    onChange({
+      target: {
+        value: newCalc
+      }
+    })
+  }}>{text}</Checkbox>
+}
+
 const TotalCostCheckboxes = ({
   i,
 }) => {
   const { control, watch } = useFormContext();
-  const [costs, totalCost] = watch(['costs', 'totalCost']);
+  const [costs] = watch(['costs']);
   return <Controller
     control={control}
     name={`totalCost.${i}.calc`}
@@ -803,23 +818,12 @@ const TotalCostCheckboxes = ({
       return <>
         <Wrap gap={1}>
           {
-            costs.map(c => {
-              const calc = totalCost[i].calc;
-              const isPresentInCalc = calc.includes(c.costId);
-              return <Checkbox key={`totalCost-${i}-${c.costId}`} defaultChecked={isPresentInCalc} onChange={(e) => {
-                let newCalc: string[];
-                if (!isPresentInCalc && e.target.checked) {
-                  newCalc = [...calc, c.costId]
-                } else {
-                  newCalc = calc.filter(id => id !== c.costId)
-                }
-                onChange({
-                  target: {
-                    value: newCalc
-                  }
-                })
-              }}>{c.text}</Checkbox>
-            })
+            costs.filter(c => c.text).map(c => <TotalCostCheckbox
+              i={i}
+              key={`totalCost-${i}-checkbox-${c.costId}`}
+              costId={c.costId}
+              text={c.text}
+              onChange={onChange} />)
           }
         </Wrap>
       </>
@@ -831,8 +835,8 @@ const TotalCostCalculatedValue = ({
   i,
 }) => {
   const { watch } = useFormContext();
-  const [costs, totalCost] = watch(['costs', 'totalCost']);
-  const value: number = costs.filter(c => totalCost[i].calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+  const [costs, totalCost] = watch(['costs', `totalCost.${i}`]);
+  const value: number = costs.filter(c => totalCost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
 
   const parsedValue = value.toLocaleString('pt', {
     style: 'currency',
@@ -844,6 +848,68 @@ const TotalCostCalculatedValue = ({
       {parsedValue}
     </Text>
   </Flex>
+}
+
+const TotalCostViews = ({
+  i,
+}) => {
+  const { control, watch } = useFormContext();
+  const totalCost = watch(`totalCost.${i}`);
+  return <Popover>
+    <PopoverTrigger>
+      <Button size="sm">Mostrar na tela principal</Button>
+    </PopoverTrigger>
+    <PopoverContent>
+      <PopoverArrow />
+      <PopoverCloseButton />
+      <PopoverHeader>Visualização</PopoverHeader>
+      <PopoverBody>
+        <Controller
+          control={control}
+          name={`totalCost.${i}.showInMainCard.views`}
+          render={({
+            field: { onChange },
+          }) => {
+            return <>
+              <Flex direction="column">
+                {
+                  [
+                    {
+                      modo: 'isRent',
+                      text: 'Aluguel'
+                    },
+                    {
+                      modo: 'isSell',
+                      text: 'Compra'
+                    },
+                    {
+                      modo: 'isBoth',
+                      text: 'Ambos'
+                    }
+                  ].map(item => {
+                    const views = totalCost?.showInMainCard?.views || [];
+                    const isSelected = views.includes(item.modo);
+                    return <Checkbox key={`view-${i}-${item.modo}`} defaultChecked={isSelected} onChange={(e) => {
+                      let newViews: string[];
+                      if (!isSelected && e.target.checked) {
+                        newViews = [...views, item.modo]
+                      } else {
+                        newViews = views.filter(id => id !== item.modo)
+                      }
+                      onChange({
+                        target: {
+                          value: newViews
+                        }
+                      })
+                    }}>{item.text}</Checkbox>
+                  })
+                }
+              </Flex>
+            </>
+          }}/>
+        </PopoverBody>
+    </PopoverContent>
+  </Popover>
 }
 
 const ActivateSecondaryInfoComponent = ({
