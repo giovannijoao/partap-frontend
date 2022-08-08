@@ -127,7 +127,7 @@ export default function NewV2() {
       costs: []
     }
   })
-  const { control, register, handleSubmit: handleFormSubmit, reset, getValues, setValue, watch, formState: { errors } } = formMethods;
+  const { register, handleSubmit: handleFormSubmit, reset, getValues, setValue, watch, formState: { errors } } = formMethods;
 
   useEffect(() => {
     reset(property)
