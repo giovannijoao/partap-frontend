@@ -62,6 +62,18 @@ export default function Home() {
     setErrorMsg("")
   }, [signUpForm])
 
+  useEffect(() => {
+    const credentials = process.env.NEXT_PUBLIC_AUTO_LOGIN_CREDENTIALS;
+    if (credentials) {
+      console.log('# Auto login enabled')
+      const [email, password] = credentials.split(',');
+      handleSignIn({
+        email,
+        password,
+      })
+    }
+  }, [handleSignIn])
+
   return (
     <Center
       w={"100vw"}
