@@ -365,8 +365,6 @@ const Filters = forwardRef(({
     value: number;
   }>();
 
-  const { filtersCustomData } = useCostsFilters();
-
   const [filters, setFilters] = useState({
     isAvailable: [true],
     isSell: undefined,
@@ -576,11 +574,6 @@ const Filters = forwardRef(({
     },
   }));
 
-  const handlePriceFilterAdd = useCallback((values) => {
-    console.log(558, values)
-    appendCostsFilter(values)
-    resetPriceFilterAdd()
-  }, [appendCostsFilter, resetPriceFilterAdd]);
 
   return <Flex
     flex={1}
@@ -614,45 +607,7 @@ const Filters = forwardRef(({
     >
       <Text fontSize="xs">Filtros de preço</Text>
       <Divider />
-      <form onSubmit={handleSubmitPriceFilterAdd(handlePriceFilterAdd)}>
-        <Flex alignItems={"center"} gap={2}>
-          <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.field}>
-            <Select defaultValue="#" size={"xs"} {...registerPriceFilterAdd('field', {
-              required: true,
-              setValueAs: (value) => value === '#' ? null : value
-            })}>
-              <option disabled value="#">Custo</option>
-              <optgroup label="Custos Unitários">
-                {filtersCustomData?.data.costFilters.filter(x => x.property === "costs").map(costFilter => {
-                  return <option key={`${costFilter.property}-${costFilter.text}`} value={`${costFilter.property}||${costFilter.text}`}>{costFilter.text}</option>
-                })}
-              </optgroup>
-              <optgroup label="Custos Totais">
-                {filtersCustomData?.data.costFilters.filter(x => x.property === "totalCost").map(costFilter => {
-                  return <option key={`${costFilter.property}-${costFilter.text}`} value={`${costFilter.property}||${costFilter.text}`}>{costFilter.text}</option>
-                })}
-              </optgroup>
-            </Select>
-          </FormControl>
-          <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.operator}>
-            <Select defaultValue="#" size="xs" {...registerPriceFilterAdd('operator', {
-              required: true,
-              setValueAs: (value) => value === '#' ? null : value
-            })}>
-              <option disabled value="#">Filtro</option>
-              {
-                operators.map(operator => <option key={operator.operator} value={operator.operator}>{operator.selectOption}</option>)
-              }
-            </Select>
-          </FormControl>
-          <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.value}>
-            <Input type="number" size="xs" {...registerPriceFilterAdd('value', {
-              required: true,
-            })} />
-          </FormControl>
-          <IconButton size="xs" icon={<AddIcon />} aria-label="Adicionar filtro de valor" type="submit" />
-        </Flex>
-      </form>
+      <PriceAddFilterForm appendCostsFilter={appendCostsFilter} />
       <Divider />
       <Flex direction="column">
         {
@@ -729,3 +684,67 @@ const Filters = forwardRef(({
     </Box>
   </Flex>
 })
+
+const PriceAddFilterForm = ({
+  appendCostsFilter
+}) => {
+
+  const { filtersCustomData } = useCostsFilters();
+
+  const {
+    register: registerPriceFilterAdd,
+    handleSubmit: handleSubmitPriceFilterAdd,
+    reset: resetPriceFilterAdd,
+    formState: formStatePriceFilterAdd
+  } = useForm<{
+    field: string;
+    operator: string;
+    value: number;
+  }>();
+
+  const handlePriceFilterAdd = useCallback((values) => {
+    appendCostsFilter(values)
+    resetPriceFilterAdd()
+  }, [appendCostsFilter, resetPriceFilterAdd]);
+
+
+  return <form onSubmit={handleSubmitPriceFilterAdd(handlePriceFilterAdd)}>
+    <Flex alignItems={"center"} gap={2}>
+      <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.field}>
+        <Select defaultValue="#" size={"xs"} {...registerPriceFilterAdd('field', {
+          required: true,
+          setValueAs: (value) => value === '#' ? null : value
+        })}>
+          <option disabled value="#">Custo</option>
+          <optgroup label="Custos Unitários">
+            {filtersCustomData?.data.costFilters.filter(x => x.property === "costs").map(costFilter => {
+              return <option key={`${costFilter.property}-${costFilter.text}`} value={`${costFilter.property}||${costFilter.text}`}>{costFilter.text}</option>
+            })}
+          </optgroup>
+          <optgroup label="Custos Totais">
+            {filtersCustomData?.data.costFilters.filter(x => x.property === "totalCost").map(costFilter => {
+              return <option key={`${costFilter.property}-${costFilter.text}`} value={`${costFilter.property}||${costFilter.text}`}>{costFilter.text}</option>
+            })}
+          </optgroup>
+        </Select>
+      </FormControl>
+      <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.operator}>
+        <Select defaultValue="#" size="xs" {...registerPriceFilterAdd('operator', {
+          required: true,
+          setValueAs: (value) => value === '#' ? null : value
+        })}>
+          <option disabled value="#">Filtro</option>
+          {
+            operators.map(operator => <option key={operator.operator} value={operator.operator}>{operator.selectOption}</option>)
+          }
+        </Select>
+      </FormControl>
+      <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.value}>
+        <Input type="number" size="xs" {...registerPriceFilterAdd('value', {
+          required: true,
+        })} />
+      </FormControl>
+      <IconButton size="xs" icon={<AddIcon />} aria-label="Adicionar filtro de valor" type="submit" />
+    </Flex>
+  </form>
+}
