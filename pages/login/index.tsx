@@ -1,6 +1,6 @@
 import { Box, Button, Center, Flex, FormControl, FormLabel, Grid, Heading, Icon, Input, SimpleGrid, Text, useToast } from '@chakra-ui/react'
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useForm } from "react-hook-form";
 import { ApiInstance } from '../../services/api';
 import { OwnAPI } from '../../services/own-api';
@@ -21,7 +21,7 @@ export default function Home() {
 
   const { register, handleSubmit } = useForm()
 
-  async function handleSignIn(info) {
+  const handleSignIn = useCallback(async (info) => {
     setIsLoading(true)
     try {
       const result = await OwnAPI.post("/api/login", info).then(res => res.data)
@@ -40,7 +40,7 @@ export default function Home() {
       }
     }
     setIsLoading(false)
-  }
+  }, [mutateUser, toast])
 
   async function handleSignUp(info) {
     setIsLoading(true)
