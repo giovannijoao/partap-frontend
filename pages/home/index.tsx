@@ -12,7 +12,7 @@ import useProperty from "../../lib/useProperty";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
 import { GoogleAd } from "../../components/GoogleAd";
 import useCostsFilters from "../../lib/useCostsFilters";
-import { useFieldArray, useForm } from "react-hook-form";
+import { Controller, FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 export default function HomePage() {
   const router = useRouter();
@@ -92,10 +92,10 @@ export default function HomePage() {
         return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
       }))
       if (filtersRef.current?.exposedCostsFilter.length > 0) {
-        const fields = filtersRef.current.exposedCostsFilter.filter(f => f.field.includes('costs||')).map(f => {
-          const [property, field] = f.field.split('||');
+        const fields = Array.from(new Set(filtersRef.current.exposedCostsFilter.filter(f => f.field.includes('costs||')).map(x => x.field))).map((f: string) => {
+          const [property, field] = f.split('||');
           const cost = item[property].find(x => x.text === field);
-          return <Text key={item._id.concat(f.id)} color="green" fontSize={"xs"}>{field} {cost?.value}</Text>
+          return <Text key={item._id.concat(field)} color="green" fontSize={"xs"}>{field} {cost?.value}</Text>
         })
         costsElements.push(...fields);
       }
@@ -111,7 +111,6 @@ export default function HomePage() {
         _hover={{
           textDecoration: undefined
         }}
-        onMouseEnter={() => mutateProperty(item._id)}
       >
         {item.images && item.images[0] ? <Box width="100%" height="3xs" position="relative">
           <Image src={item.images[0].url} alt="Image" width="100%" height="100%" />
@@ -155,7 +154,7 @@ export default function HomePage() {
         </Flex>
       </Link>
     })
-  }, [items, mutateProperty])
+  }, [items])
   return <>
     <Grid
       gap={2}
@@ -340,7 +339,19 @@ const Filters = forwardRef(({
   onChangeFilters,
 }, ref) => {
 
-  const { control: controlFilters, register: registerField, resetField } = useForm<{
+  const fieldFormMethods = useForm<{
+    isAvailable?: boolean[]
+    minBedrooms?: number
+    minBathrooms?: number
+    minParkingSlots?: number
+    isNearSubway?: boolean
+    isFurnished?: boolean
+    minValue?: number
+    maxValue?: number
+    isSell?: boolean
+    isRent?: boolean
+    isBoth?: boolean
+    keywords?: string
     costsFilter: Array<{
       field: string;
       operator: string;
@@ -348,22 +359,39 @@ const Filters = forwardRef(({
     }>
   }>();
 
+  const { control: controlFilters, register: registerFieldFilter, watch: watchFilter, reset: resetFilters } = fieldFormMethods;
+
+  const watchFields = watchFilter();
+  useEffect(() => {
+    let timeout = setTimeout(() => {
+      const costsFilter = watchFields.costsFilter?.reduce((a, costFilter) => {
+        const [property, field] = costFilter.field.split("||");
+        return [
+          ...a,
+          {
+            [`${property}.text`]: field,
+            [`${property}.value`]: {
+              [`$${costFilter.operator}`]: Number(costFilter.value)
+            }
+          }
+        ]
+      }, [])
+      onChangeFilters({
+        ...watchFields,
+        costsFilter
+      })
+
+    }, 1000)
+    return () => clearTimeout(timeout)
+  }, [onChangeFilters, watchFields])
+
   const { fields: fieldsCostsFilter, append: appendCostsFilter, remove: removeCostsFilter } = useFieldArray({
     control: controlFilters,
     name: 'costsFilter'
   })
 
+
   const exposedCostsFilter = useMemo(() => fieldsCostsFilter, [fieldsCostsFilter])
-  const {
-    register: registerPriceFilterAdd,
-    handleSubmit: handleSubmitPriceFilterAdd,
-    reset: resetPriceFilterAdd,
-    formState: formStatePriceFilterAdd
-  } = useForm<{
-    field: string;
-    operator: string;
-    value: number;
-  }>();
 
   const [filters, setFilters] = useState({
     isAvailable: [true],
@@ -385,15 +413,6 @@ const Filters = forwardRef(({
     keywords?: string
   })
   const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isBoth')
-
-  const [keywords, setKeywords] = useState('');
-
-  useEffect(() => {
-    let timeout = setTimeout(() => {
-      setFilters(s => ({ ...s, keywords: keywords.trim() !== '' ? keywords : undefined }))
-    }, 1000)
-    return () => clearTimeout(timeout)
-  }, [keywords])
 
   useEffect(() => {
     if (modoVisualizacao === 'isRent') {
@@ -420,35 +439,17 @@ const Filters = forwardRef(({
     }
   }, [modoVisualizacao])
 
-  useEffect(() => {
-    const costsFilter = fieldsCostsFilter.reduce((a, costFilter) => {
-      const [property, field] = costFilter.field.split("||");
-      return [
-        ...a,
-        {
-          [`${property}.text`]: field,
-          [`${property}.value`]: {
-            [`$${costFilter.operator}`]: Number(costFilter.value)
-          }
-        }
-      ]
-    }, [])
-    setFilters((f) => ({
-      ...f,
-      costsFilter
-    }))
-  }, [fieldsCostsFilter])
 
   // Used by parent element
   const isFiltersApplied = useMemo(() =>
-    filters.minBedrooms ||
-    filters.minBathrooms ||
-    filters.minParkingSlots ||
-    filters.isNearSubway ||
-    filters.isFurnished ||
-    filters.keywords ||
+    watchFields.minBedrooms ||
+    watchFields.minBathrooms ||
+    watchFields.minParkingSlots ||
+    watchFields.isNearSubway ||
+    watchFields.isFurnished ||
+    watchFields.keywords ||
     fieldsCostsFilter.length > 0
-    , [fieldsCostsFilter.length, filters.isFurnished, filters.isNearSubway, filters.keywords, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
+    , [fieldsCostsFilter.length, watchFields.isFurnished, watchFields.isNearSubway, watchFields.keywords, watchFields.minBathrooms, watchFields.minBedrooms, watchFields.minParkingSlots])
 
   useEffect(() => {
     mutateProperties(filters)
@@ -473,44 +474,42 @@ const Filters = forwardRef(({
     icon: '/bxs_car-garage.svg',
     filterProp: 'minParkingSlots'
   }].map(option => {
-    const onChange = (selectedOpt: string) => {
-      const parsedOption = selectedOpt.replace('+', '');
-      setFilters(state => {
-        const { ...newState } = state;
-        if (newState[option.filterProp] === parsedOption) {
-          newState[option.filterProp] = undefined;
-        } else {
-          newState[option.filterProp] = parsedOption;
-        }
-        return newState;
-      })
-    }
-    return <Flex
+    return <Controller
+      name={option.filterProp}
       key={option.name.concat('-filter')}
-      borderRadius={"md"}
-      boxShadow={"xs"}
-      p={2}
-      gap={2}
-      wrap="wrap"
-      flexDir={"row"}
-    >
-      <Flex alignItems="center" gap={2} flex={1}>
-        <Image src={option.icon} alt="Field" />
-        <Text>{option.text}</Text>
-      </Flex>
-      <Wrap>
-        {["1+", "2+", "3+", "4+"].map(q => <Button
-          key={q.concat(`-${option.name}-filter`)}
-          onClick={() => onChange(q)}
-          size="xs"
-          colorScheme='purple'
-          variant={(filters[option.filterProp] || '').concat('+') !== q ? 'outline' : undefined}
+      render={({
+        field: { value, onChange },
+      }) => {
+        return <Flex
+          borderRadius={"md"}
+          boxShadow={"xs"}
+          p={2}
+          gap={2}
+          wrap="wrap"
+          flexDir={"row"}
         >
-          {q}
-        </Button>)}
-      </Wrap>
-    </Flex>
-  }), [filters])
+          <Flex alignItems="center" gap={2} flex={1}>
+            <Image src={option.icon} alt="Field" />
+            <Text>{option.text}</Text>
+          </Flex>
+          <Wrap>
+            {["1+", "2+", "3+", "4+"].map(q => {
+              const isSelected = (value || '').concat('+') === q;
+              return <Button
+                key={q.concat(`-${option.name}-filter`)}
+                onClick={() => onChange(isSelected ? undefined : q.replace('+', ''))}
+                size="xs"
+                colorScheme='purple'
+                variant={isSelected ? undefined : 'outline'}
+              >
+                {q}
+              </Button>
+            })}
+          </Wrap>
+        </Flex>
+      }}
+    />
+  }), [])
 
   const toggleOptions = useMemo(() => [{
     name: 'isNearSubway',
@@ -519,23 +518,20 @@ const Filters = forwardRef(({
     name: 'isFurnished',
     text: 'Mobiliado'
   }].map(option => {
-    const onClick = () => {
-      setFilters((state) => {
-        const { ...newFilters } = state;
-        if (newFilters[option.name]) {
-          newFilters[option.name] = undefined;
-        } else {
-          newFilters[option.name] = true;
-        }
-        return newFilters;
-      })
-    }
-    return <Tag key={option.name.concat('-filter')} size={'md'} variant='subtle' colorScheme={filters[option.name] ? 'purple' : 'gray'} cursor={"pointer"} onClick={onClick}>
-      {!filters[option.name] && <TagLeftIcon boxSize='12px' as={AddIcon} />}
-      <TagLabel>{option.text}</TagLabel>
-      {filters[option.name] && <TagRightIcon boxSize='12px' as={DeleteIcon} />}
-    </Tag>
-  }), [filters]);
+    return <Controller
+      name={option.name}
+      key={option.name.concat('-filter')}
+      render={({
+        field: { value, onChange }
+      }) => {
+        return <Tag size={'md'} variant='subtle' colorScheme={value ? 'purple' : 'gray'} cursor={"pointer"} onClick={() => onChange(!value ? true : undefined)}>
+          {!value && <TagLeftIcon boxSize='12px' as={AddIcon} />}
+          <TagLabel>{option.text}</TagLabel>
+          {value && <TagRightIcon boxSize='12px' as={DeleteIcon} />}
+        </Tag>
+      }}
+    />
+  }), []);
 
   const toggleAvailabilityFilter = useCallback(() => {
     setFilters(filters => {
@@ -549,20 +545,23 @@ const Filters = forwardRef(({
     })
   }, [])
 
-  const removeAllCostsFilter = useCallback(() => {
-    fieldsCostsFilter.map((_, i) => removeCostsFilter(i))
-  }, [fieldsCostsFilter, removeCostsFilter])
-
   const handleCleanFilters = useCallback(() => {
-    setFilters(f => ({
-      isAvailable: f.isAvailable,
-      isSell: f.isSell,
-      isRent: f.isRent,
-      isBoth: f.isBoth,
-    }))
-    setKeywords('')
-    removeAllCostsFilter()
-  }, [removeAllCostsFilter])
+    resetFilters({
+      isAvailable: [true],
+      minBedrooms: null,
+      minBathrooms: null,
+      minParkingSlots: null,
+      isNearSubway: null,
+      isFurnished: null,
+      minValue: null,
+      maxValue: null,
+      isSell: null,
+      isRent: null,
+      isBoth: null,
+      keywords: null,
+      costsFilter: []
+    })
+  }, [resetFilters])
 
   // Used by parent element
   useImperativeHandle(ref, () => ({
@@ -573,7 +572,6 @@ const Filters = forwardRef(({
       handleCleanFilters()
     },
   }));
-
 
   return <Flex
     flex={1}
@@ -593,95 +591,99 @@ const Filters = forwardRef(({
         <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isSell' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isSell')}>Compra</Button>
       </Flex>
     </Flex>
-    {mainOptions}
-    <Wrap>
-      {toggleOptions}
-    </Wrap>
-    <Flex
-      maxW="xs"
-      gap={2}
-      boxShadow='xs'
-      p={2}
-      borderRadius="md"
-      direction="column"
-    >
-      <Text fontSize="xs">Filtros de preço</Text>
-      <Divider />
-      <PriceAddFilterForm appendCostsFilter={appendCostsFilter} />
-      <Divider />
-      <Flex direction="column">
-        {
-          fieldsCostsFilter.map((filter, i) => {
-            const [property, text] = filter.field.split('||');
-            const operator = operators.find(o => o.operator === filter.operator)
-            return <Flex
-              alignItems="center"
-              key={filter.id}
-              justifyContent="space-evenly"
-              gap={2}
-              p={2}
-              border="1px"
-              borderColor={"gray.50"}
-            >
-              <Center
-                display="column"
-                textAlign="center"
+    <FormProvider {...fieldFormMethods}>
+      {mainOptions}
+      <Wrap>
+        {toggleOptions}
+      </Wrap>
+      <Flex
+        maxW="xs"
+        gap={2}
+        boxShadow='xs'
+        p={2}
+        borderRadius="md"
+        direction="column"
+      >
+        <Text fontSize="xs">Filtros de preço</Text>
+        <Divider />
+        <PriceAddFilterForm appendCostsFilter={appendCostsFilter} />
+        <Divider />
+        <Flex direction="column">
+          {
+            fieldsCostsFilter.map((filter, i) => {
+              const [property, text] = filter.field.split('||');
+              const operator = operators.find(o => o.operator === filter.operator)
+              return <Flex
+                alignItems="center"
+                key={filter.id}
+                justifyContent="space-evenly"
+                gap={2}
                 p={2}
                 border="1px"
-                borderColor="gray.100"
-                borderRadius="md"
+                borderColor={"gray.50"}
               >
-                <Text>
-                  {text}
+                <Center
+                  display="column"
+                  textAlign="center"
+                  p={2}
+                  border="1px"
+                  borderColor="gray.100"
+                  borderRadius="md"
+                >
+                  <Text>
+                    {text}
+                    {' '}
+                  </Text>
+                  <Text fontSize="xs">
+                    {property === "costs" ? 'Custo unitário' : 'Custo total'}
+                    {' '}
+                  </Text>
+                </Center>
+                <Text textAlign="center">
+                  é
+                  {' '}
+                  {operator.text}
                   {' '}
                 </Text>
-                <Text fontSize="xs">
-                  {property === "costs" ? 'Custo unitário' : 'Custo total'}
-                  {' '}
-                </Text>
-              </Center>
-              <Text textAlign="center">
-                é
-                {' '}
-                {operator.text}
-                {' '}
-              </Text>
-              <Text
-                p={2}
-                border="1px"
-                borderColor="gray.100"
-                borderRadius="md"
-              >{filter.value.toLocaleString('pt', {
-                style: 'currency',
-                currency: 'BRL'
-              })}</Text>
-              <IconButton icon={<DeleteIcon />} aria-label="Remover filtro" onClick={() => removeCostsFilter(i)}></IconButton>
-            </Flex>
-          })
-        }
+                <Text
+                  p={2}
+                  border="1px"
+                  borderColor="gray.100"
+                  borderRadius="md"
+                >{filter.value.toLocaleString('pt', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}</Text>
+                <IconButton icon={<DeleteIcon />} aria-label="Remover filtro" onClick={() => removeCostsFilter(i)}></IconButton>
+              </Flex>
+            })
+          }
+        </Flex>
       </Flex>
-    </Flex>
-    <Flex
-      maxW="xs"
-      gap={2}
-      boxShadow='xs'
-      p={2}
-      borderRadius="md"
-      direction="column"
-    >
-      <Input placeholder="Palavras-chaves (case insensitive)" value={keywords} onChange={e => setKeywords(e.target.value)} />
-      <Flex alignItems="center" gap={2}>
-        <Text ml="auto" fontSize="xs">Use vírgulas para separar as palavras</Text>
+      <Flex
+        maxW="xs"
+        gap={2}
+        boxShadow='xs'
+        p={2}
+        borderRadius="md"
+        direction="column"
+      >
+        <Input placeholder="Palavras-chaves (case insensitive)" {...registerFieldFilter('keywords', {
+          setValueAs: v => !v || !v.trim() ? null : v,
+        })} />
+        <Flex alignItems="center" gap={2}>
+          <Text ml="auto" fontSize="xs">Use vírgulas para separar as palavras</Text>
+        </Flex>
       </Flex>
-    </Flex>
-    <Button size="xs" onClick={handleCleanFilters} opacity={isFiltersApplied ? 1 : 0.5}>Limpar filtros</Button>
-    <Box
-      p={2}
-      borderRadius="md"
-      boxShadow="md"
-    >
-      <Checkbox checked={filters.isAvailable.includes(false)} defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
-    </Box>
+      <Button size="xs" onClick={handleCleanFilters} opacity={isFiltersApplied ? 1 : 0.5}>Limpar filtros</Button>
+      <Box
+        p={2}
+        borderRadius="md"
+        boxShadow="md"
+      >
+        <Checkbox checked={filters.isAvailable.includes(false)} defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
+      </Box>
+    </FormProvider>
   </Flex>
 })
 
