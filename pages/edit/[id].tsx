@@ -75,6 +75,7 @@ type IForm = {
       checked: boolean
       views: string[]
     }
+    value?: number
   }>
   contactInfo: {
     description?: string
@@ -134,7 +135,10 @@ export default function NewV2() {
     if (property?.images) setImages(property.images)
   }, [property, reset])
 
-  const handleSubmit = useCallback(async (values) => {
+  const handleSubmit = useCallback(async (values: IForm) => {
+    values.totalCost.forEach(totalCost => {
+      totalCost.value = values.costs.filter(c => totalCost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+    })
     const newValues = {
       ...values,
       provider: values.provider || "own",

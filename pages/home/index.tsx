@@ -1,4 +1,5 @@
-import { Badge, Box, Button, Center, Checkbox, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
+
+import { Badge, Box, Button, Center, Checkbox, Divider, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
 import { ApiInstance } from "../../services/api";
 import { mutate } from "swr"
 import { AddIcon, DeleteIcon, InfoOutlineIcon, SearchIcon } from "@chakra-ui/icons";
@@ -8,11 +9,10 @@ import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
 import useProperties from "../../lib/useProperties";
 import useProperty from "../../lib/useProperty";
-import usePropertyExtractor from "../../lib/usePropertyExtractor";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
-import AddPropertyModal from "../../components/AddPropertyModal";
 import { GoogleAd } from "../../components/GoogleAd";
-const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
+import useCostsFilters from "../../lib/useCostsFilters";
+import { useFieldArray, useForm } from "react-hook-form";
 
 export default function HomePage() {
   const router = useRouter();
@@ -67,8 +67,18 @@ export default function HomePage() {
         showIn: cost.showInMainCard?.views || []
       }
     })
+    const costs = item.costs.map(cost => {
+      return {
+        ...cost,
+        value: cost.value.toLocaleString('pt', {
+          style: 'currency',
+          currency: "BRL"
+        }),
+      }
+    })
     return {
       ...item,
+      costs,
       totalCost,
     };
   });
@@ -77,6 +87,18 @@ export default function HomePage() {
 
   const itemsElements = useMemo(() => {
     return items?.map(item => {
+      const costsElements = [];
+      costsElements.push(...item.totalCost.filter(t => t.showIn.includes(filtersRef.current?.selectedVisualizationMode || 'isBoth')).map(totalCost => {
+        return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
+      }))
+      if (filtersRef.current?.exposedCostsFilter.length > 0) {
+        const fields = filtersRef.current.exposedCostsFilter.filter(f => f.field.includes('costs||')).map(f => {
+          const [property, field] = f.field.split('||');
+          const cost = item[property].find(x => x.text === field);
+          return <Text key={item._id.concat(f.id)} color="green" fontSize={"xs"}>{field} {cost?.value}</Text>
+        })
+        costsElements.push(...fields);
+      }
       return <Link
         w={"100%"}
         boxShadow='lg'
@@ -126,9 +148,7 @@ export default function HomePage() {
             </Flex>
             <Flex direction="column" flex={1} alignItems="end">
               {
-                item.totalCost.filter(t => t.showIn.includes(filtersRef.current?.selectedVisualizationMode || 'isBoth')).map(totalCost => {
-                  return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
-                })
+                costsElements
               }
             </Flex>
           </Flex>
@@ -257,7 +277,7 @@ export default function HomePage() {
                 itemsElements
               }
             </SimpleGrid>
-            <GoogleAd adSlot={"9985735186"}/>
+            <GoogleAd adSlot={"9985735186"} />
           </Flex>
         </Flex>
       </Box>
@@ -288,10 +308,65 @@ export default function HomePage() {
   </>
 }
 
+let operators = [{
+  "operator": "eq",
+  "selectOption": '= (igual a)',
+  "text": "igual a"
+},
+{
+  "operator": "gt",
+  "selectOption": '> (maior que)',
+  "text": "maior que"
+},
+{
+  "operator": "gte",
+  "selectOption": '>= (igual ou maior que)',
+  "text": "igual ou maior que"
+},
+{
+  "operator": "lt",
+  "selectOption": '< (menor que)',
+  "text": "menor que"
+},
+{
+  "operator": "lte",
+  "selectOption": '<= (igual ou menor que)',
+  "text": "igual ou menor que"
+}]
+
+
 const Filters = forwardRef(({
   mutateProperties,
   onChangeFilters,
 }, ref) => {
+
+  const { control: controlFilters, register: registerField, resetField } = useForm<{
+    costsFilter: Array<{
+      field: string;
+      operator: string;
+      value: number;
+    }>
+  }>();
+
+  const { fields: fieldsCostsFilter, append: appendCostsFilter, remove: removeCostsFilter } = useFieldArray({
+    control: controlFilters,
+    name: 'costsFilter'
+  })
+
+  const exposedCostsFilter = useMemo(() => fieldsCostsFilter, [fieldsCostsFilter])
+  const {
+    register: registerPriceFilterAdd,
+    handleSubmit: handleSubmitPriceFilterAdd,
+    reset: resetPriceFilterAdd,
+    formState: formStatePriceFilterAdd
+  } = useForm<{
+    field: string;
+    operator: string;
+    value: number;
+  }>();
+
+  const { filtersCustomData } = useCostsFilters();
+
   const [filters, setFilters] = useState({
     isAvailable: [true],
     isSell: undefined,
@@ -313,23 +388,7 @@ const Filters = forwardRef(({
   })
   const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isBoth')
 
-  const [minValue, setMinValue] = useState<number | ''>('');
-  const [maxValue, setMaxValue] = useState<number | ''>('');
   const [keywords, setKeywords] = useState('');
-
-  useEffect(() => {
-    let timeout = setTimeout(() => {
-      setFilters(s => ({ ...s, minValue: minValue || undefined }))
-    }, 1000)
-    return () => clearTimeout(timeout)
-  }, [minValue])
-
-  useEffect(() => {
-    let timeout = setTimeout(() => {
-      setFilters(s => ({ ...s, maxValue: maxValue || undefined }))
-    }, 1000)
-    return () => clearTimeout(timeout)
-  }, [maxValue])
 
   useEffect(() => {
     let timeout = setTimeout(() => {
@@ -363,6 +422,25 @@ const Filters = forwardRef(({
     }
   }, [modoVisualizacao])
 
+  useEffect(() => {
+    const costsFilter = fieldsCostsFilter.reduce((a, costFilter) => {
+      const [property, field] = costFilter.field.split("||");
+      return [
+        ...a,
+        {
+          [`${property}.text`]: field,
+          [`${property}.value`]: {
+            [`$${costFilter.operator}`]: Number(costFilter.value)
+          }
+        }
+      ]
+    }, [])
+    setFilters((f) => ({
+      ...f,
+      costsFilter
+    }))
+  }, [fieldsCostsFilter])
+
   // Used by parent element
   const isFiltersApplied = useMemo(() =>
     filters.minBedrooms ||
@@ -370,16 +448,14 @@ const Filters = forwardRef(({
     filters.minParkingSlots ||
     filters.isNearSubway ||
     filters.isFurnished ||
-    filters.minValue ||
-    filters.maxValue ||
-    filters.keywords
-    , [filters.isFurnished, filters.isNearSubway, filters.keywords, filters.maxValue, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots, filters.minValue])
+    filters.keywords ||
+    fieldsCostsFilter.length > 0
+    , [fieldsCostsFilter.length, filters.isFurnished, filters.isNearSubway, filters.keywords, filters.minBathrooms, filters.minBedrooms, filters.minParkingSlots])
 
   useEffect(() => {
     mutateProperties(filters)
     onChangeFilters(filters)
   }, [mutateProperties, onChangeFilters, filters])
-
 
   const selectedVisualizationMode = useMemo(() => modoVisualizacao, [modoVisualizacao])
 
@@ -475,6 +551,10 @@ const Filters = forwardRef(({
     })
   }, [])
 
+  const removeAllCostsFilter = useCallback(() => {
+    fieldsCostsFilter.map((_, i) => removeCostsFilter(i))
+  }, [fieldsCostsFilter, removeCostsFilter])
+
   const handleCleanFilters = useCallback(() => {
     setFilters(f => ({
       isAvailable: f.isAvailable,
@@ -482,19 +562,25 @@ const Filters = forwardRef(({
       isRent: f.isRent,
       isBoth: f.isBoth,
     }))
-    setMinValue('')
-    setMaxValue('')
     setKeywords('')
-  }, [])
+    removeAllCostsFilter()
+  }, [removeAllCostsFilter])
 
   // Used by parent element
   useImperativeHandle(ref, () => ({
+    exposedCostsFilter,
     selectedVisualizationMode,
     isFiltersApplied,
     cleanFilters() {
       handleCleanFilters()
     },
   }));
+
+  const handlePriceFilterAdd = useCallback((values) => {
+    console.log(558, values)
+    appendCostsFilter(values)
+    resetPriceFilterAdd()
+  }, [appendCostsFilter, resetPriceFilterAdd]);
 
   return <Flex
     flex={1}
@@ -524,14 +610,100 @@ const Filters = forwardRef(({
       boxShadow='xs'
       p={2}
       borderRadius="md"
+      direction="column"
     >
+      <Text fontSize="xs">Filtros de preço</Text>
+      <Divider />
+      <form onSubmit={handleSubmitPriceFilterAdd(handlePriceFilterAdd)}>
+        <Flex alignItems={"center"} gap={2}>
+          <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.field}>
+            <Select defaultValue="#" size={"xs"} {...registerPriceFilterAdd('field', {
+              required: true,
+              setValueAs: (value) => value === '#' ? null : value
+            })}>
+              <option disabled value="#">Custo</option>
+              <optgroup label="Custos Unitários">
+                {filtersCustomData?.data.costFilters.filter(x => x.property === "costs").map(costFilter => {
+                  return <option key={`${costFilter.property}-${costFilter.text}`} value={`${costFilter.property}||${costFilter.text}`}>{costFilter.text}</option>
+                })}
+              </optgroup>
+              <optgroup label="Custos Totais">
+                {filtersCustomData?.data.costFilters.filter(x => x.property === "totalCost").map(costFilter => {
+                  return <option key={`${costFilter.property}-${costFilter.text}`} value={`${costFilter.property}||${costFilter.text}`}>{costFilter.text}</option>
+                })}
+              </optgroup>
+            </Select>
+          </FormControl>
+          <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.operator}>
+            <Select defaultValue="#" size="xs" {...registerPriceFilterAdd('operator', {
+              required: true,
+              setValueAs: (value) => value === '#' ? null : value
+            })}>
+              <option disabled value="#">Filtro</option>
+              {
+                operators.map(operator => <option key={operator.operator} value={operator.operator}>{operator.selectOption}</option>)
+              }
+            </Select>
+          </FormControl>
+          <FormControl isInvalid={!!formStatePriceFilterAdd?.errors.value}>
+            <Input type="number" size="xs" {...registerPriceFilterAdd('value', {
+              required: true,
+            })} />
+          </FormControl>
+          <IconButton size="xs" icon={<AddIcon />} aria-label="Adicionar filtro de valor" type="submit" />
+        </Flex>
+      </form>
+      <Divider />
       <Flex direction="column">
-        <Text fontSize="xs">Preço Minimo</Text>
-        <Input type="number" placeholder='0.00' value={minValue} onChange={(e) => setMinValue(e.target.value ? Number(e.target.value) : '')} min={0} />
-      </Flex>
-      <Flex direction="column">
-        <Text fontSize="xs">Preço Maximo</Text>
-        <Input type="number" placeholder='0.00' value={maxValue} onChange={(e) => setMaxValue(e.target.value ? Number(e.target.value) : '')} min={0} />
+        {
+          fieldsCostsFilter.map((filter, i) => {
+            const [property, text] = filter.field.split('||');
+            const operator = operators.find(o => o.operator === filter.operator)
+            return <Flex
+              alignItems="center"
+              key={filter.id}
+              justifyContent="space-evenly"
+              gap={2}
+              p={2}
+              border="1px"
+              borderColor={"gray.50"}
+            >
+              <Center
+                display="column"
+                textAlign="center"
+                p={2}
+                border="1px"
+                borderColor="gray.100"
+                borderRadius="md"
+              >
+                <Text>
+                  {text}
+                  {' '}
+                </Text>
+                <Text fontSize="xs">
+                  {property === "costs" ? 'Custo unitário' : 'Custo total'}
+                  {' '}
+                </Text>
+              </Center>
+              <Text textAlign="center">
+                é
+                {' '}
+                {operator.text}
+                {' '}
+              </Text>
+              <Text
+                p={2}
+                border="1px"
+                borderColor="gray.100"
+                borderRadius="md"
+              >{filter.value.toLocaleString('pt', {
+                style: 'currency',
+                currency: 'BRL'
+              })}</Text>
+              <IconButton icon={<DeleteIcon />} aria-label="Remover filtro" onClick={() => removeCostsFilter(i)}></IconButton>
+            </Flex>
+          })
+        }
       </Flex>
     </Flex>
     <Flex

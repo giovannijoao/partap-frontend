@@ -342,7 +342,7 @@ export default function PropertyPage({
             </TabPanels>
           </Tabs>
           <Flex
-            position={"sticky"}
+            gridArea="sidePanel"
             top={4}
             flex={1}
             direction="column"
