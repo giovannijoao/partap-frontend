@@ -12,7 +12,7 @@ import useProperty from "../../lib/useProperty";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
 import { GoogleAd } from "../../components/GoogleAd";
 import useCostsFilters from "../../lib/useCostsFilters";
-import { Controller, FormProvider, useFieldArray, useForm } from "react-hook-form";
+import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,7 +20,6 @@ export default function HomePage() {
   useUser({
     redirectTo: '/login',
   })
-  const { mutateProperty } = useProperty();
   const filtersRef = useRef(null);
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
@@ -85,6 +84,11 @@ export default function HomePage() {
 
   const isDesktop = !isMobileDevice;
 
+  const handleCleanFilters = useCallback(() => {
+    filtersRef.current.cleanFilters();
+    setAddressFieldValue('');
+  }, [])
+
   const itemsElements = useMemo(() => {
     return items?.map(item => {
       const costsElements = [];
@@ -123,6 +127,9 @@ export default function HomePage() {
               <TagLeftIcon boxSize='12px' as={FaCouch} />
               <TagLabel>Mobiliado</TagLabel>
             </Tag>}
+            {!item.isAvailable &&
+              <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
+            }
           </Flex>
         </Box> : <Center width="100%" height="3xs" flexDirection="column" gap={2}>
           <Icon as={FaHome} h={16} w={16} />
@@ -140,9 +147,6 @@ export default function HomePage() {
               }
               {item.information.bedrooms &&
                 <Badge ml={1} textTransform={"none"}>{item.information.bedrooms} {item.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
-              }
-              {!item.isAvailable &&
-                <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
               }
             </Flex>
             <Flex direction="column" flex={1} alignItems="end">
@@ -203,7 +207,7 @@ export default function HomePage() {
               <Input w={{
                 base: 'full',
                 md: "xs"
-              }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
+              }} disabled={items?.length === 0 && !filters.address} type='text' value={addressFieldValue} placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
             </InputGroup>}
           </Box>
           <Button ml={{ base: undefined, md: 'auto' }} onClick={() => router.push('/new')} gridArea="add" colorScheme={'purple'}>Adicionar</Button>
@@ -239,9 +243,9 @@ export default function HomePage() {
               <Input w={{
                 base: 'full',
                 md: "xs"
-              }} disabled={items?.length === 0 && !filters.address} type='text' placeholder='Buscar' onChange={e => setAddressFieldValue(e.target.value)} />
+              }} disabled={items?.length === 0 && !filters.address} type='text' value={addressFieldValue} placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
             </InputGroup>
-            <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
+            <Filters onChangeFilters={onChangeFilters} ref={filtersRef} />
           </Flex>
           }
           <Flex>
@@ -268,7 +272,7 @@ export default function HomePage() {
                   <Button onClick={() => router.push('/new')}>Adicionar</Button>
                   {filtersRef.current?.isFiltersApplied && <>
                     <Text>Ou remova os filtros</Text>
-                    <Button size="sm" onClick={filtersRef.current.cleanFilters}>Remover filtros</Button>
+                    <Button size="sm" onClick={handleCleanFilters}>Remover filtros</Button>
                   </>}
                 </Flex>
               }
@@ -293,7 +297,7 @@ export default function HomePage() {
           <DrawerHeader>Filtros</DrawerHeader>
 
           <DrawerBody>
-            <Filters mutateProperties={mutateProperties} onChangeFilters={onChangeFilters} ref={filtersRef} />
+            <Filters onChangeFilters={onChangeFilters} ref={filtersRef} />
           </DrawerBody>
 
           <DrawerFooter>
@@ -335,7 +339,6 @@ let operators = [{
 
 
 const Filters = forwardRef(({
-  mutateProperties,
   onChangeFilters,
 }, ref) => {
 
@@ -348,9 +351,7 @@ const Filters = forwardRef(({
     isFurnished?: boolean
     minValue?: number
     maxValue?: number
-    isSell?: boolean
-    isRent?: boolean
-    isBoth?: boolean
+    view: string;
     keywords?: string
     costsFilter: Array<{
       field: string;
@@ -359,28 +360,52 @@ const Filters = forwardRef(({
     }>
   }>();
 
-  const { control: controlFilters, register: registerFieldFilter, watch: watchFilter, reset: resetFilters } = fieldFormMethods;
+  const { control: controlFilters, register: registerFieldFilter, watch: watchFilter, reset: resetFilters, setValue } = fieldFormMethods;
 
   const watchFields = watchFilter();
   useEffect(() => {
     let timeout = setTimeout(() => {
+      let view: object;
+      if (watchFields.view === 'isRent') {
+        view = {
+          isSell: undefined,
+          isRent: true,
+          isBoth: undefined
+        }
+      } else if (watchFields.view === 'isSell') {
+        view = {
+          isSell: true,
+          isRent: undefined,
+          isBoth: undefined
+        }
+      } else {
+        view = {
+          isSell: undefined,
+          isRent: undefined,
+          isBoth: true
+        }
+      }
       const costsFilter = watchFields.costsFilter?.reduce((a, costFilter) => {
         const [property, field] = costFilter.field.split("||");
         return [
           ...a,
           {
-            [`${property}.text`]: field,
-            [`${property}.value`]: {
-              [`$${costFilter.operator}`]: Number(costFilter.value)
+            [property]: {
+              $elemMatch: {
+                text: field,
+                value: {
+                  [`$${costFilter.operator}`]: Number(costFilter.value)
+                }
+              }
             }
           }
         ]
       }, [])
       onChangeFilters({
         ...watchFields,
+        ...view,
         costsFilter
       })
-
     }, 1000)
     return () => clearTimeout(timeout)
   }, [onChangeFilters, watchFields])
@@ -393,53 +418,6 @@ const Filters = forwardRef(({
 
   const exposedCostsFilter = useMemo(() => fieldsCostsFilter, [fieldsCostsFilter])
 
-  const [filters, setFilters] = useState({
-    isAvailable: [true],
-    isSell: undefined,
-    isRent: undefined,
-    isBoth: true
-  } as {
-    isAvailable?: boolean[]
-    minBedrooms?: number
-    minBathrooms?: number
-    minParkingSlots?: number
-    isNearSubway?: boolean
-    isFurnished?: boolean
-    minValue?: number
-    maxValue?: number
-    isSell?: boolean
-    isRent?: boolean
-    isBoth?: boolean
-    keywords?: string
-  })
-  const [modoVisualizacao, setModoVisualizacao] = useState<'isRent' | 'isSell' | 'isBoth'>('isBoth')
-
-  useEffect(() => {
-    if (modoVisualizacao === 'isRent') {
-      setFilters((s) => ({
-        ...s,
-        isSell: undefined,
-        isRent: true,
-        isBoth: undefined
-      }))
-    } else if (modoVisualizacao === 'isSell') {
-      setFilters((s) => ({
-        ...s,
-        isSell: true,
-        isRent: undefined,
-        isBoth: undefined
-      }))
-    } else {
-      setFilters((s) => ({
-        ...s,
-        isSell: undefined,
-        isRent: undefined,
-        isBoth: true
-      }))
-    }
-  }, [modoVisualizacao])
-
-
   // Used by parent element
   const isFiltersApplied = useMemo(() =>
     watchFields.minBedrooms ||
@@ -451,12 +429,7 @@ const Filters = forwardRef(({
     fieldsCostsFilter.length > 0
     , [fieldsCostsFilter.length, watchFields.isFurnished, watchFields.isNearSubway, watchFields.keywords, watchFields.minBathrooms, watchFields.minBedrooms, watchFields.minParkingSlots])
 
-  useEffect(() => {
-    mutateProperties(filters)
-    onChangeFilters(filters)
-  }, [mutateProperties, onChangeFilters, filters])
-
-  const selectedVisualizationMode = useMemo(() => modoVisualizacao, [modoVisualizacao])
+  const selectedVisualizationMode = useMemo(() => watchFields.view, [watchFields.view])
 
   const mainOptions = useMemo(() => [{
     name: 'bedrooms',
@@ -533,21 +506,8 @@ const Filters = forwardRef(({
     />
   }), []);
 
-  const toggleAvailabilityFilter = useCallback(() => {
-    setFilters(filters => {
-      const newFilters = { ...filters }
-      if (newFilters.isAvailable.includes(false)) {
-        newFilters.isAvailable = [true]
-      } else {
-        newFilters.isAvailable = [true, false]
-      }
-      return newFilters;
-    })
-  }, [])
-
   const handleCleanFilters = useCallback(() => {
     resetFilters({
-      isAvailable: [true],
       minBedrooms: null,
       minBathrooms: null,
       minParkingSlots: null,
@@ -555,13 +515,12 @@ const Filters = forwardRef(({
       isFurnished: null,
       minValue: null,
       maxValue: null,
-      isSell: null,
-      isRent: null,
-      isBoth: null,
+      view: 'isBoth',
       keywords: null,
       costsFilter: []
     })
-  }, [resetFilters])
+    setValue('isAvailable', [true])
+  }, [resetFilters, setValue])
 
   // Used by parent element
   useImperativeHandle(ref, () => ({
@@ -585,11 +544,21 @@ const Filters = forwardRef(({
       direction="column"
     >
       <Text fontSize={"xs"}>Modo de Visualização</Text>
-      <Flex gap={1}>
-        <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isBoth' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isBoth')}>Ambos</Button>
-        <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isRent' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isRent')}>Aluguel</Button>
-        <Button flex={1} size="xs" colorScheme={modoVisualizacao === 'isSell' ? 'purple' : 'gray'} onClick={() => setModoVisualizacao('isSell')}>Compra</Button>
-      </Flex>
+      <Controller
+        control={controlFilters}
+        name="view"
+        defaultValue="isBoth"
+        render={({
+            field: { value, onChange }
+        }) => {
+
+          return <Flex gap={1}>
+            <Button flex={1} size="xs" colorScheme={value === 'isBoth' ? 'purple' : 'gray'} onClick={() => onChange('isBoth')}>Ambos</Button>
+            <Button flex={1} size="xs" colorScheme={value === 'isRent' ? 'purple' : 'gray'} onClick={() => onChange('isRent')}>Aluguel</Button>
+            <Button flex={1} size="xs" colorScheme={value === 'isSell' ? 'purple' : 'gray'} onClick={() => onChange('isSell')}>Compra</Button>
+          </Flex>
+        }}
+      />
     </Flex>
     <FormProvider {...fieldFormMethods}>
       {mainOptions}
@@ -676,13 +645,7 @@ const Filters = forwardRef(({
         </Flex>
       </Flex>
       <Button size="xs" onClick={handleCleanFilters} opacity={isFiltersApplied ? 1 : 0.5}>Limpar filtros</Button>
-      <Box
-        p={2}
-        borderRadius="md"
-        boxShadow="md"
-      >
-        <Checkbox checked={filters.isAvailable.includes(false)} defaultChecked={filters.isAvailable.includes(false)} onChange={toggleAvailabilityFilter}>Mostrar indisponíveis</Checkbox>
-      </Box>
+      <AvailabilityFilter control={controlFilters} />
     </FormProvider>
   </Flex>
 })
@@ -749,4 +712,33 @@ const PriceAddFilterForm = ({
       <IconButton size="xs" icon={<AddIcon />} aria-label="Adicionar filtro de valor" type="submit" />
     </Flex>
   </form>
+}
+
+const AvailabilityFilter = ({
+  control,
+}) => {
+  useWatch();
+  return <Controller
+    name="isAvailable"
+    control={control}
+    defaultValue={[true]}
+    render={({
+      field: { value, onChange }
+    }) => {
+      const change = () => {
+        if (value.includes(false)) {
+          onChange([true])
+        } else {
+          onChange([true, false])
+        }
+      }
+      return <Box
+        p={2}
+        borderRadius="md"
+        boxShadow="md"
+      >
+        <Checkbox checked={value.includes(false)} defaultChecked={value.includes(false)} onChange={change}>Mostrar indisponíveis</Checkbox>
+      </Box>
+    }}
+  />
 }
