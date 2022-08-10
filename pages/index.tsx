@@ -540,7 +540,7 @@ const Filters = () => {
           text: 'Mobiliado'
         }].map((option, i) => {
           const value = i === 0;
-          return <Tag key={option.name} size={'md'} variant='subtle' colorScheme={value ? 'purple' : 'gray'} cursor={"pointer"} onClick={() => onChange(!value ? true : undefined)}>
+          return <Tag key={option.name} size={'md'} variant='subtle' colorScheme={value ? 'purple' : 'gray'} cursor={"pointer"}>
             {!value && <TagLeftIcon boxSize='12px' as={AddIcon} />}
             <TagLabel>{option.text}</TagLabel>
             {value && <TagRightIcon boxSize='12px' as={DeleteIcon} />}
