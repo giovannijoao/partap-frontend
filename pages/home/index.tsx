@@ -14,27 +14,57 @@ import withPlanLimits from "../../lib/withPlanLimits";
 import usePlanLimits from "../../lib/usePlanLimits";
 import plans from "../../plans";
 import HeaderV2 from "../../components/HeaderV2";
+import { withIronSessionSsr } from "iron-session/next";
+import { ApiURL } from "../../config";
+import { sessionOptions } from "../../lib/session";
 
-export const getServerSideProps = withPlanLimits(async (result) => {
-  const planLimits = result.props.planLimits;
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  if (!req.session.user) {
+    return {
+      redirect: {
+        destination: '/login',
+        statusCode: 302,
+      }
+    }
+  }
+  const [propertiesResult, limitsData] = await Promise.all([
+    fetch(`${ApiURL}/properties`, {
+      headers: {
+        Authorization: req.session.user.token,
+      },
+    }).then(res => res.json()),
+    fetch(`${ApiURL}/user-plan-limits`, {
+      headers: {
+        Authorization: req.session.user.token,
+      },
+    }).then(res => res.json())
+  ]);
   return {
     props: {
-      limits: planLimits,
-    }
-  };
-})
+      userServerData: req.session.user,
+      propertiesServerData: propertiesResult,
+      planLimitsServerData: limitsData
+    }, // will be passed to the page component as props
+  }
+}, sessionOptions)
 
 export default function HomePage({
-  limits: limitsDataFromServer,
+  userServerData,
+  propertiesServerData,
+  planLimitsServerData,
 }) {
   const router = useRouter();
   const toast = useToast();
   const [isMobileDevice] = useMediaQuery('(max-width: 420px)')
   useUser({
     redirectTo: '/login',
+    fallback: userServerData
   })
   const { limitsData } = usePlanLimits({
-    fallback: limitsDataFromServer,
+    fallback: planLimitsServerData,
   });
   const filtersRef = useRef(null);
 
@@ -45,8 +75,9 @@ export default function HomePage({
   } as any);
 
   const { isOpen: isOpenFilters, onOpen: onOpenFilters, onClose: onCloseFilters } = useDisclosure()
-  const { properties, mutateProperties } = useProperties({
+  const { properties } = useProperties({
     filters,
+    fallback: propertiesServerData,
   });
 
   useEffect(() => {
