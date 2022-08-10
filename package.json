@@ -6,12 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-theme-typings": "chakra-cli tokens contexts/themes/theme.ts"
   },
   "dependencies": {
     "@chakra-ui/core": "^0.8.0",
     "@chakra-ui/icons": "^2.0.2",
-    "@chakra-ui/react": "^2.2.1",
+    "@chakra-ui/react": "^2.2.6",
     "@emotion/core": "^11.0.0",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
@@ -30,6 +31,7 @@
     "swr": "^1.3.0"
   },
   "devDependencies": {
+    "@chakra-ui/cli": "^2.1.4",
     "@types/node": "^18.0.0",
     "@types/react": "^18.0.14",
     "eslint": "8.18.0",
