@@ -1,8 +1,11 @@
 import { Box, Button, Center, Flex, Heading, HStack, List, ListIcon, ListItem, Stack, Text, VStack } from "@chakra-ui/react";
+import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { ReactNode, useCallback, useState } from "react";
 import { FaCheckCircle, FaCircle, FaTimesCircle } from "react-icons/fa";
 import Header from "../../components/Header";
+import { ApiURL } from "../../config";
+import { sessionOptions } from "../../lib/session";
 import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
 
@@ -183,14 +186,14 @@ export default function ChoosePlanPage() {
           <PriceWrapper>
             <Box py={4} px={12}>
               <Text fontWeight="500" fontSize="2xl">
-                Familia
+                Pro
               </Text>
               <HStack justifyContent="center">
                 <Text fontSize="3xl" fontWeight="600">
                   R$
                 </Text>
                 <Text fontSize="5xl" fontWeight="900">
-                  10,99
+                  9,99
                 </Text>
                 <Text fontSize="3xl" color="gray.500">
                   /semana
@@ -224,7 +227,7 @@ export default function ChoosePlanPage() {
                 </ListItem>
               </List>
               <Box w="80%" pt={7}>
-                <Button isLoading={isLoading} w="full" colorScheme="red" variant="outline">
+                <Button isLoading={isLoading} w="full" colorScheme="red" variant="outline" onClick={() => handleCheckout('pro_plan')}>
                   Iniciar teste gratuito
                 </Button>
               </Box>
@@ -235,3 +238,28 @@ export default function ChoosePlanPage() {
     </Center>
   </Flex>
 }
+
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  const result = await fetch(`${ApiURL}/subscription-plans`, {
+    headers: {
+      Authorization: req.session.user.token,
+    },
+  })
+  const data = await result.json()
+  console.log(data)
+  if (data.data.active && data.data.planId !== 'free_plan') {
+    return {
+      redirect: {
+        statusCode: 302,
+        destination: '/home'
+      }
+    }
+  } else {
+    return {
+      props: {}
+    }
+  }
+}, sessionOptions)
