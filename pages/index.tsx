@@ -256,11 +256,6 @@ const itemsElements = (() => {
 })()
 
 export default function Index() {
-  const user = useUser({
-    redirectIfFound: true,
-    redirectTo: '/login'
-  });
-
   return <Flex direction="column">
     <Flex
       direction="column"
