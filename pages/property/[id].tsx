@@ -664,8 +664,8 @@ function ShareModal({
   }, [loggedUser, property._id, property.share])
 
   const isSharingEnabled = useMemo(() => {
-    return limits.data.share.allowed > property.share.users.length;
-  }, [limits.data.share.allowed, property.share.users.length])
+    return limits.data.share.unlimited || limits.data.share.allowed > property.share.users.length;
+  }, [limits.data.share.allowed, limits.data.share.unlimited, property.share.users.length])
 
   return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
     <ModalOverlay />
