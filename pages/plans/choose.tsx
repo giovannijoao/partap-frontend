@@ -250,7 +250,7 @@ export const getServerSideProps = withIronSessionSsr(async ({
   })
   const data = await result.json()
   console.log(data)
-  if (data.data.active && data.data.planId !== 'free_plan') {
+  if (data.data?.active && data.data?.planId !== 'free_plan') {
     return {
       redirect: {
         statusCode: 302,
