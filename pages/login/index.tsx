@@ -14,10 +14,7 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState('');
   const [signUpForm, setSignUpForm] = useState(false);
 
-  const { mutateUser, error } = useUser({
-    redirectTo: '/home',
-    redirectIfFound: true,
-  })
+  const { mutateUser, error } = useUser()
 
   const { register, handleSubmit } = useForm()
 
@@ -26,12 +23,22 @@ export default function Home() {
     try {
       const result = await OwnAPI.post("/api/login", info).then(res => res.data)
       mutateUser(result)
+      const subscriptionPlan = await ApiInstance.get('/subscription-plans', {
+        headers: {
+          Authorization: result.token
+        }
+      })
       toast({
         title: 'Bem vindo!',
         status: 'success',
         duration: 5000,
         isClosable: true,
       })
+      if (subscriptionPlan.data.data.isNew) {
+        router.push('/plans/choose')
+      } else {
+        router.push('/home')
+      }
     } catch (error) {
       if (error.response?.data?.message === "Incorrect email/password combination") {
         setErrorMsg("Usuário não encontrado ou senha incorreta")
@@ -40,7 +47,7 @@ export default function Home() {
       }
     }
     setIsLoading(false)
-  }, [mutateUser, toast])
+  }, [mutateUser, router, toast])
 
   async function handleSignUp(info) {
     setIsLoading(true)
