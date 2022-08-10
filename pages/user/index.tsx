@@ -78,6 +78,7 @@ export default function UserPage({
             <Text>{planData.title}</Text>
           </Flex>
           <Text>{planData.description}</Text>
+          <Button mt={2} variant="outline" colorScheme={"red"} size="xs" onClick={handleBillingInformation} isLoading={isLoading}>Cancelar assinatura</Button>
         </Flex>
         <Flex mt={4} direction="column" gap={2}>
           <Button variant="ghost" onClick={handleBillingInformation} isLoading={isLoading}>Ver informações de cobrança</Button>
