@@ -82,10 +82,6 @@ export default function ChoosePlanPage() {
               borderBottomRadius={'xl'}>
               <List spacing={3} textAlign="start" px={12}>
                 <ListItem>
-                  <ListIcon as={FaTimesCircle} color="red.500" />
-                  Sem Anúncios
-                </ListItem>
-                <ListItem>
                   <ListIcon as={FaCheckCircle} color="green.500" />
                   5 apartamentos
                 </ListItem>
@@ -154,10 +150,6 @@ export default function ChoosePlanPage() {
                 <List spacing={3} textAlign="start" px={12}>
                   <ListItem>
                     <ListIcon as={FaCheckCircle} color="green.500" />
-                    Sem Anúncios
-                  </ListItem>
-                  <ListItem>
-                    <ListIcon as={FaCheckCircle} color="green.500" />
                     15 apartamentos
                   </ListItem>
                   <ListItem>
@@ -206,10 +198,6 @@ export default function ChoosePlanPage() {
               py={4}
               borderBottomRadius={'xl'}>
               <List spacing={3} textAlign="start" px={12}>
-                <ListItem>
-                  <ListIcon as={FaCheckCircle} color="green.500" />
-                  Sem Anúncios
-                </ListItem>
                 <ListItem>
                   <ListIcon as={FaCheckCircle} color="green.500" />
                   Apartamentos ilimitados
