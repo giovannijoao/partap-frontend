@@ -247,7 +247,7 @@ export default function HomePage({
                 limitsData.data.properties.available > 0 ?
                   `Como seu plano é o ${plans[limitsData.data.plan].title}, você pode criar mais ${limitsData.data.properties.available} ${limitsData.data.properties.available > 1 ? 'imóveis' : 'imóvel'}`
                   :
-                  `Você não pode mais criar imóveis. Marque como indisponível algum imóvel para liberar a criação${limitsData.data.plan === 'free_plan' ? ' ou atualize seu plano' : ''}.`
+                  `Você não pode mais criar imóveis. Marque como indisponível algum imóvel para liberar a criação${limitsData.data.plan === 'free_plan' ? '   ou atualize seu plano' : ''}.`
                 }>
                 <Flex
                   alignItems="center"

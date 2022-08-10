@@ -22,6 +22,9 @@ type LimitsResponse = {
       allowed: number;
       available?: number;
     };
+    chat: {
+      available: boolean;
+    }
   };
 };
 
