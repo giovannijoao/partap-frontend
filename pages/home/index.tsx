@@ -72,8 +72,8 @@ export default function HomePage({
     const limits = limitsData.data.properties;
     if (limits.unlimited || limits.available > 0) return router.push('/new')
     toast({
-      title: 'Limite de apartamentos atingido',
-      description: `Como seu plano é o ${plans[limitsData.data.plan].title} você só pode criar ${limits.allowed} imóveis. Para criar mais imóveis, marque um imóvel como indisponível.`,
+      title: 'Limite de imóveis atingido',
+      description: `Como seu plano é o ${plans[limitsData.data.plan].title} você só pode criar ${limits.allowed} imóveis. Para criar mais, marque um como indisponível.`,
     })
   }, [limitsData.data.plan, limitsData.data.properties, router, toast]);
 
@@ -243,7 +243,12 @@ export default function HomePage({
               md: '3xs'
             }} onClick={handleAddProperty} colorScheme={'purple'}>Adicionar</Button>
             {
-              !limitsData.data.properties.unlimited && <Tooltip label={`Como seu plano é o ${plans[limitsData.data.plan].title}, você pode criar mais ${limitsData.data.properties.available} ${limitsData.data.properties.available > 1 ? 'imóveis' : 'imóvel'}`}>
+              !limitsData.data.properties.unlimited && <Tooltip label={
+                limitsData.data.properties.available > 0 ?
+                  `Como seu plano é o ${plans[limitsData.data.plan].title}, você pode criar mais ${limitsData.data.properties.available} ${limitsData.data.properties.available > 1 ? 'imóveis' : 'imóvel'}`
+                  :
+                  'Você não pode mais criar imóveis. Marque como indisponível algum imóvel para liberar a criação.'
+                }>
                 <Flex
                   alignItems="center"
                   px={2}
