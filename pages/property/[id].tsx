@@ -1,23 +1,28 @@
 import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaHospital, FaSchool, FaStore } from "react-icons/fa";
+import { FaBed, FaCar, FaCouch, FaDog, FaHospital, FaRuler, FaSchool, FaShower, FaStore, FaSubway } from "react-icons/fa";
 import { mutate } from "swr";
 import Header from "../../components/Header"
 import MoneyIconSVG from "../../components/js-icons/Money";
 import SendIconSVG from "../../components/js-icons/Send";
 import ShareIconSVG from "../../components/js-icons/Share";
+import { sessionOptions } from "../../lib/session";
 import useNearbyData from "../../lib/useNearby";
 import useProperty from "../../lib/useProperty";
 import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
+import { ApiURL } from '../../config'
+import usePlanLimits, { LimitsResponse } from "../../lib/usePlanLimits";
+import HeaderV2 from "../../components/HeaderV2";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 type DisplayInfo = {
   key: string;
-  value: (property: IPropertySaved) => string
+  value: (property: IPropertySaved) => (string | JSX.Element)
   filter: (property: IPropertySaved) => boolean
   icon: string | (() => JSX.Element);
   borderColor?: string;
@@ -33,37 +38,37 @@ const displayInfo: DisplayInfo[] = [{
   color: "red.500"
 }, {
   key: 'totalArea',
-  icon: '/bx_ruler.svg',
+  icon: () => <Icon as={FaRuler} color="purple.500" />,
   value: property => `${property?.information.totalArea}m²`,
   filter: property => !!property?.information.totalArea,
 }, {
   key: 'bedrooms',
-  icon: '/cil_bed.svg',
+  icon: () => <Icon as={FaBed} color="purple.500" />,
   value: property => `${property?.information.bedrooms} quarto${property?.information.bedrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bedrooms,
 }, {
   key: 'bathrooms',
-  icon: '/cil_shower.svg',
+  icon: () => <Icon as={FaShower} color="purple.500" />,
   value: property => `${property?.information.bathrooms} banheiro${property?.information.bathrooms > 1 ? 's' : ''}`,
   filter: property => !!property?.information.bathrooms,
 }, {
   key: 'parkingSlots',
-  icon: '/bxs_car-garage.svg',
+  icon: () => <Icon as={FaCar} color="purple.500" />,
   value: property => `${property?.information.parkingSlots} vaga${property?.information.parkingSlots > 1 ? 's' : ''}`,
   filter: property => !!property?.information.parkingSlots,
 }, {
   key: 'acceptPets',
-  icon: '/dashicons_pets.svg',
+  icon: () => <Icon as={FaDog} color="purple.500" />,
   value: property => `Aceita pets`,
   filter: property => property?.information.acceptPets,
 }, {
   key: 'nearSubway',
-  icon: '/ic_baseline-subway.svg',
-  value: property => `Metrô próximo`,
+  icon: () => <Icon as={FaSubway} color="purple.500" />,
+  value: property => <Text textAlign="center">Metrô<br />próximo</Text>,
   filter: property => property?.information.nearSubway,
 }, {
   key: 'isFurnished',
-  icon: '/cil_sofa.svg',
+  icon: () => <Icon as={FaCouch} color="purple.500" />,
   value: property => `Mobiliado`,
   filter: property => property?.information.isFurnished,
 }]
@@ -88,11 +93,47 @@ const allCostsTypes = [{
   "filter": (property: IPropertySaved) => ['both', 'aluguel'].includes(property.modo)
 }]
 
-export default function PropertyPage() {
+
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  const [, id] = req.url.match(/property\/(.*)/)
+  const [propertyResult, limitsData] = await Promise.all([
+    fetch(`${ApiURL}/properties/${id}`, {
+      headers: {
+        Authorization: req.session.user.token,
+      },
+    }).then(res => res.json()),
+    fetch(`${ApiURL}/user-plan-limits`, {
+      headers: {
+        Authorization: req.session.user.token,
+      },
+    }).then(res => res.json())
+  ]);
+  return {
+    props: {
+      userServerData: req.session.user,
+      propertyServerData: propertyResult,
+      planLimitsServerData: limitsData
+    }, // will be passed to the page component as props
+  }
+}, sessionOptions)
+
+export default function PropertyPage({
+  userServerData,
+  propertyServerData,
+  planLimitsServerData
+}) {
   const { query, push } = useRouter();
   const { user } = useUser({
-    redirectTo: `/login`
+    redirectTo: `/login`,
+    fallback: userServerData
   })
+  const { limitsData } = usePlanLimits({
+    fallback: planLimitsServerData
+  })
+
   const { isOpen: isOpenAdminInvite, onOpen: onOpenAdminInvite, onClose: onCloseAdminInvite } = useDisclosure()
   const { isOpen: isOpenSelfInvite, onOpen: onOpenSelfInvite, onClose: onCloseSelfInvite } = useDisclosure()
 
@@ -105,7 +146,9 @@ export default function PropertyPage() {
   const { property, mutateProperty } = useProperty({
     propertyId,
     token,
+    fallback: propertyServerData,
   });
+
   const isAdminUser = user && user.id === property?.user._id;
   const isInvitedUser = !!token && user.id !== property?.user._id && !property?.share?.users.find(u => u._id === user.id);
 
@@ -144,31 +187,58 @@ export default function PropertyPage() {
     }
   }), [property])
 
-  const costsElements = useMemo(() => allCostsTypes
-    .filter(costType => property?.costs && (property.costs[costType.name] && property.costs[costType.name] !== 0) && (!costType.filter || costType.filter(property)))
-    .map(costType => {
-      const cost = formatNumber.format(property.costs[costType.name]);
+  const costsElements = useMemo(() => {
+    return property?.costs?.map(cost => {
       return <Flex
-        key={costType.name}
+        bgColor="white"
+        key={cost.costId}
         gap={2}
         alignItems="center"
         p={2}
         border="1px"
         borderColor="gray.300"
         borderRadius="lg"
-        bgGradient={costType.bgColor}
-        color={costType.fontColor || "black"}
       >
-        <MoneyIconSVG fill={costType.fontColor} />
-        <Text fontWeight={"semibold"} flex={1}>{typeof costType.text === "function" ? costType.text(property) : costType.text}</Text>
+        <MoneyIconSVG fill="black" />
+        <Text fontWeight={"semibold"} flex={1}>{cost.text}</Text>
         <Text
-          color={costType.fontColor || "purple.500"}
           fontWeight={"bold"}
           fontSize="lg"
-        >{cost}</Text>
+          color="purple.500"
+        >{cost.value.toLocaleString('pt', {
+          style: 'currency',
+          currency: 'BRL'
+        })}</Text>
       </Flex>
     })
-    , [property])
+  }, [property])
+
+  const totalCostsElements = useMemo(() => {
+    return property?.totalCost?.map(cost => {
+      const value = property.costs?.filter(c => cost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+      return <Flex
+        key={cost.costId}
+        gap={2}
+        alignItems="center"
+        p={2}
+        border="1px"
+        borderColor="gray.300"
+        borderRadius="lg"
+        bgGradient={"linear-gradient(to-r, pink.400, pink.600)"}
+        color="white"
+      >
+        <MoneyIconSVG fill="white" />
+        <Text fontWeight={"semibold"} flex={1}>{cost.text}</Text>
+        <Text
+          fontWeight={"bold"}
+          fontSize="lg"
+        >{value.toLocaleString('pt', {
+          style: 'currency',
+          currency: 'BRL'
+        })}</Text>
+      </Flex>
+    })
+  }, [property])
 
   const toggleAvailability = useCallback(async () => {
     try {
@@ -195,14 +265,21 @@ export default function PropertyPage() {
   }
 
   return <>
-    <Flex gap={2} direction="column" height={"100vh"} mb={16}>
-      <Header />
-      <Box px={4}>
-        <Flex alignItems="center" gap={2} mb={4}>
-          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-          <Heading fontSize={"2xl"}>{property.address}</Heading>
-        </Flex>
+    <Flex direction="column" height={"100vh"} mb={16}>
+      <HeaderV2 />
+      <Flex alignItems="center"
+        gap={2}
+        p={4}
+        bgGradient='linear-gradient(to-r, pink.400, pink.600)'
+        position="sticky"
+        top={0}
+      >
+        <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+        <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
+      </Flex>
+      <Flex direction="column">
         {property.images.length > 0 && <Flex
+          bgGradient='linear-gradient(to-r, pink.400, pink.600)'
           ref={imagesRef}
           gap={2}
           p={2}
@@ -218,9 +295,12 @@ export default function PropertyPage() {
             boxShadow="md"
             borderRadius="md"
             scrollSnapAlign={"start"}
+            border={"2px"}
+            borderColor="white"
           />)}
         </Flex>}
         <Grid
+          px={4}
           my={4}
           gap={6}
           gridTemplateAreas={{
@@ -243,6 +323,7 @@ export default function PropertyPage() {
             <Wrap mb={4}>
               {displayInformationGroups.map(d => {
                 const Icon = d.icon;
+                const Value = d.value;
                 return <WrapItem
                   display={"flex"}
                   flexDirection="column"
@@ -250,13 +331,14 @@ export default function PropertyPage() {
                   key={d.key}
                   gap={1}
                   alignItems="center"
+                  justifyContent="center"
                   boxShadow="sm"
                   border="1px"
-                  borderColor={d.borderColor || "gray.300"}
+                  borderColor={d.borderColor || "gray.100"}
                   borderRadius="lg"
                 >
                   {typeof (Icon) === "string" ? <Image src={d.icon as string} alt="Icon" /> : <Icon />}
-                  <Text color={d.color}>{d.value}</Text>
+                  {typeof (Value) === "string" ? <Text color={d.color}>{Value}</Text> : Value}
                 </WrapItem>
               })}
             </Wrap>
@@ -279,23 +361,42 @@ export default function PropertyPage() {
               <Tab>Informações de Contato</Tab>
               <Tab>Por perto</Tab>
             </TabList>
-
             <TabPanels>
               <TabPanel>
-                <Chat gridArea="chat" property={property} />
+                { limitsData.data.chat.available ?
+                  <Chat gridArea="chat" property={property} />
+                   :
+                  <Flex
+                    w="full"
+                    bgColor="red.50"
+                    p={4}
+                    borderRadius="md"
+                    flexDirection="column"
+                    gap={4}
+                  >
+                    <Text fontWeight={"bold"} color="red.500">Chat indisponível no seu plano de assinatura</Text>
+                    <Link href="/plans/choose"><Button w="sm" colorScheme="purple">Escolher novo plano</Button></Link>
+                  </Flex>
+                }
               </TabPanel>
               <TabPanel>
-                {property.contactInfo.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
-                {!property.contactInfo.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
+                {property.contactInfo?.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
+                {!property.contactInfo?.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
               </TabPanel>
               <TabPanel>
                 <Nearby propertyId={propertyId} token={token} />
-                </TabPanel>
+              </TabPanel>
             </TabPanels>
           </Tabs>
-          <Flex gridArea="sidePanel" maxW={{
-          }} flex={1} direction="column" gap={2}>
+          <Flex
+            gridArea="sidePanel"
+            top={4}
+            flex={1}
+            direction="column"
+            gap={2}
+          >
             {costsElements}
+            {totalCostsElements}
             <Divider my={2} />
             <Flex direction="column" gap={2}>
               {isAdminUser && <>
@@ -310,13 +411,13 @@ export default function PropertyPage() {
             </Flex>
           </Flex>
         </Grid>
-
-      </Box>
+      </Flex>
     </Flex>
-    {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
-    {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
+    {isAdminUser && <ShareModal limitsData={limitsData} isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
+    {isInvitedUser && <SelfInviteModal user={user} isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
+
 
 function Nearby({
   propertyId,
@@ -332,12 +433,12 @@ function Nearby({
     text: 'Hospitais'
   }, {
     placeId: 'school',
-      icon: FaSchool,
-      text: 'Escolas'
-    }, {
+    icon: FaSchool,
+    text: 'Escolas'
+  }, {
     placeId: 'drugstore',
-      icon: FaStore,
-      text: 'Drogarias'
+    icon: FaStore,
+    text: 'Drogarias'
   }].map(place => {
     const list = nearbyData?.places
       .filter((p) => p.types.includes(place.placeId))
@@ -489,7 +590,9 @@ function ShareModal({
   isOpenInvite,
   onCloseInvite,
   property: _property,
+  limitsData,
 }) {
+  const limits = limitsData as LimitsResponse;
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("")
@@ -499,6 +602,7 @@ function ShareModal({
 
   const mutateProperty = useCallback(() => mutate(`/properties/${property._id}`), [property._id]);
   const handleAdd = useCallback(async (e) => {
+    if (!loggedUser) return;
     e.preventDefault()
     setErrorMsg("")
     setIsLoading(true)
@@ -528,9 +632,10 @@ function ShareModal({
       else setErrorMsg("Ocorreu um erro")
     }
     setIsLoading(false)
-  }, [email, loggedUser.token, mutateProperty, property._id])
+  }, [email, loggedUser, mutateProperty, property._id])
 
   const handleRemove = useCallback(async (userId) => {
+    if (!loggedUser) return;
     await ApiInstance.delete(`/share/${property._id}`, {
       params: {
         user: userId,
@@ -540,7 +645,8 @@ function ShareModal({
       },
     }).then(res => res.data);
     mutateProperty()
-  }, [loggedUser.token, mutateProperty, property._id])
+    mutate('/user-plan-limits')
+  }, [loggedUser, mutateProperty, property._id])
 
   const handleCopyLink = useCallback(async () => {
     if (!property.share.token) {
@@ -556,9 +662,11 @@ function ShareModal({
     const link = `${window.location.origin}/property/${property._id}?token=${property.share.token}`
     navigator.clipboard.writeText(link)
     setLinkCopied(true)
-  }, [loggedUser.token, property._id, property.share])
+  }, [loggedUser, property._id, property.share])
 
-
+  const isSharingEnabled = useMemo(() => {
+    return limits.data.share.unlimited || limits.data.share.allowed > property.share.users.length;
+  }, [limits.data.share.allowed, limits.data.share.unlimited, property.share.users.length])
 
   return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
     <ModalOverlay />
@@ -566,7 +674,7 @@ function ShareModal({
       <ModalHeader>Compartilhar</ModalHeader>
       <ModalCloseButton />
       <ModalBody mb={4}>
-        <Flex as="form" gap={2} onSubmit={handleAdd} >
+        {isSharingEnabled  && <Flex as="form" gap={2} onSubmit={handleAdd} >
           <InputGroup>
             <InputLeftElement
               pointerEvents='none'
@@ -577,6 +685,19 @@ function ShareModal({
             Convidar
           </Button>
         </Flex>
+        }
+        {!isSharingEnabled && <Flex
+          w="full"
+          bgColor="red.50"
+          p={4}
+          borderRadius="md"
+          flexDirection="column"
+          gap={2}
+        >
+          <Text fontWeight="bold">Você atingiu o limite de compartilhamento.</Text>
+          <Text>Remova os usuários ou escolha um novo plano para compartilhar com mais usuários.</Text>
+          <Link mt={2} href="/plans/choose"><Button w="sm" colorScheme="purple">Escolher novo plano</Button></Link>
+        </Flex>}
         {errorMsg && <Text fontSize="sm" color="red.500" textAlign="left">{errorMsg}</Text>}
         <Divider mt={2} />
         <Flex my={2} direction="column" gap={1}>
@@ -611,9 +732,9 @@ function SelfInviteModal({
   onCloseSelfInvite,
   property: _property,
   token,
+  user,
 }) {
   const toast = useToast();
-  const { user } = useUser();
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
 

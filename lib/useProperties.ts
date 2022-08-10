@@ -13,6 +13,7 @@ type IFilters = {
 
 type UsePropertiesProps = {
   filters?: IFilters;
+  fallback?: PropertyInformationResponse
 };
 
 type PropertyInformationResponse = {
@@ -21,6 +22,7 @@ type PropertyInformationResponse = {
 
 export default function useProperties({
   filters,
+  fallback,
 }: UsePropertiesProps) {
   const { user } = useUser();
 
@@ -43,10 +45,8 @@ export default function useProperties({
     user?.isLoggedIn ? ["/properties", filters] : null,
     (url, args) => fetchProperty(url, args),
     {
-      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-        if (retryCount >= 10) return;
-        revalidate({ retryCount });
-      },
+      errorRetryInterval: 5000,
+      fallbackData: fallback
     }
   );
 

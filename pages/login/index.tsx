@@ -1,11 +1,32 @@
 import { Box, Button, Center, Flex, FormControl, FormLabel, Grid, Heading, Icon, Input, SimpleGrid, Text, useToast } from '@chakra-ui/react'
 import { useRouter } from 'next/router';
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useForm } from "react-hook-form";
 import { ApiInstance } from '../../services/api';
 import { OwnAPI } from '../../services/own-api';
 import useUser from '../../lib/useUser';
 import { FaHome } from 'react-icons/fa';
+import { withIronSessionSsr } from 'iron-session/next';
+import { sessionOptions } from '../../lib/session';
+
+
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  if (req.session.user) {
+    return {
+      redirect: {
+        statusCode: 302,
+        destination: '/home'
+      }
+    }
+  } else {
+    return {
+      props: {}
+    }
+  }
+}, sessionOptions)
 
 export default function Home() {
   const router = useRouter()
@@ -14,24 +35,31 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState('');
   const [signUpForm, setSignUpForm] = useState(false);
 
-  const { mutateUser, error } = useUser({
-    redirectTo: '/home',
-    redirectIfFound: true,
-  })
+  const { mutateUser, error } = useUser()
 
   const { register, handleSubmit } = useForm()
 
-  async function handleSignIn(info) {
+  const handleSignIn = useCallback(async (info) => {
     setIsLoading(true)
     try {
       const result = await OwnAPI.post("/api/login", info).then(res => res.data)
       mutateUser(result)
+      const subscriptionPlan = await ApiInstance.get('/subscription-plans', {
+        headers: {
+          Authorization: result.token
+        }
+      })
       toast({
         title: 'Bem vindo!',
         status: 'success',
         duration: 5000,
         isClosable: true,
       })
+      if (subscriptionPlan.data.data.isNew) {
+        router.push('/plans/choose')
+      } else {
+        router.push('/home')
+      }
     } catch (error) {
       if (error.response?.data?.message === "Incorrect email/password combination") {
         setErrorMsg("Usuário não encontrado ou senha incorreta")
@@ -40,7 +68,7 @@ export default function Home() {
       }
     }
     setIsLoading(false)
-  }
+  }, [mutateUser, router, toast])
 
   async function handleSignUp(info) {
     setIsLoading(true)
@@ -61,6 +89,18 @@ export default function Home() {
   useEffect(() => {
     setErrorMsg("")
   }, [signUpForm])
+
+  useEffect(() => {
+    const credentials = process.env.NEXT_PUBLIC_AUTO_LOGIN_CREDENTIALS;
+    if (credentials) {
+      console.log('# Auto login enabled')
+      const [email, password] = credentials.split(',');
+      handleSignIn({
+        email,
+        password,
+      })
+    }
+  }, [handleSignIn])
 
   return (
     <Center
