@@ -367,7 +367,7 @@ export default function PropertyPage({
       </Flex>
     </Flex>
     {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
-    {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
+    {isInvitedUser && <SelfInviteModal user={user} isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
 
@@ -687,9 +687,9 @@ function SelfInviteModal({
   onCloseSelfInvite,
   property: _property,
   token,
+  user,
 }) {
   const toast = useToast();
-  const { user } = useUser();
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
 

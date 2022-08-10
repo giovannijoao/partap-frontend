@@ -1,25 +1,40 @@
 
-import { Badge, Box, Button, Center, Checkbox, Divider, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, useDisclosure, useMediaQuery, Wrap, WrapItem } from "@chakra-ui/react";
-import { ApiInstance } from "../../services/api";
-import { mutate } from "swr"
+import { Badge, Box, Button, Center, Checkbox, Divider, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, Tooltip, useDisclosure, useMediaQuery, useToast, Wrap, WrapItem } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon, InfoOutlineIcon, SearchIcon } from "@chakra-ui/icons";
 import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
 import useProperties from "../../lib/useProperties";
-import useProperty from "../../lib/useProperty";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
 import { GoogleAd } from "../../components/GoogleAd";
 import useCostsFilters from "../../lib/useCostsFilters";
 import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
+import withPlanLimits from "../../lib/withPlanLimits";
+import usePlanLimits from "../../lib/usePlanLimits";
+import plans from "../../plans";
 
-export default function HomePage() {
+export const getServerSideProps = withPlanLimits(async (result) => {
+  const planLimits = result.props.planLimits;
+  return {
+    props: {
+      limits: planLimits,
+    }
+  };
+})
+
+export default function HomePage({
+  limits: limitsDataFromServer,
+}) {
   const router = useRouter();
+  const toast = useToast();
   const [isMobileDevice] = useMediaQuery('(max-width: 420px)')
   useUser({
     redirectTo: '/login',
   })
+  const { limitsData } = usePlanLimits({
+    fallback: limitsDataFromServer,
+  });
   const filtersRef = useRef(null);
 
   const [addressFieldValue, setAddressFieldValue] = useState("");
@@ -52,6 +67,15 @@ export default function HomePage() {
       ...newFilters
     }))
   }, [])
+
+  const handleAddProperty = useCallback(() => {
+    const limits = limitsData.data.properties;
+    if (limits.unlimited || limits.available > 0) return router.push('/new')
+    toast({
+      title: 'Limite de apartamentos atingido',
+      description: `Como seu plano é o ${plans[limitsData.data.plan].title} você só pode criar ${limits.allowed} imóveis. Para criar mais imóveis, marque um imóvel como indisponível.`,
+    })
+  }, [limitsData.data.plan, limitsData.data.properties, router, toast]);
 
   const items = properties?.data.map(item => {
     const totalCost = item.totalCost.map(cost => {
@@ -210,7 +234,33 @@ export default function HomePage() {
               }} disabled={items?.length === 0 && !filters.address} type='text' value={addressFieldValue} placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
             </InputGroup>}
           </Box>
-          <Button ml={{ base: undefined, md: 'auto' }} onClick={() => router.push('/new')} gridArea="add" colorScheme={'purple'}>Adicionar</Button>
+          <Flex gridArea="add" gap={2} w={{
+            base: 'full',
+            md: 'fit-content'
+          }} ml="auto">
+            <Button w={{
+              base: 'full',
+              md: '3xs'
+            }} onClick={handleAddProperty} colorScheme={'purple'}>Adicionar</Button>
+            {
+              !limitsData.data.properties.unlimited && <Tooltip label={`Como seu plano é o ${plans[limitsData.data.plan].title}, você pode criar mais ${limitsData.data.properties.available} ${limitsData.data.properties.available > 1 ? 'imóveis' : 'imóvel'}`}>
+                <Flex
+                  alignItems="center"
+                  px={2}
+                  py={1}
+                  bgColor="gray.100"
+                  borderRadius="md"
+                  gap={1}
+                  w="fit-content"
+                  m="auto"
+                >
+                  <Text>{limitsData?.data.properties.totalCount - limitsData?.data.properties.unavailableCount}</Text>
+                  <Text>{'/'}</Text>
+                  <Text>{limitsData?.data.properties.allowed}</Text>
+                </Flex>
+              </Tooltip>
+            }
+          </Flex>
           {isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button>}
         </Grid>
         <Flex
@@ -269,7 +319,7 @@ export default function HomePage() {
                 >
                   <Heading fontSize={"md"}>Parece que não temos nada por aqui...</Heading>
                   <Text>Adicione uma nova propriedade</Text>
-                  <Button onClick={() => router.push('/new')}>Adicionar</Button>
+                  <Button onClick={handleAddProperty}>Adicionar</Button>
                   {filtersRef.current?.isFiltersApplied && <>
                     <Text>Ou remova os filtros</Text>
                     <Button size="sm" onClick={handleCleanFilters}>Remover filtros</Button>
@@ -549,7 +599,7 @@ const Filters = forwardRef(({
         name="view"
         defaultValue="isBoth"
         render={({
-            field: { value, onChange }
+          field: { value, onChange }
         }) => {
 
           return <Flex gap={1}>
