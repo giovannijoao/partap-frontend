@@ -1,5 +1,5 @@
 import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,6 +16,7 @@ import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
 import { ApiURL } from '../../config'
+import usePlanLimits, { LimitsResponse } from "../../lib/usePlanLimits";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 type DisplayInfo = {
@@ -62,7 +63,7 @@ const displayInfo: DisplayInfo[] = [{
 }, {
   key: 'nearSubway',
   icon: () => <Icon as={FaSubway} color="purple.500" />,
-  value: property => <Text textAlign="center">Metrô<br/>próximo</Text>,
+  value: property => <Text textAlign="center">Metrô<br />próximo</Text>,
   filter: property => property?.information.nearSubway,
 }, {
   key: 'isFurnished',
@@ -91,14 +92,45 @@ const allCostsTypes = [{
   "filter": (property: IPropertySaved) => ['both', 'aluguel'].includes(property.modo)
 }]
 
+
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  const [, id] = req.url.match(/property\/(.*)/)
+  const [propertyResult, limitsData] = await Promise.all([
+    fetch(`${ApiURL}/properties/${id}`, {
+      headers: {
+        Authorization: req.session.user.token,
+      },
+    }).then(res => res.json()),
+    fetch(`${ApiURL}/user-plan-limits`, {
+      headers: {
+        Authorization: req.session.user.token,
+      },
+    }).then(res => res.json())
+  ]);
+  return {
+    props: {
+      userServerData: req.session.user,
+      propertyServerData: propertyResult,
+      planLimitsServerData: limitsData
+    }, // will be passed to the page component as props
+  }
+}, sessionOptions)
+
 export default function PropertyPage({
   userServerData,
   propertyServerData,
+  planLimitsServerData
 }) {
   const { query, push } = useRouter();
   const { user } = useUser({
     redirectTo: `/login`,
     fallback: userServerData
+  })
+  const { limitsData } = usePlanLimits({
+    fallback: planLimitsServerData
   })
 
   const { isOpen: isOpenAdminInvite, onOpen: onOpenAdminInvite, onClose: onCloseAdminInvite } = useDisclosure()
@@ -330,7 +362,21 @@ export default function PropertyPage({
             </TabList>
             <TabPanels>
               <TabPanel>
-                <Chat gridArea="chat" property={property} />
+                { limitsData.data.chat.available ?
+                  <Chat gridArea="chat" property={property} />
+                   :
+                  <Flex
+                    w="full"
+                    bgColor="red.50"
+                    p={4}
+                    borderRadius="md"
+                    flexDirection="column"
+                    gap={4}
+                  >
+                    <Text fontWeight={"bold"} color="red.500">Chat indisponível no seu plano de assinatura</Text>
+                    <Link href="/plans/choose"><Button w="sm" colorScheme="purple">Escolher novo plano</Button></Link>
+                  </Flex>
+                }
               </TabPanel>
               <TabPanel>
                 {property.contactInfo?.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
@@ -366,31 +412,11 @@ export default function PropertyPage({
         </Grid>
       </Flex>
     </Flex>
-    {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
-    {isInvitedUser && <SelfInviteModal isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
+    {isAdminUser && <ShareModal limitsData={limitsData} isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
+    {isInvitedUser && <SelfInviteModal user={user} isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
 
-export const getServerSideProps = withIronSessionSsr(async ({
-  req,
-  res
-}) => {
-  const [, id] = req.url.match(/property\/(.*)/)
-  const result = await fetch(`${ApiURL}/properties/${id}`, {
-    headers: {
-      Authorization: req.session.user.token,
-    },
-  })
-  const data = await result.json()
-  return {
-    props: {
-      userServerData: {
-        ...req.session.user
-      },
-      propertyServerData: data
-    }, // will be passed to the page component as props
-  }
-}, sessionOptions)
 
 function Nearby({
   propertyId,
@@ -563,7 +589,9 @@ function ShareModal({
   isOpenInvite,
   onCloseInvite,
   property: _property,
+  limitsData,
 }) {
+  const limits = limitsData as LimitsResponse;
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("")
@@ -616,6 +644,7 @@ function ShareModal({
       },
     }).then(res => res.data);
     mutateProperty()
+    mutate('/user-plan-limits')
   }, [loggedUser, mutateProperty, property._id])
 
   const handleCopyLink = useCallback(async () => {
@@ -634,7 +663,9 @@ function ShareModal({
     setLinkCopied(true)
   }, [loggedUser, property._id, property.share])
 
-
+  const isSharingEnabled = useMemo(() => {
+    return limits.data.share.allowed > property.share.users.length;
+  }, [limits.data.share.allowed, property.share.users.length])
 
   return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
     <ModalOverlay />
@@ -642,7 +673,7 @@ function ShareModal({
       <ModalHeader>Compartilhar</ModalHeader>
       <ModalCloseButton />
       <ModalBody mb={4}>
-        <Flex as="form" gap={2} onSubmit={handleAdd} >
+        {isSharingEnabled  && <Flex as="form" gap={2} onSubmit={handleAdd} >
           <InputGroup>
             <InputLeftElement
               pointerEvents='none'
@@ -653,6 +684,19 @@ function ShareModal({
             Convidar
           </Button>
         </Flex>
+        }
+        {!isSharingEnabled && <Flex
+          w="full"
+          bgColor="red.50"
+          p={4}
+          borderRadius="md"
+          flexDirection="column"
+          gap={2}
+        >
+          <Text fontWeight="bold">Você atingiu o limite de compartilhamento.</Text>
+          <Text>Remova os usuários ou escolha um novo plano para compartilhar com mais usuários.</Text>
+          <Link mt={2} href="/plans/choose"><Button w="sm" colorScheme="purple">Escolher novo plano</Button></Link>
+        </Flex>}
         {errorMsg && <Text fontSize="sm" color="red.500" textAlign="left">{errorMsg}</Text>}
         <Divider mt={2} />
         <Flex my={2} direction="column" gap={1}>
@@ -687,9 +731,9 @@ function SelfInviteModal({
   onCloseSelfInvite,
   property: _property,
   token,
+  user,
 }) {
   const toast = useToast();
-  const { user } = useUser();
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
 
