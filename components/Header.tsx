@@ -31,12 +31,12 @@ export default function Header() {
       <Heading fontSize={"2xl"} color="whiteAlpha.900">PartAp</Heading>
     </Link>
     { user && <Flex ml="auto" alignItems="center" gap={2}>
-      <Image
+      <Link href="/user"><Image
         borderRadius='full'
         boxSize='8'
         src={`https://ui-avatars.com/api/?name=${user.name}`}
         alt='Profile'
-      />
+      /></Link>
       <Button size="xs" onClick={logout}>Sair</Button>
     </Flex> }
   </GridItem>
