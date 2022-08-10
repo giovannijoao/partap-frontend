@@ -17,6 +17,7 @@ import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
 import { ApiURL } from '../../config'
 import usePlanLimits, { LimitsResponse } from "../../lib/usePlanLimits";
+import HeaderV2 from "../../components/HeaderV2";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 type DisplayInfo = {
@@ -265,7 +266,7 @@ export default function PropertyPage({
 
   return <>
     <Flex direction="column" height={"100vh"} mb={16}>
-      <Header />
+      <HeaderV2 />
       <Flex alignItems="center"
         gap={2}
         p={4}

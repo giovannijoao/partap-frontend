@@ -9,6 +9,7 @@ import useProperty from "../../lib/useProperty";
 import Header from "../../components/Header";
 import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
+import HeaderV2 from "../../components/HeaderV2";
 
 const formSteps = [
   'options',
@@ -192,7 +193,7 @@ export default function NewV2() {
       templateRows="auto 1fr"
       templateColumns="1fr"
     >
-      <Header />
+      <HeaderV2 />
       <Center
         flexDirection="column"
         gridArea="body"

@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { ApiInstance } from "../../../services/api";
 import useUser from "../../../lib/useUser";
 import { useCallback, useState } from "react";
+import HeaderV2 from "../../../components/HeaderV2";
 
 export default function PlansCheckoutSuccess() {
   const { user } = useUser();
@@ -24,7 +25,7 @@ export default function PlansCheckoutSuccess() {
   }, [user?.token, router])
 
   return <Flex direction="column" height={"100vh"}>
-    <Header />
+    <HeaderV2 />
     <Center flexDirection="column" flex={1} bgColor="gray.50">
       <Flex
         m={4}

@@ -13,6 +13,7 @@ import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "reac
 import withPlanLimits from "../../lib/withPlanLimits";
 import usePlanLimits from "../../lib/usePlanLimits";
 import plans from "../../plans";
+import HeaderV2 from "../../components/HeaderV2";
 
 export const getServerSideProps = withPlanLimits(async (result) => {
   const planLimits = result.props.planLimits;
@@ -193,7 +194,7 @@ export default function HomePage({
       templateRows="auto 1fr"
       templateColumns="1fr"
     >
-      <Header />
+      <HeaderV2 />
       <Box
         gridArea="body"
         p={4}

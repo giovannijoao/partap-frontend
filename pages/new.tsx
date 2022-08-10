@@ -6,6 +6,7 @@ import { useDropzone } from "react-dropzone";
 import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { FaBed, FaCar, FaCouch, FaDog, FaDollarSign, FaHome, FaRuler, FaShower, FaSubway } from "react-icons/fa";
 import Header from "../components/Header";
+import HeaderV2 from "../components/HeaderV2";
 import { ImportProviders } from "../importProviders";
 import useUser from "../lib/useUser";
 import { ApiInstance } from "../services/api";
@@ -217,7 +218,7 @@ export default function NewV2() {
       templateRows="auto 1fr"
       templateColumns="1fr"
     >
-      <Header />
+      <HeaderV2 />
       <Center
         flexDirection="column"
         gridArea="body"

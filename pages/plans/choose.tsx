@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { ReactNode, useCallback, useState } from "react";
 import { FaCheckCircle, FaCircle, FaTimesCircle } from "react-icons/fa";
 import Header from "../../components/Header";
+import HeaderV2 from "../../components/HeaderV2";
 import { ApiURL } from "../../config";
 import { sessionOptions } from "../../lib/session";
 import useUser from "../../lib/useUser";
@@ -44,7 +45,7 @@ export default function ChoosePlanPage() {
     router.replace(url);
   }, [user?.token, router])
   return <Flex direction="column" height={"100vh"}>
-    <Header />
+    <HeaderV2 />
     <Center flexDirection="column" flex={1} bgColor="gray.50">
       <Flex
         m={4}
