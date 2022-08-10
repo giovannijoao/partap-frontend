@@ -6,7 +6,7 @@ import { IUser } from "../pages/api/user";
 import useUser from "./useUser";
 import { useCallback } from "react";
 
-type LimitsResponse = {
+export type LimitsResponse = {
   data: {
     plan: string;
     ads: boolean;

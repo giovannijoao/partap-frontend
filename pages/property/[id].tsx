@@ -16,7 +16,7 @@ import useUser from "../../lib/useUser";
 import { ApiInstance } from "../../services/api";
 import { IPropertySaved } from "../interfaces/IProperty";
 import { ApiURL } from '../../config'
-import usePlanLimits from "../../lib/usePlanLimits";
+import usePlanLimits, { LimitsResponse } from "../../lib/usePlanLimits";
 const formatNumber = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 3 })
 
 type DisplayInfo = {
@@ -412,7 +412,7 @@ export default function PropertyPage({
         </Grid>
       </Flex>
     </Flex>
-    {isAdminUser && <ShareModal isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
+    {isAdminUser && <ShareModal limitsData={limitsData} isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
     {isInvitedUser && <SelfInviteModal user={user} isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
   </>;
 }
@@ -589,7 +589,9 @@ function ShareModal({
   isOpenInvite,
   onCloseInvite,
   property: _property,
+  limitsData,
 }) {
+  const limits = limitsData as LimitsResponse;
   const property = _property as IPropertySaved;
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("")
@@ -642,6 +644,7 @@ function ShareModal({
       },
     }).then(res => res.data);
     mutateProperty()
+    mutate('/user-plan-limits')
   }, [loggedUser, mutateProperty, property._id])
 
   const handleCopyLink = useCallback(async () => {
@@ -660,7 +663,9 @@ function ShareModal({
     setLinkCopied(true)
   }, [loggedUser, property._id, property.share])
 
-
+  const isSharingEnabled = useMemo(() => {
+    return limits.data.share.allowed > property.share.users.length;
+  }, [limits.data.share.allowed, property.share.users.length])
 
   return <Modal isOpen={isOpenInvite} onClose={onCloseInvite}>
     <ModalOverlay />
@@ -668,7 +673,7 @@ function ShareModal({
       <ModalHeader>Compartilhar</ModalHeader>
       <ModalCloseButton />
       <ModalBody mb={4}>
-        <Flex as="form" gap={2} onSubmit={handleAdd} >
+        {isSharingEnabled  && <Flex as="form" gap={2} onSubmit={handleAdd} >
           <InputGroup>
             <InputLeftElement
               pointerEvents='none'
@@ -679,6 +684,19 @@ function ShareModal({
             Convidar
           </Button>
         </Flex>
+        }
+        {!isSharingEnabled && <Flex
+          w="full"
+          bgColor="red.50"
+          p={4}
+          borderRadius="md"
+          flexDirection="column"
+          gap={2}
+        >
+          <Text fontWeight="bold">Você atingiu o limite de compartilhamento.</Text>
+          <Text>Remova os usuários ou escolha um novo plano para compartilhar com mais usuários.</Text>
+          <Link mt={2} href="/plans/choose"><Button w="sm" colorScheme="purple">Escolher novo plano</Button></Link>
+        </Flex>}
         {errorMsg && <Text fontSize="sm" color="red.500" textAlign="left">{errorMsg}</Text>}
         <Divider mt={2} />
         <Flex my={2} direction="column" gap={1}>
