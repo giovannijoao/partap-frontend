@@ -70,13 +70,13 @@ export default function HomePage({
   }, [])
 
   const handleAddProperty = useCallback(() => {
-    const limits = limitsData.data.properties;
+    const limits = limitsData?.data.properties;
     if (limits.unlimited || limits.available > 0) return router.push('/new')
     toast({
       title: 'Limite de imóveis atingido',
-      description: `Como seu plano é o ${plans[limitsData.data.plan].title} você só pode criar ${limits.allowed} imóveis. Para criar mais, marque um como indisponível.`,
+      description: `Como seu plano é o ${plans[limitsData?.data.plan].title} você só pode criar ${limits.allowed} imóveis. Para criar mais, marque um como indisponível.`,
     })
-  }, [limitsData.data.plan, limitsData.data.properties, router, toast]);
+  }, [limitsData?.data.plan, limitsData?.data.properties, router, toast]);
 
   const items = properties?.data.map(item => {
     const totalCost = item.totalCost.map(cost => {
@@ -244,11 +244,11 @@ export default function HomePage({
               md: '3xs'
             }} onClick={handleAddProperty} colorScheme={'purple'}>Adicionar</Button>
             {
-              !limitsData.data.properties.unlimited && <Tooltip label={
-                limitsData.data.properties.available > 0 ?
-                  `Como seu plano é o ${plans[limitsData.data.plan].title}, você pode criar mais ${limitsData.data.properties.available} ${limitsData.data.properties.available > 1 ? 'imóveis' : 'imóvel'}`
+              !limitsData?.data.properties.unlimited && <Tooltip label={
+                limitsData?.data.properties.available > 0 ?
+                  `Como seu plano é o ${plans[limitsData?.data.plan].title}, você pode criar mais ${limitsData?.data.properties.available} ${limitsData?.data.properties.available > 1 ? 'imóveis' : 'imóvel'}`
                   :
-                  `Você não pode mais criar imóveis. Marque como indisponível algum imóvel para liberar a criação${limitsData.data.plan === 'free_plan' ? '   ou atualize seu plano' : ''}.`
+                  `Você não pode mais criar imóveis. Marque como indisponível algum imóvel para liberar a criação${limitsData?.data.plan === 'free_plan' ? '   ou atualize seu plano' : ''}.`
                 }>
                 <Flex
                   alignItems="center"
