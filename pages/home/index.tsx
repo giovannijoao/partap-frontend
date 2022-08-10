@@ -58,7 +58,6 @@ export default function HomePage({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [isMobileDevice] = useMediaQuery('(max-width: 420px)')
   useUser({
     redirectTo: '/login',
     fallback: userServerData
@@ -137,8 +136,6 @@ export default function HomePage({
       totalCost,
     };
   });
-
-  const isDesktop = !isMobileDevice;
 
   const handleCleanFilters = useCallback(() => {
     filtersRef.current.cleanFilters();
@@ -254,7 +251,9 @@ export default function HomePage({
         >
           <Heading fontSize={"2xl"} gridArea="title">Imóveis que estou acompanhando</Heading>
           <Box gridArea="search">
-            {isMobileDevice && <InputGroup >
+            <InputGroup display={{
+              md: 'none'
+            }}>
               <InputLeftElement
                 pointerEvents='none'
               >
@@ -264,7 +263,7 @@ export default function HomePage({
                 base: 'full',
                 md: "xs"
               }} disabled={items?.length === 0 && !filters.address} type='text' value={addressFieldValue} placeholder='Buscar endereço' onChange={e => setAddressFieldValue(e.target.value)} />
-            </InputGroup>}
+            </InputGroup>
           </Box>
           <Flex gridArea="add" gap={2} w={{
             base: 'full',
@@ -298,7 +297,9 @@ export default function HomePage({
               </Tooltip>
             }
           </Flex>
-          {isMobileDevice && <Button onClick={onOpenFilters} gridArea="filters">Filtros</Button>}
+          <Button onClick={onOpenFilters} gridArea="filters" display={{
+            md: 'none'
+          }}>Filtros</Button>
         </Grid>
         <Flex
           gap={4}
@@ -307,7 +308,7 @@ export default function HomePage({
             md: 'row'
           }}
         >
-          {isDesktop && <Flex
+          <Flex
             direction="column"
             position="sticky"
             top={4}
@@ -319,6 +320,10 @@ export default function HomePage({
             maxW={{
               base: undefined,
               md: "fit-content"
+            }}
+            display={{
+              base: 'none',
+              md: 'flex'
             }}
           >
             <InputGroup mb={2}>
@@ -334,7 +339,6 @@ export default function HomePage({
             </InputGroup>
             <Filters onChangeFilters={onChangeFilters} ref={filtersRef} />
           </Flex>
-          }
           <Flex>
             <SimpleGrid
               gap={4}
@@ -372,29 +376,28 @@ export default function HomePage({
         </Flex>
       </Box>
     </Grid>
-    {
-      isMobileDevice && <Drawer
-        isOpen={isOpenFilters}
-        placement='right'
-        onClose={onCloseFilters}
-      >
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>Filtros</DrawerHeader>
+    <Drawer
+      isOpen={isOpenFilters}
+      placement='right'
+      onClose={onCloseFilters}
+    >
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerCloseButton />
+        <DrawerHeader>Filtros</DrawerHeader>
 
-          <DrawerBody>
-            <Filters onChangeFilters={onChangeFilters} ref={filtersRef} />
-          </DrawerBody>
+        <DrawerBody>
+          <Filters onChangeFilters={onChangeFilters} ref={filtersRef} />
+        </DrawerBody>
 
-          <DrawerFooter>
-            <Button variant='outline' mr={3} onClick={onCloseFilters}>
-              Cancelar
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
-    }
+        <DrawerFooter>
+          <Button variant='outline' mr={3} onClick={onCloseFilters}>
+            Cancelar
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+
   </>
 }
 
