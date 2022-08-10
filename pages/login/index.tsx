@@ -6,6 +6,27 @@ import { ApiInstance } from '../../services/api';
 import { OwnAPI } from '../../services/own-api';
 import useUser from '../../lib/useUser';
 import { FaHome } from 'react-icons/fa';
+import { withIronSessionSsr } from 'iron-session/next';
+import { sessionOptions } from '../../lib/session';
+
+
+export const getServerSideProps = withIronSessionSsr(async ({
+  req,
+  res
+}) => {
+  if (req.session.user) {
+    return {
+      redirect: {
+        statusCode: 302,
+        destination: '/home'
+      }
+    }
+  } else {
+    return {
+      props: {}
+    }
+  }
+}, sessionOptions)
 
 export default function Home() {
   const router = useRouter()

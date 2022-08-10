@@ -104,7 +104,7 @@ export default function ChoosePlanPage() {
                 </ListItem>
               </List>
               <Box w="80%" pt={7}>
-                <Button isLoading={isLoading} w="full" colorScheme="red" variant="outline">
+                <Button isLoading={isLoading} w="full" colorScheme="red" variant="outline" onClick={() => router.push('/home')}>
                   Continuar com o plano gratuito
                 </Button>
               </Box>
