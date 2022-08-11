@@ -73,7 +73,6 @@ type IForm = {
     text: string
     calc: string[]
     showInMainCard: {
-      checked: boolean
       views: string[]
     }
     value?: number
@@ -743,6 +742,7 @@ const CostsTable = () => {
   <Button onClick={() => {
     appendCost({
       costId: uniqueID().toString(),
+      text: '',
       value: 0
     })
   }}>Adicionar custo</Button>
@@ -795,7 +795,11 @@ const TotalCosts = () => {
     <Button onClick={() => {
       appendCostTotal({
         costId: uniqueID().toString(),
+        text: '',
         calc: [],
+        showInMainCard: {
+          views: []
+        }
       })
     }}>Adicionar total</Button>
   </>

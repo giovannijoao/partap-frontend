@@ -105,7 +105,7 @@ export default function HeaderV2() {
                 />
               </MenuButton>
               <MenuList>
-                {/* <MenuItem>Link 1</MenuItem> */}
+                <Link href="/user"><MenuItem>Perfil</MenuItem></Link>
                 {/* <MenuItem>Link 2</MenuItem> */}
                 {/* <MenuDivider /> */}
                 <MenuItem onClick={logout}>Sair</MenuItem>
