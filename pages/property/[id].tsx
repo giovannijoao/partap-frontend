@@ -98,25 +98,35 @@ export const getServerSideProps = withIronSessionSsr(async ({
   req,
   res
 }) => {
-  const [, id] = req.url.match(/property\/(.*)/)
-  const [propertyResult, limitsData] = await Promise.all([
-    fetch(`${ApiURL}/properties/${id}`, {
-      headers: {
-        Authorization: req.session.user.token,
-      },
-    }).then(res => res.json()),
-    fetch(`${ApiURL}/user-plan-limits`, {
-      headers: {
-        Authorization: req.session.user.token,
-      },
-    }).then(res => res.json())
-  ]);
-  return {
-    props: {
-      userServerData: req.session.user,
-      propertyServerData: propertyResult,
-      planLimitsServerData: limitsData
-    }, // will be passed to the page component as props
+  try {
+    const [, id] = req.url.match(/property\/(.*)/)
+    const [propertyResult, limitsData] = await Promise.all([
+      fetch(`${ApiURL}/properties/${id}`, {
+        headers: {
+          Authorization: req.session.user.token,
+        },
+      }).then(res => res.json()),
+      fetch(`${ApiURL}/user-plan-limits`, {
+        headers: {
+          Authorization: req.session.user.token,
+        },
+      }).then(res => res.json())
+    ]);
+    return {
+      props: {
+        userServerData: req.session.user,
+        propertyServerData: propertyResult,
+        planLimitsServerData: limitsData
+      }, // will be passed to the page component as props
+    }
+  } catch (error) {
+    req.session.destroy();
+    return {
+      redirect: {
+        destination: '/login',
+        statusCode: 302,
+      }
+    }
   }
 }, sessionOptions)
 

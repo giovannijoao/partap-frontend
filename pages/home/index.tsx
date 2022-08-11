@@ -1,22 +1,20 @@
 
-import { Badge, Box, Button, Center, Checkbox, Divider, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, FormLabel, forwardRef, Grid, GridItem, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack, Select, SimpleGrid, Stack, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, Tooltip, useDisclosure, useMediaQuery, useToast, Wrap, WrapItem } from "@chakra-ui/react";
-import { AddIcon, DeleteIcon, InfoOutlineIcon, SearchIcon } from "@chakra-ui/icons";
-import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons";
+import { Badge, Box, Button, Center, Checkbox, Divider, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerFooter, DrawerHeader, DrawerOverlay, Flex, FormControl, forwardRef, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Select, SimpleGrid, Tag, TagLabel, TagLeftIcon, TagRightIcon, Text, Tooltip, useDisclosure, useToast, Wrap } from "@chakra-ui/react";
+import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
-import Header from "../../components/Header";
-import useUser from "../../lib/useUser";
-import useProperties from "../../lib/useProperties";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { FaCouch, FaHome, FaTrain } from "react-icons/fa";
 import { GoogleAd } from "../../components/GoogleAd";
-import useCostsFilters from "../../lib/useCostsFilters";
-import { Controller, FormProvider, useFieldArray, useForm, useWatch } from "react-hook-form";
-import withPlanLimits from "../../lib/withPlanLimits";
-import usePlanLimits from "../../lib/usePlanLimits";
-import plans from "../../plans";
 import HeaderV2 from "../../components/HeaderV2";
-import { withIronSessionSsr } from "iron-session/next";
 import { ApiURL } from "../../config";
 import { sessionOptions } from "../../lib/session";
+import useCostsFilters from "../../lib/useCostsFilters";
+import usePlanLimits from "../../lib/usePlanLimits";
+import useProperties from "../../lib/useProperties";
+import useUser from "../../lib/useUser";
+import plans from "../../plans";
 
 export const getServerSideProps = withIronSessionSsr(async ({
   req,
@@ -30,24 +28,34 @@ export const getServerSideProps = withIronSessionSsr(async ({
       }
     }
   }
-  const [propertiesResult, limitsData] = await Promise.all([
-    fetch(`${ApiURL}/properties`, {
-      headers: {
-        Authorization: req.session.user.token,
-      },
-    }).then(res => res.json()),
-    fetch(`${ApiURL}/user-plan-limits`, {
-      headers: {
-        Authorization: req.session.user.token,
-      },
-    }).then(res => res.json())
-  ]);
-  return {
-    props: {
-      userServerData: req.session.user,
-      propertiesServerData: propertiesResult,
-      planLimitsServerData: limitsData
-    }, // will be passed to the page component as props
+  try {
+    const [propertiesResult, limitsData] = await Promise.all([
+      fetch(`${ApiURL}/properties`, {
+        headers: {
+          Authorization: req.session.user.token,
+        },
+      }).then(res => res.json()),
+      fetch(`${ApiURL}/user-plan-limits`, {
+        headers: {
+          Authorization: req.session.user.token,
+        },
+      }).then(res => res.json())
+    ]);
+    return {
+      props: {
+        userServerData: req.session.user,
+        propertiesServerData: propertiesResult,
+        planLimitsServerData: limitsData
+      }, // will be passed to the page component as props
+    }
+  } catch (error) {
+    req.session.destroy();
+    return {
+      redirect: {
+        destination: '/login',
+        statusCode: 302,
+      }
+    }
   }
 }, sessionOptions)
 
