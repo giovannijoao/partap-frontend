@@ -3,6 +3,7 @@ import Router from 'next/router'
 import useSWR from 'swr'
 import { IUser } from '../pages/api/user'
 import { OwnAPI } from '../services/own-api'
+import { ApiInstance } from '../services/api'
 
 export default function useUser({
   redirectTo = '',
@@ -28,6 +29,10 @@ export default function useUser({
     }
   }, [user, redirectIfFound, redirectTo])
 
+  useEffect(() => {
+    if (user?.token) ApiInstance.defaults.headers["Authorization"] = user.token;
+  }, [user?.token])
+
   const logout = useCallback(async () => {
     await OwnAPI.post(`/api/logout`);
     mutateUser({
@@ -35,6 +40,7 @@ export default function useUser({
     });
     Router.push("/login");
   }, [mutateUser]);
+
 
   return { user, mutateUser, error, logout }
 }

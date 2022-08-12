@@ -30,7 +30,7 @@ export const getServerSideProps = withIronSessionSsr(async ({
   }
   try {
     const [propertiesResult, limitsData] = await Promise.all([
-      fetch(`${ApiURL}/properties`, {
+      fetch(`${ApiURL}/properties?isAvailable=true`, {
         headers: {
           Authorization: req.session.user.token,
         },

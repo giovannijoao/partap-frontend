@@ -1,28 +1,14 @@
-import { ReactNode, useMemo } from 'react';
+import { CloseIcon, HamburgerIcon } from '@chakra-ui/icons';
 import {
-  Box,
-  Flex,
-  Avatar,
-  HStack,
-  Link,
-  IconButton,
-  Button,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  MenuDivider,
-  useDisclosure,
-  useColorModeValue,
-  Stack,
-  Icon,
-  Heading,
+  Avatar, Box, Button, Flex, Heading, HStack, Icon, IconButton, Link, Menu,
+  MenuButton, MenuItem, MenuList, Stack, useDisclosure
 } from '@chakra-ui/react';
-import { HamburgerIcon, CloseIcon } from '@chakra-ui/icons';
-import { FaHome } from 'react-icons/fa';
-import useUser from '../lib/useUser';
-import usePlanLimits from '../lib/usePlanLimits';
 import { useRouter } from 'next/router';
+import { ReactNode, useMemo } from 'react';
+import { FaHome } from 'react-icons/fa';
+import usePlanLimits from '../lib/usePlanLimits';
+import useUser from '../lib/useUser';
+import Notifications from './Notifications';
 
 
 const NavLink = ({ children, link }: { children: ReactNode, link: {
@@ -90,27 +76,30 @@ export default function HeaderV2() {
             </HStack>
           </HStack>
           <Flex alignItems={'center'}>
-            <Menu>
-              <MenuButton
-                as={Button}
-                rounded={'full'}
-                variant={'link'}
-                cursor={'pointer'}
-                minW={0}>
-                <Avatar
-                  size={'sm'}
-                  src={
-                    `https://ui-avatars.com/api/?name=${user?.name}`
-                  }
-                />
-              </MenuButton>
-              <MenuList>
-                <Link href="/user"><MenuItem>Perfil</MenuItem></Link>
-                {/* <MenuItem>Link 2</MenuItem> */}
-                {/* <MenuDivider /> */}
-                <MenuItem onClick={logout}>Sair</MenuItem>
-              </MenuList>
-            </Menu>
+             <Stack direction={'row'} spacing={7}>
+              <Notifications />
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  rounded={'full'}
+                  variant={'link'}
+                  cursor={'pointer'}
+                  minW={0}>
+                  <Avatar
+                    size={'sm'}
+                    src={
+                      `https://ui-avatars.com/api/?name=${user?.name}`
+                    }
+                  />
+                </MenuButton>
+                <MenuList>
+                  <Link href="/user"><MenuItem>Perfil</MenuItem></Link>
+                  {/* <MenuItem>Link 2</MenuItem> */}
+                  {/* <MenuDivider /> */}
+                  <MenuItem onClick={logout}>Sair</MenuItem>
+                </MenuList>
+              </Menu>
+             </Stack>
           </Flex>
         </Flex>
 
