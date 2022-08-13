@@ -16,6 +16,7 @@
     "@emotion/core": "^11.0.0",
     "@emotion/react": "^11.9.3",
     "@emotion/styled": "^11.9.3",
+    "@sentry/nextjs": "^7.10.0",
     "axios": "^0.27.2",
     "emotion-theming": "^11.0.0",
     "framer-motion": "^6",
