@@ -312,7 +312,8 @@ export default function PropertyPage({
         </Flex>}
         <Flex
           px={4}
-          my={4}
+          mt={4}
+          mb={12}
           gap={8}
           direction={{
             base: 'column',
