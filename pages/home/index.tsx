@@ -41,9 +41,8 @@ export const getServerSideProps = withIronSessionSsr(async ({
         },
       }).then(res => res.json())
     ]);
-    if (!propertiesResult?.data || limitsData?.data) {
-      throw new Error('Login necessary')
-    }
+    console.log('Properties', propertiesResult)
+    console.log('Limits', limitsData)
     return {
       props: {
         userServerData: req.session.user,
