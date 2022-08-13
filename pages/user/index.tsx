@@ -2,7 +2,7 @@ import { Button, Center, Divider, Flex, Heading, Image, Text } from "@chakra-ui/
 import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
-import Header from "../../components/Header";
+import HeaderV2 from "../../components/HeaderV2";
 import { ApiURL } from "../../config";
 import { sessionOptions } from "../../lib/session";
 import useUser from "../../lib/useUser";
@@ -42,8 +42,12 @@ export default function UserPage({
 
   const planData = plans[plan.planId];
   return <Flex direction="column" height={"100vh"}>
-    <Header />
-    <Center flexDirection="column" flex={1} bgColor="gray.50">
+    <HeaderV2 />
+    <Center
+      flexDirection="column"
+      flex={1}
+      bgColor="gray.50"
+    >
       <Flex
         m={4}
         direction="column"
@@ -51,7 +55,10 @@ export default function UserPage({
         boxShadow={"lg"}
         p={4}
         borderRadius="lg"
-        w="lg"
+        w={{
+          base: 'full',
+          md: 'lg'
+        }}
         gap={4}
       >
         <Flex gap={4} alignItems='center'>
