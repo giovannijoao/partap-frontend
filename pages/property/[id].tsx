@@ -277,18 +277,18 @@ export default function PropertyPage({
   return <Box height={"100vh"}>
     <Flex direction="column" mb={16} h="full">
       <HeaderV2 />
-      <Flex alignItems="center"
-        gap={2}
-        p={4}
-        bgGradient='linear-gradient(to-r, pink.400, pink.600)'
-        position="sticky"
-        top={0}
-        zIndex={2}
-      >
-        <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
-        <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
-      </Flex>
       <Flex direction="column">
+        <Flex alignItems="center"
+          gap={2}
+          p={4}
+          bgGradient='linear-gradient(to-r, pink.400, pink.600)'
+          position="sticky"
+          top={0}
+          zIndex={2}
+        >
+          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+          <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
+        </Flex>
         {property.images.length > 0 && <Flex
           bgGradient='linear-gradient(to-r, pink.400, pink.600)'
           ref={imagesRef}
@@ -591,7 +591,7 @@ function ChatV2({
       {
         isAvailable && <Flex
           h={{
-            base: 'full',
+            base: '100vh',
             md: '70vh'
           }}
           bg="white"
@@ -602,8 +602,8 @@ function ChatV2({
           }}
         >
           <Flex
-            flex={1}
             direction="column"
+            h="full"
             px={2}
             gap={2}
             overflowY="auto"
@@ -620,7 +620,7 @@ function ChatV2({
               <Text color="gray.500">Parece que não temos nenhuma mensagem por aqui</Text>
             </Center>}
           </Flex>
-          <Flex as="form" m={2} gap={2} onSubmit={handleSendMessage}>
+          <Flex flex={1} as="form" m={2} gap={2} onSubmit={handleSendMessage}>
             <Input name="mensagem" isDisabled={isLoading} type='text' placeholder='Envie uma mensagem' onChange={e => setMessage(e.target.value)} value={message || ""} />
             <IconButton isLoading={isLoading} aria-label="Enviar mensagem" icon={<SendIconSVG />} type="submit" />
           </Flex>
