@@ -1,5 +1,5 @@
-import { AddIcon, ChevronLeftIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
-import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
+import { AddIcon, ChevronDownIcon, ChevronLeftIcon, ChevronUpIcon, DeleteIcon, EditIcon, EmailIcon, ExternalLinkIcon, LinkIcon, LockIcon, StarIcon, UnlockIcon } from "@chakra-ui/icons";
+import { Accordion, AccordionButton, AccordionIcon, AccordionItem, AccordionPanel, Box, Button, Center, CircularProgress, Collapse, Container, Divider, Flex, Grid, Heading, Icon, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, SimpleGrid, Slide, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text, Textarea, Tooltip, useDisclosure, useToast, Wrap, WrapItem } from "@chakra-ui/react"
 import { withIronSessionSsr } from "iron-session/next";
 import { useRouter } from "next/router";
 import { Fragment, TextareaHTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -274,8 +274,8 @@ export default function PropertyPage({
     </Flex>
   }
 
-  return <>
-    <Flex direction="column" height={"100vh"} mb={16}>
+  return <Box height={"100vh"}>
+    <Flex direction="column" mb={16} h="full">
       <HeaderV2 />
       <Flex alignItems="center"
         gap={2}
@@ -283,6 +283,7 @@ export default function PropertyPage({
         bgGradient='linear-gradient(to-r, pink.400, pink.600)'
         position="sticky"
         top={0}
+        zIndex={2}
       >
         <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
         <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
@@ -359,41 +360,6 @@ export default function PropertyPage({
               <Nearby propertyId={propertyId} token={token} />
             </Box>
           </Flex>
-
-          {/* <Tabs gridArea="more">
-            <TabList>
-              <Tab>Chat</Tab>
-              <Tab>Informações de Contato</Tab>
-              <Tab>Por perto</Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>
-                { limitsData.data.chat.available ?
-                  <Chat gridArea="chat" property={property} />
-                   :
-                  <Flex
-                    w="full"
-                    bgColor="red.50"
-                    p={4}
-                    borderRadius="md"
-                    flexDirection="column"
-                    gap={4}
-                  >
-                    <Text fontWeight={"bold"} color="red.500">Chat indisponível no seu plano de assinatura</Text>
-                    <Link href="/plans/choose"><Button w="sm" colorScheme="purple">Escolher novo plano</Button></Link>
-                  </Flex>
-                }
-              </TabPanel>
-              <TabPanel>
-                {property.contactInfo?.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
-                {!property.contactInfo?.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
-              </TabPanel>
-              <TabPanel>
-                <Nearby propertyId={propertyId} token={token} />
-              </TabPanel>
-            </TabPanels>
-          </Tabs> */}
-
           <Flex
             top={4}
             flex={1}
@@ -416,13 +382,16 @@ export default function PropertyPage({
             </Flex>
           </Flex>
         </Flex>
+        <ChatV2
+          isAvailable={limitsData.data.chat.available}
+          property={property}
+        />
       </Flex>
     </Flex>
     {isAdminUser && <ShareModal limitsData={limitsData} isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
     {isInvitedUser && <SelfInviteModal user={user} isOpenSelfInvite={isOpenSelfInvite} onCloseSelfInvite={onCloseSelfInvite} property={property} token={token} />}
-  </>;
+  </Box>;
 }
-
 
 function Nearby({
   propertyId,
@@ -496,12 +465,14 @@ function Nearby({
   </Box>
 }
 
-function Chat({
+function ChatV2({
   property: _property,
-  gridArea,
+  isAvailable
 }) {
+  const { isOpen, onToggle } = useDisclosure();
   const property = _property as IPropertySaved;
   const { user } = useUser();
+
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -523,7 +494,6 @@ function Chat({
     }
     setIsLoading(false)
   }, [message, property._id, user?.token])
-
 
   const messageElements = useMemo(() => property?.messages.map(message => {
     const isFromMe = message.user._id === user?.id;
@@ -547,47 +517,116 @@ function Chat({
       })}
     >
       <Text>{message.message}</Text>
-      <Flex alignItems="center" gap={2} mt={2}>
-        <Image
-          borderRadius='full'
-          boxSize='6'
-          src={`https://ui-avatars.com/api/?name=${message.user.name}`}
-          alt='Profile'
-        />
-        <Text flex={1} fontWeight={"bold"}>{message.user.name}</Text>
-        <Text color="gray.500">{new Date(message.date).toLocaleString()}</Text>
+      <Flex
+        alignItems="center"
+        gap={2}
+        mt={2}
+        justifyContent={"space-between"}
+        wrap="wrap"
+      >
+        { !isFromMe && <Text fontWeight={"bold"} fontSize="xs">{message.user.name}</Text> }
+        <Text color="gray.500" fontSize="xs">{new Date(message.date).toLocaleString()}</Text>
       </Flex>
     </Box>
   }), [property?.messages, user?.id])
 
-  return <Flex gridArea={gridArea} h="full" minH="lg" direction="column">
+  const ChatHeaderIcon = isOpen ? ChevronDownIcon : ChevronUpIcon;
+  return <Flex
+    direction="column"
+    bg="white"
+    position="fixed"
+    top={{
+      base: isOpen ? 0 : undefined,
+      md: 'unset',
+    }}
+    bottom="0"
+    left={{
+      base: undefined,
+      md: 4,
+    }}
+    w={{
+      base: 'full',
+      md: "sm"
+    }}
+    zIndex={99}
+    borderTopRadius="md"
+    borderTop="1px"
+    borderX="1px"
+    borderColor={"gray.200"}
+    overflowY="auto"
+    style={{
+      overscrollBehaviorY: 'contain'
+    }}
+  >
     <Flex
-      direction="column"
-      mt={2}
-      border="1px"
-      borderColor="gray.300"
-      borderRadius="lg"
-      w={{
-        base: "full",
-      }}
-      h="full"
-      flex={1}
+      py={2}
+      px={4}
+      onClick={onToggle}
+      cursor='pointer'
+      bgColor="gray.50"
     >
-      <Flex
-        direction="column"
-        p={4}
-        gap={2}
-        flex={1}
-        overflowY="auto"
-      >
-        {messageElements}
-      </Flex>
-      <Divider />
-      <Flex as="form" m={2} gap={2} onSubmit={handleSendMessage}>
-        <Input isDisabled={isLoading} type='text' placeholder='Envie uma mensagem' onChange={e => setMessage(e.target.value)} value={message || ""} />
-        <IconButton isLoading={isLoading} aria-label="Enviar mensagem" icon={<SendIconSVG />} type="submit" />
-      </Flex>
+      <Text variant="ghost" w="full">Chat</Text>
+      <ChatHeaderIcon h={6} w={6} />
     </Flex>
+    {isOpen && <Divider />}
+    <Collapse in={isOpen} animateOpacity endingHeight={"100%"}>
+      {
+        !isAvailable && <Flex
+          h={'30vh'}
+          bg="white"
+          direction="column"
+          mb={1}
+          style={{
+            overscrollBehaviorY: 'contain'
+          }}
+        >
+          <Center h="full" flexDirection="column" px={16} textAlign="center" gap={2}>
+            <Heading fontSize="lg">Ops!</Heading>
+            <Text>Seu plano atual não possuí o chat disponível.</Text>
+            <Link href="/plans/choose"><Button colorScheme="purple">Atualizar meu plano</Button></Link>
+          </Center>
+        </Flex>
+      }
+      {
+        isAvailable && <Flex
+          h={{
+            base: 'full',
+            md: '70vh'
+          }}
+          bg="white"
+          direction="column"
+          mb={1}
+          style={{
+            overscrollBehaviorY: 'contain'
+          }}
+        >
+          <Flex
+            flex={1}
+            direction="column"
+            px={2}
+            gap={2}
+            overflowY="auto"
+            style={{
+              overscrollBehaviorY: 'contain'
+            }}
+          >
+            {messageElements}
+            {messageElements.length === 0 && <Center
+              flex={1}
+              textAlign="center"
+              p={12}
+            >
+              <Text color="gray.500">Parece que não temos nenhuma mensagem por aqui</Text>
+            </Center>}
+          </Flex>
+          <Flex as="form" m={2} gap={2} onSubmit={handleSendMessage}>
+            <Input name="mensagem" isDisabled={isLoading} type='text' placeholder='Envie uma mensagem' onChange={e => setMessage(e.target.value)} value={message || ""} />
+            <IconButton isLoading={isLoading} aria-label="Enviar mensagem" icon={<SendIconSVG />} type="submit" />
+          </Flex>
+        </Flex>
+      }
+    </Collapse>
+
   </Flex>
 }
 
@@ -679,7 +718,7 @@ function ShareModal({
       <ModalHeader>Compartilhar</ModalHeader>
       <ModalCloseButton />
       <ModalBody mb={4}>
-        {isSharingEnabled  && <Flex as="form" gap={2} onSubmit={handleAdd} >
+        {isSharingEnabled && <Flex as="form" gap={2} onSubmit={handleAdd} >
           <InputGroup>
             <InputLeftElement
               pointerEvents='none'
