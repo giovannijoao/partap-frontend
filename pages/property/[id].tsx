@@ -309,32 +309,22 @@ export default function PropertyPage({
             borderColor="white"
           />)}
         </Flex>}
-        <Grid
+        <Flex
           px={4}
           my={4}
-          gap={6}
-          gridTemplateAreas={{
-            base: `
-              "info"
-              "sidePanel"
-              "more"
-            `,
-            md: `
-              "info sidePanel"
-              "more sidePanel"
-            `
-          }}
-          gridTemplateColumns={{
-            base: "1fr",
-            md: "3fr 1fr"
+          gap={8}
+          direction={{
+            base: 'column',
+            md: 'row'
           }}
         >
-          <Box gridArea="info">
-            <Wrap mb={4}>
+          <Flex direction="column" flex={3} gap={4}>
+            <Wrap>
               {displayInformationGroups.map(d => {
                 const Icon = d.icon;
                 const Value = d.value;
                 return <WrapItem
+                  h={24}
                   display={"flex"}
                   flexDirection="column"
                   p={4}
@@ -352,20 +342,25 @@ export default function PropertyPage({
                 </WrapItem>
               })}
             </Wrap>
-            <Box
-              textAlign="left"
-              w={{
-                xs: "xs",
-                sm: "sm",
-              }}
-              mr="auto"
-            >
+            <Box>
               <Text fontWeight="bold">Descrição</Text>
               {property.information.description && <Textarea ref={descriptionRef} resize="none" defaultValue={property.information.description} isReadOnly={true} />}
               {!property.information.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
             </Box>
-          </Box>
-          <Tabs gridArea="more">
+            <Box>
+              <Text fontWeight="bold">Informações de Contato</Text>
+              <Box>
+                {property.contactInfo?.description && <Textarea ref={contactInfoRef} resize="none" defaultValue={property.contactInfo.description} isReadOnly={true} />}
+                {!property.contactInfo?.description && <Text fontStyle={"italic"}>Sem descrição</Text>}
+              </Box>
+            </Box>
+            <Box>
+              <Text fontWeight="bold">Proximidades</Text>
+              <Nearby propertyId={propertyId} token={token} />
+            </Box>
+          </Flex>
+
+          {/* <Tabs gridArea="more">
             <TabList>
               <Tab>Chat</Tab>
               <Tab>Informações de Contato</Tab>
@@ -397,9 +392,9 @@ export default function PropertyPage({
                 <Nearby propertyId={propertyId} token={token} />
               </TabPanel>
             </TabPanels>
-          </Tabs>
+          </Tabs> */}
+
           <Flex
-            gridArea="sidePanel"
             top={4}
             flex={1}
             direction="column"
@@ -420,7 +415,7 @@ export default function PropertyPage({
               </Box></Tooltip>}
             </Flex>
           </Flex>
-        </Grid>
+        </Flex>
       </Flex>
     </Flex>
     {isAdminUser && <ShareModal limitsData={limitsData} isOpenInvite={isOpenAdminInvite} onCloseInvite={onCloseAdminInvite} property={property} />}
@@ -484,7 +479,7 @@ function Nearby({
     </Box>
   }), [nearbyData])
 
-  return <Box gridArea="nearby" p={4} borderRadius="md" boxShadow='md'>
+  return <Box py={2}>
     {
       !nearbyData && <Center h="full" w="full">
         <CircularProgress isIndeterminate color='green.300' />
