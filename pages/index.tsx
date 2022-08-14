@@ -1,8 +1,8 @@
 import { AddIcon, DeleteIcon, ExternalLinkIcon } from "@chakra-ui/icons";
-import { Highlight, Badge, Box, Button, Center, Colors, Flex, Heading, Icon, ResponsiveValue, SimpleGrid, Tag, TagLabel, TagLeftIcon, Text, Link, Wrap, TagRightIcon, Popover, PopoverTrigger, Checkbox, IconButton, FormControl, Input, TableContainer, Table, Thead, Tr, Th, Tbody, Td, InputGroup, InputLeftAddon, InputLeftElement, Fade } from "@chakra-ui/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Badge, Box, Button, Checkbox, Fade, Flex, FormControl, Heading, Highlight, Icon, IconButton, Input, InputGroup, InputLeftAddon, InputLeftElement, Link, SimpleGrid, Table, TableContainer, Tag, TagLabel, TagLeftIcon, TagRightIcon, Tbody, Td, Text, Th, Thead, Tr, Wrap } from "@chakra-ui/react";
+import { useCallback, useMemo, useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from "react-hook-form";
-import { FaBed, FaCar, FaCaretRight, FaCouch, FaFilter, FaHome, FaPhotoVideo, FaRobot, FaSearchDollar, FaSearchLocation, FaShower, FaStickyNote, FaTrain, FaUsers } from "react-icons/fa";
+import { FaBed, FaCar, FaCaretRight, FaCouch, FaFilter, FaHome, FaPhotoVideo, FaRobot, FaSearchDollar, FaSearchLocation, FaShower, FaTrain, FaUsers } from "react-icons/fa";
 import { ImportProviders } from "../importProviders";
 import { ApiInstance } from "../services/api";
 import { IPropertySaved } from "./interfaces/IProperty";
@@ -474,31 +474,7 @@ export default function Index() {
         <Icon as={FaCaretRight} h={12} w={12} color="purple" />
         <Heading>Teste alguns recursos</Heading>
       </Flex>
-      <Flex
-        bg="white"
-        p={4}
-        alignItems="center"
-        gap={8}
-        boxShadow="lg"
-      >
-        <AutoImport />
-      </Flex>
-      <Flex
-        bg="white"
-        p={4}
-        alignItems="center"
-        gap={8}
-        boxShadow="lg"
-      >
-        <Flex
-          direction={"column"}
-          gap={4}
-          flex={1}
-        >
-          <Heading fontSize="2xl" textAlign="center">Você consegue organizar qualquer tipo de custo que você terá com o imóvel.</Heading>
-          <CostsForm />
-        </Flex>
-      </Flex>
+      <TestResources />
     </Flex>
   </Flex>
 }
@@ -506,10 +482,217 @@ export default function Index() {
 
 const supportedImportProviders = ImportProviders;
 
+
+
+const IconBox = ({
+  icon
+}) => {
+  return <Box
+    h={14}
+    w={14}
+    rounded={"full"}
+    bgColor="gray.200"
+  >
+    <Icon as={icon} h="full" w="full" p={4} color="gray.800" />
+  </Box>
+}
+
+const Filters = () => {
+  return <Flex direction="column" gap={2}>
+    {[{
+      name: 'bedrooms',
+      text: 'Quartos',
+      icon: FaBed,
+      filterProp: 'minBedrooms'
+    }, {
+      name: 'bathrooms',
+      text: 'Banheiros',
+      icon: FaShower,
+      filterProp: 'minBathrooms'
+    }, {
+      name: 'parkingSlots',
+      text: 'Vagas',
+      icon: FaCar,
+      filterProp: 'minParkingSlots'
+    }].map((option, i) => {
+      return <Flex
+        key={option.name}
+        borderRadius={"md"}
+        boxShadow={"xs"}
+        p={2}
+        gap={2}
+        wrap="wrap"
+        flexDir={"row"}
+      >
+        <Flex alignItems="center" gap={2} flex={1}>
+          <Icon as={option.icon} />
+          <Text>{option.text}</Text>
+        </Flex>
+        <Wrap>
+          {["1+", "2+", "3+", "4+"].map((q, ii) => {
+            return <Button
+              key={q.concat(`-${option.name}-filter`)}
+              size="xs"
+              colorScheme='purple'
+              variant={i === ii ? undefined : 'outline'}
+            >
+              {q}
+            </Button>
+          })}
+        </Wrap>
+      </Flex>
+    })}
+    <Wrap>
+      {
+        [{
+          name: 'isNearSubway',
+          text: 'Metro próximo'
+        }, {
+          name: 'isFurnished',
+          text: 'Mobiliado'
+        }].map((option, i) => {
+          const value = i === 0;
+          return <Tag key={option.name} size={'md'} variant='subtle' colorScheme={value ? 'purple' : 'gray'} cursor={"pointer"}>
+            {!value && <TagLeftIcon boxSize='12px' as={AddIcon} />}
+            <TagLabel>{option.text}</TagLabel>
+            {value && <TagRightIcon boxSize='12px' as={DeleteIcon} />}
+          </Tag>
+        })
+      }
+    </Wrap>
+  </Flex>
+}
+
+type ICostsForm = {
+  costs: Array<{
+    costId: string;
+    text: string
+    value: number;
+  }>
+  totalCost: Array<{
+    costId: string
+    text: string
+    calc: string[]
+    showInMainCard: {
+      views: string[]
+    }
+    value?: number
+  }>
+}
+
+const TestResources = () => {
+  const formMethods = useForm<CustomProperty>({
+    defaultValues: {
+      costs: [{
+        "costId": "rentValue",
+        "text": "Aluguel",
+        "value": 2000,
+      },
+      {
+        "costId": "iptuValue",
+        "text": "IPTU",
+        "value": 100,
+      },
+      {
+        "costId": "homeownersInsuranceValue",
+        "text": "Seguro incêndio",
+        "value": 26,
+      },
+      {
+        "costId": "494669153367",
+        "text": "Reforma",
+        "value": 5000,
+      },
+      {
+        "costId": "221214278880",
+        "text": "Instalação de cameras",
+        "value": 500,
+      },
+      ],
+      totalCost: [{
+        "costId": "totalRent",
+        "text": "Aluguel",
+        "calc": ["rentValue", "condominiumValue", "iptuValue", "homeownersInsuranceValue", "tenantServiceFee"],
+        "showInMainCard": {
+          "views": ["isBoth", "isRent"]
+        },
+      },
+      {
+        "costId": "13556176146",
+        "text": "Mudança",
+        "calc": ["494669153367", "221214278880", "255084876476"],
+        "showInMainCard": {
+          "views": ["isBoth", "isSell", "isRent"]
+        },
+      }]
+    }
+  });
+  return <FormProvider {...formMethods}>
+    <Flex
+      bg="white"
+      p={4}
+      alignItems="center"
+      gap={8}
+      boxShadow="lg"
+      borderRadius={"md"}
+    >
+      <AutoImport />
+    </Flex>
+    <Flex
+      bg="white"
+      p={4}
+      alignItems="center"
+      gap={8}
+      boxShadow="lg"
+      borderRadius={"md"}
+    >
+      <Flex
+        direction={"column"}
+        gap={4}
+        flex={1}
+      >
+        <Heading fontSize="2xl" textAlign="center" p={4}>Você consegue organizar qualquer tipo de custo que você terá com o imóvel.</Heading>
+        <Flex gap={4} direction={{
+          base: 'column',
+          md: 'row'
+        }}
+          justifyContent="space-evenly"
+        >
+          <Flex direction='column'>
+            <Flex
+              direction="column"
+              bgColor="gray.100"
+              p={2}
+              borderRadius="md"
+            >
+              <Text fontWeight={"bold"}>Custos</Text>
+              <Text fontSize="sm">Informe aqui todo e qualquer custo com o imóvel</Text>
+            </Flex>
+            <CostsTable />
+          </Flex>
+          <Flex direction="column">
+            <Flex
+              direction="column"
+              bgColor="gray.100"
+              p={2}
+              borderRadius="md"
+            >
+              <Text fontWeight={"bold"}>Custos Totais</Text>
+              <Text fontSize="sm">Agrupe custos para totalizar o valor. Eles podem ser exibidos no cartão do imóvel.</Text>
+            </Flex>
+            <TotalCosts />
+          </Flex>
+        </Flex>
+      </Flex>
+    </Flex>
+  </FormProvider>
+}
+
 const AutoImport = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [importUrl, setImportUrl] = useState("");
   const [importErrorMessage, setImportErrorMessage] = useState('');
+  const { reset } = useFormContext<ICostsForm>();
 
   const [imported, setImported] = useState<CustomProperty>();
   const handleImport = useCallback(async () => {
@@ -519,11 +702,13 @@ const AutoImport = () => {
       setIsLoading(true)
       const result = await ApiInstance.get(`/simple-views/properties-extractor?url=${importUrl}`);
       setImported(result.data.data)
+      reset(result.data.data)
     } catch (error) {
       setImportErrorMessage('Infelizmente não conseguimos importar as informações desse site nesse momento. Por gentileza, crie manualmente.')
     }
     setIsLoading(false)
-  }, [importUrl])
+  }, [importUrl, reset])
+
   return <Flex
     direction={{
       base: 'column',
@@ -624,194 +809,36 @@ const AutoImport = () => {
             }
           </Flex>
           <Flex direction="column" flex={1} alignItems="end">
-            {/* {
-              costsElements
-            } */}
+            <CardCostsElements />
           </Flex>
         </Flex>
       </Flex>
-    </Box></Fade> }
+    </Box></Fade>}
   </Flex>
 }
 
-const IconBox = ({
-  icon
-}) => {
-  return <Box
-    h={14}
-    w={14}
-    rounded={"full"}
-    bgColor="gray.200"
-  >
-    <Icon as={icon} h="full" w="full" p={4} color="gray.800" />
-  </Box>
-}
+const CardCostsElements = () => {
+  const { watch } = useFormContext<ICostsForm>();
 
-const Filters = () => {
-  return <Flex direction="column" gap={2}>
-    {[{
-      name: 'bedrooms',
-      text: 'Quartos',
-      icon: FaBed,
-      filterProp: 'minBedrooms'
-    }, {
-      name: 'bathrooms',
-      text: 'Banheiros',
-      icon: FaShower,
-      filterProp: 'minBathrooms'
-    }, {
-      name: 'parkingSlots',
-      text: 'Vagas',
-      icon: FaCar,
-      filterProp: 'minParkingSlots'
-    }].map((option, i) => {
-      return <Flex
-        key={option.name}
-        borderRadius={"md"}
-        boxShadow={"xs"}
-        p={2}
-        gap={2}
-        wrap="wrap"
-        flexDir={"row"}
-      >
-        <Flex alignItems="center" gap={2} flex={1}>
-          <Icon as={option.icon} />
-          <Text>{option.text}</Text>
-        </Flex>
-        <Wrap>
-          {["1+", "2+", "3+", "4+"].map((q, ii) => {
-            return <Button
-              key={q.concat(`-${option.name}-filter`)}
-              size="xs"
-              colorScheme='purple'
-              variant={i === ii ? undefined : 'outline'}
-            >
-              {q}
-            </Button>
-          })}
-        </Wrap>
-      </Flex>
+  const [watchTotalCost, watchCosts] = watch(['totalCost', 'costs'])
+
+  const totalCost = watchTotalCost.map(cost => {
+    const value = watchCosts?.filter(c => cost.calc?.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+    return {
+      id: cost.costId,
+      text: cost.text,
+      value: value.toLocaleString('pt', {
+        style: 'currency',
+        currency: "BRL"
+      }),
+      showIn: cost.showInMainCard?.views || []
+    }
+  })
+  return <>
+    {totalCost.map(totalCost => {
+      return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
     })}
-    <Wrap>
-      {
-        [{
-          name: 'isNearSubway',
-          text: 'Metro próximo'
-        }, {
-          name: 'isFurnished',
-          text: 'Mobiliado'
-        }].map((option, i) => {
-          const value = i === 0;
-          return <Tag key={option.name} size={'md'} variant='subtle' colorScheme={value ? 'purple' : 'gray'} cursor={"pointer"}>
-            {!value && <TagLeftIcon boxSize='12px' as={AddIcon} />}
-            <TagLabel>{option.text}</TagLabel>
-            {value && <TagRightIcon boxSize='12px' as={DeleteIcon} />}
-          </Tag>
-        })
-      }
-    </Wrap>
-  </Flex>
-}
-
-type ICostsForm = {
-  costs: Array<{
-    costId: string;
-    text: string
-    value: number;
-  }>
-  totalCost: Array<{
-    costId: string
-    text: string
-    calc: string[]
-    showInMainCard: {
-      views: string[]
-    }
-    value?: number
-  }>
-}
-
-const CostsForm = () => {
-  const formMethods = useForm<ICostsForm>({
-    defaultValues: {
-      costs: [{
-        "costId": "rentValue",
-        "text": "Aluguel",
-        "value": 2000,
-      },
-      {
-        "costId": "iptuValue",
-        "text": "IPTU",
-        "value": 100,
-      },
-      {
-        "costId": "homeownersInsuranceValue",
-        "text": "Seguro incêndio",
-        "value": 26,
-      },
-      {
-        "costId": "494669153367",
-        "text": "Reforma",
-        "value": 5000,
-      },
-      {
-        "costId": "221214278880",
-        "text": "Instalação de cameras",
-        "value": 500,
-      },
-    ],
-      totalCost: [{
-        "costId": "totalRent",
-        "text": "Aluguel",
-        "calc": ["rentValue", "condominiumValue", "iptuValue", "homeownersInsuranceValue", "tenantServiceFee"],
-        "showInMainCard": {
-          "views": ["isBoth", "isRent"]
-        },
-        "value": 2170,
-      },
-      {
-        "costId": "13556176146",
-        "text": "Mudança",
-        "calc": ["494669153367", "221214278880", "255084876476"],
-        "showInMainCard": {
-          "views": ["isBoth", "isSell", "isRent"]
-        },
-        "value": 6100,
-      }]
-    }
-  });
-  return <FormProvider {...formMethods}>
-    <Flex gap={4} direction={{
-      base: 'column',
-      md: 'row'
-    }}
-    justifyContent="space-evenly"
-    >
-      <Flex direction='column'>
-        <Flex
-          direction="column"
-          bgColor="gray.100"
-          p={2}
-          borderRadius="md"
-        >
-          <Text fontWeight={"bold"}>Custos</Text>
-          <Text fontSize="sm">Informe aqui todo e qualquer custo com o imóvel</Text>
-        </Flex>
-        <CostsTable />
-      </Flex>
-      <Flex direction="column">
-        <Flex
-          direction="column"
-          bgColor="gray.100"
-          p={2}
-          borderRadius="md"
-        >
-          <Text fontWeight={"bold"}>Custos Totais</Text>
-          <Text fontSize="sm">Agrupe custos para totalizar o valor. Eles podem ser exibidos no cartão do imóvel.</Text>
-        </Flex>
-        <TotalCosts />
-      </Flex>
-    </Flex>
-  </FormProvider>
+  </>
 }
 
 const uniqueID = () => Math.floor(Math.random() * Math.floor(Math.random() * Date.now()))
@@ -881,7 +908,7 @@ const CostsTable = () => {
 }
 
 const TotalCosts = () => {
-  const { register, control, formState: { errors } } = useFormContext<ICostsForm>();
+  const { register, control, formState: { errors } } = useFormContext<CustomProperty>();
   const { fields: fieldsCostsTotal, append: appendCostTotal, remove: removeCostTotal } = useFieldArray({
     control, // control props comes from useForm (optional: if you are using FormContext)
     name: "totalCost", // unique name for your Field Array.
