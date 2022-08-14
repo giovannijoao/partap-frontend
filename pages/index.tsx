@@ -1,9 +1,10 @@
-import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
-import { Highlight, Badge, Box, Button, Center, Colors, Flex, Heading, Icon, ResponsiveValue, SimpleGrid, Tag, TagLabel, TagLeftIcon, Text, Link, Wrap, TagRightIcon } from "@chakra-ui/react";
-import { useRouter } from "next/router";
-import { useEffect, useMemo } from "react";
+import { AddIcon, DeleteIcon, ExternalLinkIcon } from "@chakra-ui/icons";
+import { Highlight, Badge, Box, Button, Center, Colors, Flex, Heading, Icon, ResponsiveValue, SimpleGrid, Tag, TagLabel, TagLeftIcon, Text, Link, Wrap, TagRightIcon, Popover, PopoverTrigger, Checkbox, IconButton, FormControl, Input, TableContainer, Table, Thead, Tr, Th, Tbody, Td, InputGroup, InputLeftAddon, InputLeftElement, Fade } from "@chakra-ui/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { FaBed, FaCar, FaCaretRight, FaCouch, FaFilter, FaHome, FaPhotoVideo, FaRobot, FaSearchDollar, FaSearchLocation, FaShower, FaStickyNote, FaTrain, FaUsers } from "react-icons/fa";
-import useUser from "../lib/useUser";
+import { ImportProviders } from "../importProviders";
+import { ApiInstance } from "../services/api";
 import { IPropertySaved } from "./interfaces/IProperty";
 
 interface CustomProperty extends Omit<IPropertySaved, 'share' | 'user' | 'messages'> {
@@ -463,7 +464,173 @@ export default function Index() {
         </Flex>
       </Flex>
     </Flex>
+    <Flex
+      direction="column"
+      bgColor="pink.50"
+      p={8}
+      gap={6}
+    >
+      <Flex>
+        <Icon as={FaCaretRight} h={12} w={12} color="purple" />
+        <Heading>Teste alguns recursos</Heading>
+      </Flex>
+      <Flex
+        bg="white"
+        p={4}
+        alignItems="center"
+        gap={8}
+        boxShadow="lg"
+      >
+        <AutoImport />
+      </Flex>
+      <Flex
+        bg="white"
+        p={4}
+        alignItems="center"
+        gap={8}
+        boxShadow="lg"
+      >
+        <Flex
+          direction={"column"}
+          gap={4}
+          flex={1}
+        >
+          <Heading fontSize="2xl" textAlign="center">Você consegue organizar qualquer tipo de custo que você terá com o imóvel.</Heading>
+          <CostsForm />
+        </Flex>
+      </Flex>
+    </Flex>
+  </Flex>
+}
 
+
+const supportedImportProviders = ImportProviders;
+
+const AutoImport = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importErrorMessage, setImportErrorMessage] = useState('');
+
+  const [imported, setImported] = useState<CustomProperty>();
+  const handleImport = useCallback(async () => {
+    try {
+      setImported(null);
+      setImportErrorMessage("");
+      setIsLoading(true)
+      const result = await ApiInstance.get(`/simple-views/properties-extractor?url=${importUrl}`);
+      setImported(result.data.data)
+    } catch (error) {
+      setImportErrorMessage('Infelizmente não conseguimos importar as informações desse site nesse momento. Por gentileza, crie manualmente.')
+    }
+    setIsLoading(false)
+  }, [importUrl])
+  return <Flex
+    direction={{
+      base: 'column',
+      md: 'row'
+    }}
+    justify="space-evenly"
+    flex={1}
+    gap={4}
+  >
+    <Flex
+      w={{
+        base: 'full',
+        md: "lg"
+      }}
+      direction="column"
+      p={4}
+      border="1px"
+      borderColor="gray.100"
+      shadow={"md"}
+      borderRadius="lg"
+    >
+      <Heading fontSize="xl" m={4} textAlign="center">
+        Importar de um site
+      </Heading>
+      <InputGroup>
+        <InputLeftElement>
+          <ExternalLinkIcon />
+        </InputLeftElement>
+        <Input placeholder='Link do imóvel' onChange={e => setImportUrl(e.target.value)} />
+      </InputGroup>
+      <Wrap mt={2}>
+        {
+          supportedImportProviders.map(provider => <Link key={provider.name} target="_blank" rel="noopener noreferrer" href={provider.url}><Tag>
+            <TagLeftIcon boxSize='12px' as={ExternalLinkIcon} />
+            <TagLabel>{provider.name}</TagLabel>
+          </Tag></Link>)
+        }
+      </Wrap>
+      {
+        importErrorMessage && <Flex
+          bgColor="red.200"
+          w="full"
+          p={4}
+          borderRadius="md"
+          mt={2}
+        >
+          {importErrorMessage}
+        </Flex>
+      }
+      {!importErrorMessage && <Text m={4} textAlign="center" fontSize="xs">Esse é um recurso que ainda está sendo desenvolvido, mas você já pode tentar utilizá-lo.</Text>}
+      <Flex py={2} alignItems={"center"} gap={2} alignSelf="end">
+        <Button colorScheme="green" onClick={handleImport} isDisabled={!importUrl} isLoading={isLoading}>Importar</Button>
+      </Flex>
+    </Flex>
+    {imported && <Fade in={!!imported}><Box
+      w={{
+        base: 'full',
+        md: "sm"
+      }}
+      boxShadow='lg'
+      borderRadius="sm"
+      display="flex"
+      flexDirection="column"
+    >
+      <Box width="100%" height="3xs" position="relative">
+        <Box
+          bgImage={imported.images[0]?.url || 'orange'}
+          bgSize="contain"
+          width="100%"
+          height="100%"
+        />
+        <Flex position="absolute" bottom={1} left={1} gap={1}>
+          {imported.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
+            <TagLeftIcon boxSize='12px' as={FaTrain} />
+            <TagLabel>Metro próx.</TagLabel>
+          </Tag>}
+          {imported.information.isFurnished && <Tag size={"md"} variant='subtle' colorScheme='orange' >
+            <TagLeftIcon boxSize='12px' as={FaCouch} />
+            <TagLabel>Mobiliado</TagLabel>
+          </Tag>}
+          {!imported.isAvailable &&
+            <Badge ml={1} textTransform={"none"} colorScheme="red">Indisponível</Badge>
+          }
+        </Flex>
+      </Box>
+      <Flex p={2}
+        direction="column"
+        flexGrow={1}
+      >
+        <Heading fontSize="md">{imported.address}</Heading>
+        <Flex mt={1} alignItems="center">
+          <Flex>
+            {imported.information.totalArea &&
+              <Badge textTransform={"none"}>{imported.information.totalArea}m²</Badge>
+            }
+            {imported.information.bedrooms &&
+              <Badge ml={1} textTransform={"none"}>{imported.information.bedrooms} {imported.information.bedrooms > 1 ? "quartos" : "quarto"}</Badge>
+            }
+          </Flex>
+          <Flex direction="column" flex={1} alignItems="end">
+            {/* {
+              costsElements
+            } */}
+          </Flex>
+        </Flex>
+      </Flex>
+    </Box></Fade> }
   </Flex>
 }
 
@@ -543,5 +710,298 @@ const Filters = () => {
         })
       }
     </Wrap>
+  </Flex>
+}
+
+type ICostsForm = {
+  costs: Array<{
+    costId: string;
+    text: string
+    value: number;
+  }>
+  totalCost: Array<{
+    costId: string
+    text: string
+    calc: string[]
+    showInMainCard: {
+      views: string[]
+    }
+    value?: number
+  }>
+}
+
+const CostsForm = () => {
+  const formMethods = useForm<ICostsForm>({
+    defaultValues: {
+      costs: [{
+        "costId": "rentValue",
+        "text": "Aluguel",
+        "value": 2000,
+      },
+      {
+        "costId": "iptuValue",
+        "text": "IPTU",
+        "value": 100,
+      },
+      {
+        "costId": "homeownersInsuranceValue",
+        "text": "Seguro incêndio",
+        "value": 26,
+      },
+      {
+        "costId": "494669153367",
+        "text": "Reforma",
+        "value": 5000,
+      },
+      {
+        "costId": "221214278880",
+        "text": "Instalação de cameras",
+        "value": 500,
+      },
+    ],
+      totalCost: [{
+        "costId": "totalRent",
+        "text": "Aluguel",
+        "calc": ["rentValue", "condominiumValue", "iptuValue", "homeownersInsuranceValue", "tenantServiceFee"],
+        "showInMainCard": {
+          "views": ["isBoth", "isRent"]
+        },
+        "value": 2170,
+      },
+      {
+        "costId": "13556176146",
+        "text": "Mudança",
+        "calc": ["494669153367", "221214278880", "255084876476"],
+        "showInMainCard": {
+          "views": ["isBoth", "isSell", "isRent"]
+        },
+        "value": 6100,
+      }]
+    }
+  });
+  return <FormProvider {...formMethods}>
+    <Flex gap={4} direction={{
+      base: 'column',
+      md: 'row'
+    }}
+    justifyContent="space-evenly"
+    >
+      <Flex direction='column'>
+        <Flex
+          direction="column"
+          bgColor="gray.100"
+          p={2}
+          borderRadius="md"
+        >
+          <Text fontWeight={"bold"}>Custos</Text>
+          <Text fontSize="sm">Informe aqui todo e qualquer custo com o imóvel</Text>
+        </Flex>
+        <CostsTable />
+      </Flex>
+      <Flex direction="column">
+        <Flex
+          direction="column"
+          bgColor="gray.100"
+          p={2}
+          borderRadius="md"
+        >
+          <Text fontWeight={"bold"}>Custos Totais</Text>
+          <Text fontSize="sm">Agrupe custos para totalizar o valor. Eles podem ser exibidos no cartão do imóvel.</Text>
+        </Flex>
+        <TotalCosts />
+      </Flex>
+    </Flex>
+  </FormProvider>
+}
+
+const uniqueID = () => Math.floor(Math.random() * Math.floor(Math.random() * Date.now()))
+
+const CostsTable = () => {
+  const { register, control, formState: { errors } } = useFormContext<ICostsForm>();
+  const { fields: fieldsCosts, append: appendCost, remove: removeCost } = useFieldArray({
+    control, // control props comes from useForm (optional: if you are using FormContext)
+    name: "costs", // unique name for your Field Array.
+  });
+
+  return <>
+    <TableContainer w="full">
+      <Table>
+        <Thead>
+          <Tr>
+            <Th p={1}>Id</Th>
+            <Th p={1}>Nome</Th>
+            <Th p={1}>Valor</Th>
+            <Th p={1}></Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {
+            fieldsCosts.map((cost, i) => {
+              return <Tr key={cost.id}>
+                <Td
+                  padding={1}
+                >{i + 1}</Td>
+                <Td
+                  padding={1}
+                >
+                  <FormControl isInvalid={errors?.costs && !!errors.costs[i]?.text}>
+                    <Input defaultValue={cost.text} {...register(`costs.${i}.text`, {
+                      required: true,
+                    })} />
+                  </FormControl>
+                </Td>
+                <Td p={1} display="flex" alignItems="center" gap={2}>
+                  <FormControl isInvalid={errors?.costs && !!errors.costs[i]?.value}>
+                    <InputGroup>
+                      <InputLeftAddon>R$</InputLeftAddon>
+                      <Input defaultValue={cost.value} type="number" {...register(`costs.${i}.value`, {
+                        setValueAs: e => Number(e),
+                        required: true,
+                      })} />
+                    </InputGroup>
+                  </FormControl>
+                </Td>
+                <Td padding={1} >
+                  <IconButton icon={<DeleteIcon />} onClick={() => removeCost(i)} aria-label="Deletar" />
+                </Td>
+              </Tr>
+            })
+          }
+        </Tbody>
+      </Table>
+    </TableContainer>
+    <Button onClick={() => {
+      appendCost({
+        costId: uniqueID().toString(),
+        text: '',
+        value: 0
+      })
+    }}>Adicionar custo</Button>
+  </>
+}
+
+const TotalCosts = () => {
+  const { register, control, formState: { errors } } = useFormContext<ICostsForm>();
+  const { fields: fieldsCostsTotal, append: appendCostTotal, remove: removeCostTotal } = useFieldArray({
+    control, // control props comes from useForm (optional: if you are using FormContext)
+    name: "totalCost", // unique name for your Field Array.
+  });
+  const elements = useMemo(() => fieldsCostsTotal.map((cost, i) => {
+    return <Flex
+      key={cost.id}
+      boxShadow="md"
+      p={4}
+      direction="column"
+      gap={2}
+    >
+      <Flex alignItems="center" gap={2}>
+        <Box h={6} w={6} textAlign="center" backgroundColor="gray.100" borderRadius={'full'}>
+          <Text>{(i + 1).toString().padStart(2, '0')}</Text>
+        </Box>
+        <FormControl isInvalid={errors?.totalCost && !!errors.totalCost[i]?.text}>
+          <Input defaultValue={cost.text} {...register(`totalCost.${i}.text`, {
+            required: true,
+          })} />
+        </FormControl>
+      </Flex>
+      <Box p={2} boxShadow="xs">
+        <Text fontSize="sm">Custos</Text>
+        <TotalCostCheckboxes i={i} />
+      </Box>
+      <Flex alignItems="center" justifyContent={"space-around"} direction={{
+        base: 'column',
+        md: 'row'
+      }} gap={{
+        base: 2,
+        md: 0
+      }}>
+        <TotalCostCalculatedValue i={i} />
+        <IconButton icon={<DeleteIcon />} onClick={() => removeCostTotal(i)} aria-label="Deletar" />
+      </Flex>
+    </Flex>
+  }), [errors?.totalCost, fieldsCostsTotal, register, removeCostTotal])
+  return <>
+    {elements}
+    <Button onClick={() => {
+      appendCostTotal({
+        costId: uniqueID().toString(),
+        text: '',
+        calc: [],
+        showInMainCard: {
+          views: []
+        }
+      })
+    }}>Adicionar total</Button>
+  </>
+}
+
+const TotalCostCheckbox = ({
+  costId,
+  text,
+  i,
+  onChange,
+}) => {
+  const { watch } = useFormContext();
+  const totalCost = watch(`totalCost.${i}`);
+  const calc = totalCost.calc;
+  const isPresentInCalc = calc.includes(costId);
+  return <Checkbox defaultChecked={isPresentInCalc} onChange={(e) => {
+    let newCalc: string[];
+    if (!isPresentInCalc && e.target.checked) {
+      newCalc = [...calc, costId]
+    } else {
+      newCalc = calc.filter(id => id !== costId)
+    }
+    onChange({
+      target: {
+        value: newCalc
+      }
+    })
+  }}>{text}</Checkbox>
+}
+
+const TotalCostCheckboxes = ({
+  i,
+}) => {
+  const { control, watch } = useFormContext();
+  const [costs] = watch(['costs']);
+  return <Controller
+    control={control}
+    name={`totalCost.${i}.calc`}
+    render={({
+      field: { onChange },
+    }) => {
+      return <>
+        <Wrap gap={1}>
+          {
+            costs.filter(c => c.text).map(c => <TotalCostCheckbox
+              i={i}
+              key={`totalCost-${i}-checkbox-${c.costId}`}
+              costId={c.costId}
+              text={c.text}
+              onChange={onChange} />)
+          }
+        </Wrap>
+      </>
+    }}
+  />
+}
+
+const TotalCostCalculatedValue = ({
+  i,
+}) => {
+  const { watch } = useFormContext();
+  const [costs, totalCost] = watch(['costs', `totalCost.${i}`]);
+  const value: number = costs.filter(c => totalCost.calc.includes(c.costId)).reduce((a, c) => a + c.value, 0);
+
+  const parsedValue = value.toLocaleString('pt', {
+    style: 'currency',
+    currency: "BRL"
+  })
+  return <Flex alignItems="center" gap={2}>
+    <Text fontWeight={"bold"}>Valor: </Text>
+    <Text>
+      {parsedValue}
+    </Text>
   </Flex>
 }
