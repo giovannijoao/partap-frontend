@@ -704,7 +704,7 @@ const AutoImport = () => {
       setImported(result.data.data)
       reset(result.data.data)
     } catch (error) {
-      setImportErrorMessage('Infelizmente não conseguimos importar as informações desse site nesse momento. Por gentileza, crie manualmente.')
+      setImportErrorMessage('Infelizmente não conseguimos importar as informações desse site nesse momento. Você teria que criar manualmente o card para esse imóvel.')
     }
     setIsLoading(false)
   }, [importUrl, reset])
