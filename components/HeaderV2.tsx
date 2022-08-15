@@ -40,6 +40,9 @@ export default function HeaderV2() {
     const links = [{
       title: 'Dashboard',
       href: '/home'
+    }, {
+      title: 'Organizar',
+      href: '/organizze'
     }]
     if (limitsData?.data.plan === "free_plan" && !router.pathname.includes('/plans')) {
       links.push({
