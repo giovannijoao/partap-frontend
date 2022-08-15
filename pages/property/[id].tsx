@@ -112,6 +112,7 @@ export const getServerSideProps = withIronSessionSsr(async ({
         },
       })
     ]);
+    if (propertyResult.status !== 200 || limitsData.status !== 200) throw new Error()
     return {
       props: {
         userServerData: req.session.user,
