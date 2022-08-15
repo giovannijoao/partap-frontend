@@ -64,6 +64,10 @@ const itemsElements = (() => {
         },
       }
     ],
+    board: {
+      id: null,
+      index: 0
+    }
   }, {
     color: 'green.300',
     address: 'Rua Andorinhas, 160, Vila Seabra',
@@ -132,6 +136,10 @@ const itemsElements = (() => {
         },
       }
     ],
+    board: {
+      id: null,
+      index: 0
+    }
   }, {
     color: 'blue.300',
     address: 'Rua Dario da Silva, 629, Vila São Paulo',
@@ -174,6 +182,10 @@ const itemsElements = (() => {
         },
       }
     ],
+    board: {
+      id: null,
+      index: 0
+    }
   }];
   const parsedItems = items.map(item => {
     const totalCost = item.totalCost.map(cost => {
