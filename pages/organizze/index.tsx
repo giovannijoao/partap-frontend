@@ -1,4 +1,4 @@
-import { Badge, Box, Flex, Heading, Image, Input, InputGroup, InputLeftElement, SimpleGrid, Skeleton, Tag, TagLabel, TagLeftIcon, Text } from '@chakra-ui/react';
+import { Badge, Box, Button, Flex, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, SimpleGrid, Skeleton, Tag, TagLabel, TagLeftIcon, Text, useToast } from '@chakra-ui/react';
 import { withIronSessionSsr } from 'iron-session/next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -9,9 +9,9 @@ import useProperty from '../../lib/useProperty';
 import useUser from '../../lib/useUser';
 import useBoards from '../../lib/useBoards';
 import { ApiInstance } from '../../services/api';
-import { useSWRConfig } from 'swr';
+import { mutate, useSWRConfig } from 'swr';
 import { FormProvider, useForm } from 'react-hook-form';
-import { SearchIcon } from '@chakra-ui/icons';
+import { HamburgerIcon, SearchIcon } from '@chakra-ui/icons';
 
 export const getServerSideProps = withIronSessionSsr(async ({
   req,
@@ -95,6 +95,7 @@ export default function OrganizzePage({
       return {
         name: board.name,
         items: boardsData?.data.find(b => {
+          console.log(98, b);
           return (b._id || 'Sem status') === board.name
         })?.cards || []
       }
@@ -108,7 +109,7 @@ export default function OrganizzePage({
     // const sourceBoard = parsedBoards[parseInt(re.source.droppableId)];
     const targetBoard = parsedBoards[parseInt(re.destination.droppableId)];
     const dragItem =
-    newBoardData[parseInt(re.source.droppableId)].items[re.source.index];
+      newBoardData[parseInt(re.source.droppableId)].items[re.source.index];
     newBoardData[parseInt(re.source.droppableId)].items.splice(
       re.source.index,
       1
@@ -117,10 +118,10 @@ export default function OrganizzePage({
       re.destination.index,
       0,
       dragItem
-      );
+    );
     await ApiInstance.put(`/properties/${dragItem.id}`, {
       board: {
-        id: targetBoard.name,
+        id: targetBoard.name === "Sem status" ? null : targetBoard.name,
         index: re.destination.index
       }
     })
@@ -131,6 +132,10 @@ export default function OrganizzePage({
       populateCache: true
     })
   }, [parsedBoards, mutate]);
+
+  const mutateBoard = useCallback(() => {
+    mutate(['/boards', filters])
+  }, [mutate, filters]);
 
   return <Flex direction="column" h="100vh">
     <HeaderV2 />
@@ -191,6 +196,7 @@ export default function OrganizzePage({
                               key={item.id}
                               data={item}
                               index={iIndex}
+                              mutateBoard={mutateBoard}
                             />
                           );
                         })}
@@ -208,8 +214,10 @@ export default function OrganizzePage({
 }
 
 const CardItem = ({
-  data, index
+  data, index,
+  mutateBoard
 }) => {
+  const toast = useToast();
   const { property } = useProperty({
     propertyId: data.id,
   });
@@ -229,14 +237,22 @@ const CardItem = ({
   if (totalCost) costsElements.push(...totalCost.map(totalCost => {
     return <Text key={totalCost.id} fontWeight="bold" color="green" fontSize={"xs"}>{totalCost.text} {totalCost.value}</Text>
   }))
-  // if (filtersRef.current?.exposedCostsFilter.length > 0) {
-  //   const fields = Array.from(new Set(filtersRef.current.exposedCostsFilter.filter(f => f.field.includes('costs||')).map(x => x.field))).map((f: string) => {
-  //     const [property, field] = f.split('||');
-  //     const cost = item[property].find(x => x.text === field);
-  //     return <Text key={item._id.concat(field)} color="green" fontSize={"xs"}>{field} {cost?.value}</Text>
-  //   })
-  //   costsElements.push(...fields);
-  // }
+
+  const markAsUnavailable = useCallback(async () => {
+    try {
+      await ApiInstance.put(`/properties/${property?._id}`, {
+        isAvailable: false
+      });
+      toast({
+        title: 'Imóvel marcado como indisponível',
+        description: 'Agora você poderá ver ele apenas na página de dashboard'
+      })
+      mutateBoard()
+    } catch (error) {
+      console.log("error")
+    }
+  }, [mutateBoard, property?._id, toast])
+
   return <Draggable index={index} draggableId={data.id.toString()}>
     {(provided) => (
       <Box
@@ -256,6 +272,30 @@ const CardItem = ({
               borderTopRadius="md"
               fit={"cover"}
             />
+            <Popover
+              variant="responsive"
+              strategy="fixed"
+            >
+              <PopoverTrigger>
+                <Flex position="absolute" top={1} right={1}>
+                  <IconButton
+                    size={"xs"}
+                    aria-label='Ações'
+                    icon={<HamburgerIcon />}
+                    opacity={0.5}
+                    _hover={{
+                      opacity: 1
+                    }}
+                  />
+                </Flex>
+              </PopoverTrigger>
+              <PopoverContent w="fit-content">
+                <PopoverArrow />
+                <PopoverBody>
+                  <Button size="xs" onClick={markAsUnavailable}>Marcar como indisponível</Button>
+                </PopoverBody>
+              </PopoverContent>
+            </Popover>
             <Flex position="absolute" bottom={1} left={1} gap={1}>
               {property.information.nearSubway && <Tag size={"md"} variant='subtle' colorScheme='cyan' >
                 <TagLeftIcon boxSize='12px' as={FaTrain} />
@@ -271,7 +311,7 @@ const CardItem = ({
             </Flex>
           </Box>}
           <Flex p={3} direction="column">
-            <Heading fontSize="md">{property?.address}</Heading>
+            <Link href={`/property/${property._id}`}><Heading fontSize="md">{property?.address}</Heading></Link>
             <Flex mt={1} alignItems="center">
               <Flex>
                 {property?.information.totalArea &&
