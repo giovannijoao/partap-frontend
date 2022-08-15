@@ -1,4 +1,4 @@
-import { Badge, Box, Flex, Heading, Image, SimpleGrid, Skeleton, Tag, TagLabel, TagLeftIcon, Text } from '@chakra-ui/react';
+import { Badge, Box, Flex, Heading, Image, Input, InputGroup, InputLeftElement, SimpleGrid, Skeleton, Tag, TagLabel, TagLeftIcon, Text } from '@chakra-ui/react';
 import { withIronSessionSsr } from 'iron-session/next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -10,6 +10,8 @@ import useUser from '../../lib/useUser';
 import useBoards from '../../lib/useBoards';
 import { ApiInstance } from '../../services/api';
 import { mutate } from 'swr';
+import { FormProvider, useForm } from 'react-hook-form';
+import { SearchIcon } from '@chakra-ui/icons';
 
 export const getServerSideProps = withIronSessionSsr(async ({
   req,
@@ -43,10 +45,9 @@ export const getServerSideProps = withIronSessionSsr(async ({
 export default function OrganizzePage({
   userServerData
 }) {
+  const [filters, setFilters] = useState<any>();
   const { boards: boardsData } = useBoards({
-    filters: {
-      // isAvailable: [true]
-    }
+    filters
   });
 
   useUser({
@@ -72,7 +73,18 @@ export default function OrganizzePage({
     }
   }, []);
 
+  const filtersFormMethods = useForm({
+    defaultValues: {
+      address: '',
+      isAvailable: [true]
+    }
+  })
 
+  const watchFilters = filtersFormMethods.watch();
+  useEffect(() => {
+    const timeout = setTimeout(() => setFilters(watchFilters), 500)
+    return () => clearTimeout(timeout)
+  }, [watchFilters])
 
   const parsedBoards = useMemo(() => {
     return boards.map(board => {
@@ -114,7 +126,19 @@ export default function OrganizzePage({
 
   return <Flex direction="column" h="100vh">
     <HeaderV2 />
-    <Flex h={"calc(100vh - 80px)"}>
+    <Flex h={"calc(100vh - 80px)"} direction="column">
+      <FormProvider {...filtersFormMethods}>
+        <Flex w="xs" ml={4} mt={2}>
+          <InputGroup>
+            <InputLeftElement
+              pointerEvents='none'
+            >
+              <SearchIcon color='gray.300' />
+            </InputLeftElement>
+            <Input type='endereco' placeholder='Endereço' {...filtersFormMethods.register('address')} />
+          </InputGroup>
+        </Flex>
+      </FormProvider>
       {ready && <DragDropContext onDragEnd={onDragEnd}>
         <Flex
           p={4}
