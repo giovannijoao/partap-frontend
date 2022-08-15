@@ -311,7 +311,7 @@ const CardItem = ({
             </Flex>
           </Box>}
           <Flex p={3} direction="column">
-            <Link href={`/property/${property._id}`}><Heading fontSize="md">{property?.address}</Heading></Link>
+            <Link href={`/property/${property?._id}`}><Heading fontSize="md">{property?.address}</Heading></Link>
             <Flex mt={1} alignItems="center">
               <Flex>
                 {property?.information.totalArea &&
