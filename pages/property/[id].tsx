@@ -135,7 +135,7 @@ export default function PropertyPage({
   propertyServerData,
   planLimitsServerData
 }) {
-  const { query, push } = useRouter();
+  const { query, push, back } = useRouter();
   const { user } = useUser({
     redirectTo: `/login`,
     fallback: userServerData
@@ -286,7 +286,7 @@ export default function PropertyPage({
           top={0}
           zIndex={2}
         >
-          <IconButton aria-label="Go back home" onClick={() => push(`/home`)} icon={<ChevronLeftIcon h={8} w={8} />} />
+          <IconButton aria-label="Go back home" onClick={() => back()} icon={<ChevronLeftIcon h={8} w={8} />} />
           <Heading fontSize={"2xl"} color='white'>{property.address}</Heading>
         </Flex>
         {property.images.length > 0 && <Flex
