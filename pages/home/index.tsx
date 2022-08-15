@@ -34,20 +34,20 @@ export const getServerSideProps = withIronSessionSsr(async ({
         headers: {
           Authorization: req.session.user.token,
         },
-      }).then(res => res.json()),
+      }),
       fetch(`${ApiURL}/user-plan-limits`, {
         headers: {
           Authorization: req.session.user.token,
         },
-      }).then(res => res.json())
+      })
     ]);
     console.log('Properties', propertiesResult)
     console.log('Limits', limitsData)
     return {
       props: {
         userServerData: req.session.user,
-        propertiesServerData: propertiesResult,
-        planLimitsServerData: limitsData
+        propertiesServerData: await propertiesResult.json(),
+        planLimitsServerData: await limitsData.json()
       }, // will be passed to the page component as props
     }
   } catch (error) {
