@@ -46,6 +46,10 @@ export interface IProperty {
   contactInfo: {
     description?: string
   }
+  board: {
+    id?: string
+    index: number
+  }
 }
 
 export interface IPropertySaved extends IProperty {

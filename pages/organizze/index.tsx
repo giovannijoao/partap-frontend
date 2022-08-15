@@ -1,17 +1,17 @@
-import { Badge, Box, Button, Flex, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Popover, PopoverArrow, PopoverBody, PopoverCloseButton, PopoverContent, PopoverHeader, PopoverTrigger, SimpleGrid, Skeleton, Tag, TagLabel, TagLeftIcon, Text, useToast } from '@chakra-ui/react';
+import { ChevronRightIcon, HamburgerIcon, SearchIcon } from '@chakra-ui/icons';
+import { Badge, Box, Button, Divider, Flex, Heading, IconButton, Image, Input, InputGroup, InputLeftElement, Link, Popover, PopoverArrow, PopoverBody, PopoverContent, PopoverTrigger, Skeleton, Tag, TagLabel, TagLeftIcon, Text, useToast } from '@chakra-ui/react';
 import { withIronSessionSsr } from 'iron-session/next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
+import { FormProvider, useForm } from 'react-hook-form';
 import { FaCouch, FaTrain } from 'react-icons/fa';
+import { useSWRConfig } from 'swr';
 import HeaderV2 from '../../components/HeaderV2';
 import { sessionOptions } from '../../lib/session';
+import useBoards from '../../lib/useBoards';
 import useProperty from '../../lib/useProperty';
 import useUser from '../../lib/useUser';
-import useBoards from '../../lib/useBoards';
 import { ApiInstance } from '../../services/api';
-import { mutate, useSWRConfig } from 'swr';
-import { FormProvider, useForm } from 'react-hook-form';
-import { HamburgerIcon, SearchIcon } from '@chakra-ui/icons';
 
 export const getServerSideProps = withIronSessionSsr(async ({
   req,
@@ -197,6 +197,7 @@ export default function OrganizzePage({
                               data={item}
                               index={iIndex}
                               mutateBoard={mutateBoard}
+                              boards={boards}
                             />
                           );
                         })}
@@ -215,7 +216,7 @@ export default function OrganizzePage({
 
 const CardItem = ({
   data, index,
-  mutateBoard
+  mutateBoard, boards
 }) => {
   const toast = useToast();
   const { property } = useProperty({
@@ -252,6 +253,20 @@ const CardItem = ({
       console.log("error")
     }
   }, [mutateBoard, property?._id, toast])
+
+  const updateBoard = useCallback(async (board) => {
+    try {
+      await ApiInstance.put(`/properties/${property?._id}`, {
+        board: {
+          id: board,
+          index: property?.board.index
+        }
+      });
+      mutateBoard()
+    } catch (error) {
+      console.log("error")
+    }
+  }, [mutateBoard, property?._id, property?.board.index])
 
   return <Draggable index={index} draggableId={data.id.toString()}>
     {(provided) => (
@@ -292,7 +307,18 @@ const CardItem = ({
               <PopoverContent w="fit-content">
                 <PopoverArrow />
                 <PopoverBody>
-                  <Button size="xs" onClick={markAsUnavailable}>Marcar como indisponível</Button>
+                  <Flex direction="column" gap={2}>
+                    {boards.filter(board => board.name !== (property?.board?.id || 'Sem status')).map(board => {
+                      return <Button
+                        key={`${property?._id}-${board.name}-action-button`}
+                        size="xs"
+                        leftIcon={<ChevronRightIcon />}
+                        onClick={() => updateBoard(board.name)}
+                      >{board.name}</Button>
+                    })}
+                    <Divider />
+                    <Button size="xs" onClick={markAsUnavailable} colorScheme="red" variant="outline">Marcar como indisponível</Button>
+                  </Flex>
                 </PopoverBody>
               </PopoverContent>
             </Popover>
