@@ -41,6 +41,7 @@ export const getServerSideProps = withIronSessionSsr(async ({
         },
       })
     ]);
+    if (propertiesResult.status !== 200 || limitsData.status !== 200) throw new Error()
     console.log('Properties', propertiesResult)
     console.log('Limits', limitsData)
     return {
