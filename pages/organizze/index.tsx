@@ -9,7 +9,7 @@ import useProperty from '../../lib/useProperty';
 import useUser from '../../lib/useUser';
 import useBoards from '../../lib/useBoards';
 import { ApiInstance } from '../../services/api';
-import { mutate } from 'swr';
+import { useSWRConfig } from 'swr';
 import { FormProvider, useForm } from 'react-hook-form';
 import { SearchIcon } from '@chakra-ui/icons';
 
@@ -45,7 +45,11 @@ export const getServerSideProps = withIronSessionSsr(async ({
 export default function OrganizzePage({
   userServerData
 }) {
-  const [filters, setFilters] = useState<any>();
+  const { mutate } = useSWRConfig()
+  const [filters, setFilters] = useState<any>({
+    address: '',
+    isAvailable: [true]
+  });
   const { boards: boardsData } = useBoards({
     filters
   });
@@ -104,8 +108,7 @@ export default function OrganizzePage({
     // const sourceBoard = parsedBoards[parseInt(re.source.droppableId)];
     const targetBoard = parsedBoards[parseInt(re.destination.droppableId)];
     const dragItem =
-      newBoardData[parseInt(re.source.droppableId)].items[re.source.index];
-
+    newBoardData[parseInt(re.source.droppableId)].items[re.source.index];
     newBoardData[parseInt(re.source.droppableId)].items.splice(
       re.source.index,
       1
@@ -114,15 +117,20 @@ export default function OrganizzePage({
       re.destination.index,
       0,
       dragItem
-    );
-    mutate('/boards', newBoardData)
+      );
     await ApiInstance.put(`/properties/${dragItem.id}`, {
       board: {
         id: targetBoard.name,
         index: re.destination.index
       }
     })
-  }, [parsedBoards]);
+    mutate(['/boards', {
+      isAvailable: true,
+      address: ''
+    }], null, {
+      populateCache: true
+    })
+  }, [parsedBoards, mutate]);
 
   return <Flex direction="column" h="100vh">
     <HeaderV2 />

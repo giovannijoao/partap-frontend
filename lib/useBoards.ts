@@ -11,10 +11,10 @@ type IFilters = {
 
 type UsePropertiesProps = {
   filters?: IFilters;
-  fallback?: PropertyInformationResponse
+  fallback?: BoardsResponse
 };
 
-type PropertyInformationResponse = {
+type BoardsResponse = {
   data: Array<{
     _id: string;
     cards: [{
@@ -30,7 +30,7 @@ export default function useBoards({
 }: UsePropertiesProps) {
   const { user } = useUser();
 
-   const fetchProperty = useCallback(
+   const fetchBoard = useCallback(
      (url: string, args) =>
        ApiInstance.get(url, {
          params: {
@@ -44,9 +44,9 @@ export default function useBoards({
    );
 
   // We do a request to /api/events only if the user is logged in
-  const { data: boards } = useSWR<PropertyInformationResponse>(
+  const { data: boards } = useSWR<BoardsResponse>(
     user?.isLoggedIn ? ["/boards", filters] : null,
-    (url, args) => fetchProperty(url, args),
+    (url, args) => fetchBoard(url, args),
     {
       errorRetryInterval: 5000,
       fallbackData: fallback
