@@ -1,6 +1,6 @@
 import { CloseIcon, HamburgerIcon } from '@chakra-ui/icons';
 import {
-  Avatar, Box, Button, Flex, Heading, HStack, Icon, IconButton, Link, Menu,
+  Avatar, Box, Button, Flex, Heading, HStack, Icon, IconButton, Image, Link, Menu,
   MenuButton, MenuItem, MenuList, Stack, useDisclosure
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
@@ -66,8 +66,7 @@ export default function HeaderV2() {
           />
           <HStack spacing={8} alignItems={'center'}>
             <Flex  alignItems="center" gap={4}>
-              <Icon as={FaHome} color='white' h={6} w={6} />
-              <Heading fontSize={"2xl"} color="whiteAlpha.900">PartAp</Heading>
+              <Image h={12} src="/logo.webp" alt="Logo" />
             </Flex>
             <HStack
               as={'nav'}

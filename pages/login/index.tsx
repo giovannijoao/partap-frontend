@@ -1,4 +1,4 @@
-import { Box, Button, Center, Flex, FormControl, FormLabel, Grid, Heading, Icon, Input, SimpleGrid, Text, useToast } from '@chakra-ui/react'
+import { Box, Button, Center, Flex, FormControl, FormLabel, Grid, Heading, Icon, Image, Input, SimpleGrid, Text, useToast } from '@chakra-ui/react'
 import { useRouter } from 'next/router';
 import React, { useCallback, useContext, useEffect, useState } from 'react'
 import { useForm } from "react-hook-form";
@@ -123,8 +123,7 @@ export default function Home() {
           borderTopRadius="lg"
         >
           <Center flexDirection="column">
-            <Icon as={FaHome} h={12} w={12} color="white" />
-            <Heading size={"2xl"} color="white" textAlign="center">Partap</Heading>
+            <Image h={12} src="/logo.webp" alt="Logo" />
             <Text w="70%" wordBreak={'break-word'} color="white" textAlign="center" fontSize="sm" mt={2}>Seu novo jeito de organizar a procura por imóveis</Text>
           </Center>
         </Flex>
