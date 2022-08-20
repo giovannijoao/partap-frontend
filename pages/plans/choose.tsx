@@ -139,7 +139,7 @@ export default function ChoosePlanPage() {
                     4,99
                   </Text>
                   <Text fontSize="3xl" color="gray.500">
-                    /semana
+                    /mês
                   </Text>
                 </HStack>
               </Box>
@@ -189,7 +189,7 @@ export default function ChoosePlanPage() {
                   9,99
                 </Text>
                 <Text fontSize="3xl" color="gray.500">
-                  /semana
+                  /mês
                 </Text>
               </HStack>
             </Box>
