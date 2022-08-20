@@ -259,14 +259,14 @@ const CardItem = ({
       await ApiInstance.put(`/properties/${property?._id}`, {
         board: {
           id: board,
-          index: property?.board.index
+          index: property?.board?.index
         }
       });
       mutateBoard()
     } catch (error) {
       console.log("error")
     }
-  }, [mutateBoard, property?._id, property?.board.index])
+  }, [mutateBoard, property?._id, property?.board?.index])
 
   return <Draggable index={index} draggableId={data.id.toString()}>
     {(provided) => (
