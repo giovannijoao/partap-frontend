@@ -1,5 +1,5 @@
 import { AddIcon, DeleteIcon, ExternalLinkIcon } from "@chakra-ui/icons";
-import { Badge, Box, Button, Checkbox, Fade, Flex, FormControl, Heading, Highlight, Icon, IconButton, Input, InputGroup, InputLeftAddon, InputLeftElement, Link, SimpleGrid, Table, TableContainer, Tag, TagLabel, TagLeftIcon, TagRightIcon, Tbody, Td, Text, Th, Thead, Tr, Wrap } from "@chakra-ui/react";
+import { Badge, Box, Button, Checkbox, Fade, Flex, FormControl, Heading, Highlight, Icon, IconButton, Image, Input, InputGroup, InputLeftAddon, InputLeftElement, Link, SimpleGrid, Table, TableContainer, Tag, TagLabel, TagLeftIcon, TagRightIcon, Tbody, Td, Text, Th, Thead, Tr, Wrap } from "@chakra-ui/react";
 import { useCallback, useMemo, useState } from "react";
 import { Controller, FormProvider, useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { FaBed, FaCar, FaCaretRight, FaCouch, FaFilter, FaHome, FaPhotoVideo, FaRobot, FaSearchDollar, FaSearchLocation, FaShower, FaTrain, FaUsers } from "react-icons/fa";
@@ -279,8 +279,7 @@ export default function Index() {
       gap={6}
     >
       <Flex direction='column' color="white">
-        <Icon as={FaHome} h={14} w={14} />
-        <Heading fontSize="6xl">PartAp</Heading>
+        <Image h={20} w={"fit-content"} src="/logo.webp" alt="Logo" />
         <Text fontSize="2xl">Seu novo jeito de organizar a busca por imóveis!</Text>
       </Flex>
       <Flex direction="column" w="sm">
