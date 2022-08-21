@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
+import { BrowserTracing } from '@sentry/tracing';
 
 const SENTRY_DSN = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -10,6 +11,12 @@ Sentry.init({
   dsn: SENTRY_DSN || 'https://237e7f1ada8549818fe4aa02782423b5@o1358846.ingest.sentry.io/6646146',
   // Adjust this value in production, or use tracesSampler for greater control
   tracesSampleRate: 1.0,
+  integrations: [
+    new BrowserTracing({
+      tracingOrigins: ["localhost", "q7wi8vce1g.execute-api.us-east-1.amazonaws.com", /^\//],
+      // ... other options
+    }),
+  ],
   // ...
   // Note: if you want to override the automatic release value, do not set a
   // `release` value here - use the environment variable `SENTRY_RELEASE`, so
