@@ -137,7 +137,7 @@ export default function Home() {
           {!signUpForm && <>
             <form onSubmit={handleSubmit(handleSignIn)}>
               <Flex w="xs" direction="column" gap={2}>
-                <Input required placeholder='E-mail' {...register('email')} />
+                <Input required type="email" placeholder='E-mail' {...register('email')} />
                 <Input required placeholder='Senha' type="password" {...register('password')} />
                 {errorMsg && <Text fontSize="sm" color="red.500" textAlign="center">{errorMsg}</Text>}
                 <Button
